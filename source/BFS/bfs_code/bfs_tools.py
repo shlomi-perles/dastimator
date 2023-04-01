@@ -225,7 +225,8 @@ class ArrayMob(VGroup):
         # self.squares[index].target.remove(old_element)
         # self.squares[index].target.add(val_text)
         # self.add(val_text)
-        return AnimationGroup(Write(val_text))  # TODO: handle not empty string.
+
+        return AnimationGroup(Write(val_text))  # TODO: handle not empty string. Maybe use MoveToTarget?
 
 
 class Pointer(VGroup):

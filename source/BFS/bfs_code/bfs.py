@@ -3,7 +3,7 @@ from tools.funcs import *
 from pathlib import Path
 from bfs_tools import *
 from manim_editor import PresentationSectionType as pst
-from typing import Callable, Iterable, List, Optional, Sequence, Union
+from typing import Callable, Iterable, List, Optional, Sequence, Union, Hashable
 
 MAIN_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(MAIN_PATH.parent.parent))
@@ -35,11 +35,15 @@ def get_neighbors(graph: Graph, vertex):
 # --------------------------------- BFS --------------------------------- #
 
 class BFSScene(Scene):
-    def __init__(self, vertices: Iterable, edges: Iterable[tuple], start_vertex=1, **kwargs):
+    def __init__(self, vertices: Iterable[Hashable], edges: Iterable[tuple[Hashable, Hashable]], start_vertex=1,
+                 **kwargs):
         super().__init__(**kwargs)
         self.vertices = vertices
         self.edges = edges
         self.start_vertex = start_vertex
+        self.graph, self.dist_mob = self.create_graph()
+        self.rendered_code = self.create_code()
+        self.queue_mob, self.u, self.pi = self.create_bfs_vars(self.rendered_code)
 
     def my_next_section(self, name: str = "unnamed", type: str = pst.SUB_NORMAL, skip_animations: bool = False):
         if PRESENTATION_MODE:
@@ -49,43 +53,55 @@ class BFSScene(Scene):
 
     def construct(self):
         self.my_next_section("BFS", pst.NORMAL)
-        graph = self.create_graph()
-        rendered_code = self.create_code()
-        queue_mob, u, pi = self.create_bfs_vars(rendered_code)
 
-        self.play(Write(rendered_code))
-        self.play(Write(graph))
+        self.play(Write(self.rendered_code))
+        self.play(Write(self.graph))
 
-        self.animate_bfs(graph, rendered_code, queue_mob, u, pi)
+        self.animate_bfs()
 
-        self.play(highlight_code_lines(rendered_code))
-        self.play(Unwrite(VGroup(graph, rendered_code, queue_mob, u)))
+        self.play(highlight_code_lines(self.rendered_code))
+        self.play(Unwrite(VGroup(self.graph, self.rendered_code, self.queue_mob, self.u, self.pi)))
         self.wait()
 
-    def animate_bfs(self, graph: Graph, rendered_code: Code, queue_mob: ArrayMob, u: Tex, pi: ArrayMob):
+    def animate_bfs(self):
         """
-        Animate BFS algorithm. We assume that the graph is connected. Else, we need to run BFS for each connected component.
+        Animate BFS algorithm. We assume that the graph is connected.
+        Else, we need to run BFS for each connected component.
         Each step of the algorithm is animated separately.
-        :param graph: Graph to animate
-        :param rendered_code: Code to animate
-        :param queue_mob: ArrayMob of queue
-        :param u: VGroup of u mob
-        :param pi: ArrayMob of pi
+        Note: vertices are 1-indexed
         """
-        dist = [np.Inf] * (len(graph.vertices) + 1)
-        dist[self.start_vertex] = 0
-        parent = [None] * (len(graph.vertices) + 1)
-        queue = [self.start_vertex]
+        graph, rendered_code, dist_mob = self.graph, self.rendered_code, self.dist_mob
+        queue_mob, u, pi = self.queue_mob, self.u, self.pi
 
-        self.play(queue_mob.draw_array(), Write(u), pi.draw_array())
+        queue = [self.start_vertex]
+        self.my_next_section("Initialize queue", pst.SUB_NORMAL)
+        self.play(highlight_code_lines(rendered_code, [2]))
+        self.play(queue_mob.draw_array())
+
+        dist = [np.Inf] * (len(graph.vertices) + 1)
+        self.my_next_section("Initialize dist", pst.SUB_NORMAL)
+        self.play(highlight_code_lines(rendered_code, [3, 4]))
+        self.play(AnimationGroup(*[Write(dist_mob[i]) for i in range(len(graph.vertices))], lag_ratio=0.2))
+
+        dist[self.start_vertex] = 0
+        self.my_next_section("Init first vertex dist", pst.SUB_NORMAL)
+        self.play(highlight_code_lines(rendered_code, [5]))
+        self.wait(0.2)
+        self.play(self.change_dist(self.start_vertex, 0))
+
+        parent = [None] * (len(graph.vertices) + 1)
+        self.my_next_section("Init first vertex parent", pst.SUB_NORMAL)
+        self.play(highlight_code_lines(rendered_code, [6]))
+        self.play(pi.draw_array())
+        self.play(pi.at(0, "-"))
 
         while queue:
-            self.play(highlight_code_lines(rendered_code, [9]))
+            self.play(highlight_code_lines(rendered_code, [8]))
 
             # animate pop
             cur_vertex = queue.pop(0)
             self.my_next_section(f"Pop vertex {cur_vertex} from queue", pst.SUB_NORMAL)
-            self.play(highlight_code_lines(rendered_code, [10]))
+            self.play(highlight_code_lines(rendered_code, [9]))
             if cur_vertex == self.start_vertex:
                 self.visit_vertex_animation(graph, None, cur_vertex)
             pop_item = queue_mob.get_square(0)
@@ -99,54 +115,44 @@ class BFSScene(Scene):
                     continue
                 # animate for neighbor v of u & dist[v] = ∞
                 self.my_next_section("Visit neighbor", pst.SUB_NORMAL)
-                self.play(highlight_code_lines(rendered_code, [11]))
+                self.play(highlight_code_lines(rendered_code, [10]))
                 self.my_next_section("Update visit", pst.SUB_NORMAL)
                 self.visit_vertex_animation(graph, cur_vertex, neighbor)
-
-                # animate π[v] ← u
-                parent[neighbor] = cur_vertex
-                self.my_next_section(f"Add parent {cur_vertex} to vertex {neighbor}", pst.SUB_NORMAL)
-                self.play(highlight_code_lines(rendered_code, [12]))
-                self.my_next_section("Update parent", pst.SUB_NORMAL)
-                self.play(pi.at(neighbor - 1, cur_vertex))
-
-                # animate dist[v] = dist[u] + 1
-                dist[neighbor] = dist[cur_vertex] + 1
-                self.my_next_section(f"Set distance {dist[cur_vertex] + 1} to vertex {neighbor}", pst.SUB_NORMAL)
-                self.play(highlight_code_lines(rendered_code, [13]))
 
                 # animate queue.push(v)
                 queue.append(neighbor)
                 self.my_next_section(f"Add vertex {neighbor} to queue", pst.SUB_NORMAL)
-                self.play(highlight_code_lines(rendered_code, [14]))
+                self.play(highlight_code_lines(rendered_code, [11]))
                 self.play(queue_mob.push(neighbor))
-            self.play(pop_animation[0])
 
-    def visit_vertex_animation(self, graph: Graph, parent, next_vertex):
-        visited_mark = Circle(radius=graph[next_vertex].radius, fill_opacity=0, stroke_width=VISITED_VERTEX_WIDTH,
-                              stroke_color=VISITED_COLOR).move_to(graph[next_vertex]).scale_to_fit_height(
-            graph[next_vertex].height)
-        if parent is not None:
-            visited_mark.rotate(graph.edges[(parent, next_vertex)].get_angle() + PI)
-            self.play(graph.animate.add_edges((parent, next_vertex), edge_config={"stroke_color": VISITED_COLOR,
-                                                                                  "stroke_width": VISITED_EDGE_WIDTH}))
-        self.play(Create(visited_mark))
+                # animate dist[v] = dist[u] + 1
+                dist[neighbor] = dist[cur_vertex] + 1
+                self.my_next_section(f"Set distance {dist[cur_vertex] + 1} to vertex {neighbor}", pst.SUB_NORMAL)
+                self.play(highlight_code_lines(rendered_code, [12]))
+
+                # animate π[v] ← u
+                parent[neighbor] = cur_vertex
+                self.my_next_section(f"Add parent {cur_vertex} to vertex {neighbor}", pst.SUB_NORMAL)
+                self.play(highlight_code_lines(rendered_code, [13]))
+                self.my_next_section("Update parent", pst.SUB_NORMAL)
+                self.play(pi.at(neighbor - 1, cur_vertex))
+
+            self.play(pop_animation[0])
 
     def create_code(self):
         code = '''def BFS(G,s): 
+    queue ← Build Queue({s})
     for all vertices u in V do:
         dist[u] ← ∞
-        
     dist[s] ← 0
     π[s] ← None
-    queue ← Build Queue({s})
-     
+             
     while queue ≠ ø do:
         u = queue.pop() 
         for neighbor v of u & dist[v] = ∞:
-                π[v] ← u
+                queue.push(v)
                 dist[v] = dist[u] + 1
-                queue.push(v)'''
+                π[v] ← u'''
         Code.set_default(font="Consolas")
         rendered_code = Code(code=code, tab_width=3, background="window", language="Python", style="fruity").to_corner(
             LEFT + UP)
@@ -154,6 +160,10 @@ class BFSScene(Scene):
         return rendered_code
 
     def create_graph(self):
+        """
+        Create graph and add labels to vertices,
+        Note: vertices are 1-indexed
+        """
         self.edges += [(v, u) for u, v in self.edges]
         vertex_config = {
             "fill_color": VERTEX_COLOR,
@@ -166,9 +176,10 @@ class BFSScene(Scene):
         }
         graph = Graph(self.vertices, self.edges, layout="circular", layout_scale=1.5,
                       labels=True, label_fill_color=LABEL_COLOR, vertex_config=vertex_config, edge_config=edge_config)
+        dist_mob = VGroup(*([VMobject()] + [Tex(r"$\infty$").move_to(v, UP) for v in self.vertices]))  # 1-indexed
         relative_scale = config.frame_width * 0.5 if graph.width > graph.height else config.frame_height * 0.7
         graph.scale_to_fit_width(relative_scale).to_edge(RIGHT, buff=0.2)
-        return graph
+        return graph, dist_mob
 
     def create_bfs_vars(self, rendered_code: Code) -> tuple[ArrayMob, Tex, ArrayMob]:
         scale = 1
@@ -181,6 +192,22 @@ class BFSScene(Scene):
                       align_point=u.get_right() + 0.5 * DOWN * (queue_mob.obj_ref.get_bottom()[1] - u.get_top()[1]),
                       starting_index=1)
         return queue_mob, u, pi
+
+    def visit_vertex_animation(self, graph: Graph, parent, next_vertex):
+        visited_mark = Circle(radius=graph[next_vertex].radius, fill_opacity=0, stroke_width=VISITED_VERTEX_WIDTH,
+                              stroke_color=VISITED_COLOR).move_to(graph[next_vertex]).scale_to_fit_height(
+            graph[next_vertex].height)
+        if parent is not None:
+            visited_mark.rotate(graph.edges[(parent, next_vertex)].get_angle() + PI)
+            self.play(graph.animate.add_edges((parent, next_vertex), edge_config={"stroke_color": VISITED_COLOR,
+                                                                                  "stroke_width": VISITED_EDGE_WIDTH}))
+        self.play(Create(visited_mark))
+
+    def change_dist(self, index: int, new_dist: int) -> Animation:
+        old_dist = self.dist_mob[index]
+        new_dist_tex = Tex(str(new_dist)).match_height(old_dist).move_to(old_dist)
+        self.dist_mob[index] = new_dist_tex
+        return Transform(old_dist, new_dist_tex)
 
 
 class BigGraphBFS(BFSScene):
