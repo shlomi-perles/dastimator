@@ -26,9 +26,9 @@ VISITED_EDGE_WIDTH = EDGE_STROKE_WIDTH * 1.5
 VISITED_VERTEX_WIDTH = VERTEX_STROKE_WIDTH * 1.8
 LABEL_COLOR = WHITE
 
-DISTANCE_COLOR = ORANGE
-DISTANCE_BUFFER = 0.06
-DISTANCE_SCALE = 0.7
+DISTANCE_LABEL_BUFFER = 0.02
+DISTANCE_LABEL_SCALE = 0.7
+DISTANCE_LABEL_COLOR = ORANGE
 
 LINES_OPACITY = 0.5
 
@@ -40,12 +40,12 @@ def get_neighbors(graph: Graph, vertex):
 # --------------------------------- BFS --------------------------------- #
 
 def create_dist_label(index, graph, label):
-    label = Tex(label, color=DISTANCE_COLOR)
+    label = Tex(label, color=DISTANCE_LABEL_COLOR)
     if label.width < label.height:
-        label.scale_to_fit_height(graph[index].radius * DISTANCE_SCALE)
+        label.scale_to_fit_height(graph[index].radius * DISTANCE_LABEL_SCALE)
     else:
-        label.scale_to_fit_width(graph[index].radius * DISTANCE_SCALE)
-    return label.move_to(graph[index]).next_to(graph[index][1], RIGHT, buff=DISTANCE_BUFFER)
+        label.scale_to_fit_width(graph[index].radius * DISTANCE_LABEL_SCALE)
+    return label.move_to(graph[index]).next_to(graph[index][1], RIGHT, buff=DISTANCE_LABEL_BUFFER)
 
 
 class BFSScene(Scene):
@@ -74,12 +74,11 @@ class BFSScene(Scene):
 
         self.play(Write(self.rendered_code))
         self.play(Write(self.graph))
-        return
 
         self.animate_bfs()
 
         self.play(highlight_code_lines(self.rendered_code))
-        self.play(Unwrite(self.graph), Unwrite(self.dist_mob))
+        # self.play(Unwrite(self.graph), Unwrite(self.dist_mob))
         self.play(Unwrite(VGroup(self.rendered_code, self.queue_mob, self.u, self.pi)))
         self.wait()
 
@@ -209,7 +208,7 @@ class BFSScene(Scene):
                     edge_configs[(k, v)] = edge_config
                 else:
                     edge_configs[(k, v)] = edge_config
-                    edge_configs[(k, v)]["tip_config"] = {"tip_length": DEFAULT_ARROW_TIP_LENGTH}
+                    edge_configs[(k, v)]["tip_config"] = {"tip_length": DEFAULT_ARROW_TIP_LENGTH * 0.4}
             edge_config = edge_configs
 
         graph = DiGraph(self.vertices, self.edges, layout="circular", layout_scale=1.5, labels=True,
@@ -218,7 +217,7 @@ class BFSScene(Scene):
             for i, vertex in enumerate(graph.vertices):
                 graph[vertex].move_to(self.vertices_locations[i])
         relative_scale = config.frame_width * 0.5 if graph.width > graph.height else config.frame_height * 0.7
-        graph.scale_to_fit_width(relative_scale).to_edge(RIGHT, buff=0.2)
+        graph.scale_to_fit_width(relative_scale).move_to(ORIGIN).to_edge(RIGHT, buff=0.2)
         return graph
 
     def create_bfs_vars(self, rendered_code: Code) -> tuple[ArrayMob, Tex, ArrayMob]:

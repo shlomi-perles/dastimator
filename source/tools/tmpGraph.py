@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Hashable, Iterable
 import networkx as nx
 import numpy as np
-
+from manim import LEFT, RIGHT, UP, DOWN, ORIGIN, UL, UR, DL, DR
 from manim.animation.composition import AnimationGroup
 from manim.animation.creation import Create, Uncreate
 from manim.mobject.geometry import Dot, LabeledDot, Line, ArrowTriangleFilledTip
@@ -517,6 +517,7 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
             graph_type: GraphType = GraphType.UNDIRECTED,
     ) -> None:
         super().__init__()
+        self.graph_type = graph_type
 
         if graph_type == GraphType.UNDIRECTED:
             nx_graph = nx.Graph()
@@ -598,19 +599,9 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
                 self._edge_config[e] = copy(default_edge_config)
 
         self.default_edge_config = default_edge_config
+        self.edges = {}
         for (u, v) in edges:
-            edge_len = np.linalg.norm(self._layout[u] - self._layout[v])
-            edge = edge_type(self[u].get_center(), self[v].get_center(), **self._edge_config[(u, v)])
-
-        self.edges = {
-            (u, v): edge_type(
-                self[u].get_center() if graph_type == GraphType.UNDIRECTED else self[u],
-                self[v].get_center() if graph_type == GraphType.UNDIRECTED else self[v],
-                z_index=-1,
-                **self._edge_config[(u, v)],
-            )
-            for (u, v) in edges
-        }
+            self.edges[(u, v)] = self.create_edge(edge_type, u, v)
 
         # Add tips in case of directed graph
         if graph_type == GraphType.DIRECTED:
@@ -999,14 +990,30 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
         edge_config = base_edge_config
         self._edge_config[(u, v)] = edge_config
 
-        edge_mobject = edge_type(
-            self[u].get_center(), self[v].get_center(), z_index=-1, **edge_config
-        )
+        edge_mobject = self.create_edge(edge_type, u, v)
+
         self.edges[(u, v)] = edge_mobject
 
         self.add(edge_mobject)
         added_mobjects.append(edge_mobject)
         return self.get_group_class()(*added_mobjects)
+
+    def create_edge(self, edge_type, u, v):
+        if self.graph_type == GraphType.UNDIRECTED:
+            edge_mobject = edge_type(self[u].get_center(), self[v].get_center(), z_index=-1,
+                                     **self._edge_config[(u, v)],
+                                     )
+        else:
+            edge_len = np.linalg.norm(self[u].get_center() - self[v].get_center()
+                                      ) - (self[v].width + self[u].width) / 2
+            edge_mobject = edge_type(self[u].get_center(), self[v].get_center(), z_index=-1,
+                                     **self._edge_config[(u, v)])
+            edge_mobject.put_start_and_end_on(ORIGIN, [edge_len, 0, 0])
+            edge_mobject.next_to(self[u], RIGHT, buff=0)
+            u_v_angle = np.arctan2(self[v].get_center()[1] - self[u].get_center()[1],
+                                   self[v].get_center()[0] - self[u].get_center()[0])
+            edge_mobject.rotate(u_v_angle, about_point=self[u].get_center())
+        return edge_mobject
 
     def add_edges(
             self,
@@ -1404,7 +1411,9 @@ class DiGraph(GenericGraph):
             # pdb.set_trace()
             edge_type = type(edge)
             tip = edge.pop_tips()
-            new_edge = edge_type(self[u], self[v], **self._edge_config[(u, v)])
+
+            new_edge = self.create_edge(edge_type, u, v)
+
             edge.become(new_edge)
             if len(tip) > 0:
                 edge.add_tip(tip[0])
