@@ -144,10 +144,6 @@ class ArrayMob(VGroup):
         self.squares.remove(self.squares[index])
         self.vals_texts.remove(self.vals_texts[index])
 
-        for i in range(index, len(self.squares) - 1):
-            self.squares[i] = self.squares[i + 1]
-            self.vals_texts[i] = self.vals_texts[i + 1]
-
         shift_arr_to = self.array_name if index == 0 else self.squares[index - 1]
         buff = DEFAULT_MOBJECT_TO_MOBJECT_BUFFER if index == 0 else 0
         animations.append(self.squares[index:].animate.next_to(shift_arr_to, direction=RIGHT, buff=buff))
@@ -182,7 +178,10 @@ class ArrayMob(VGroup):
         square = Square(**self.create_array_args.pop("square_config", {})).scale_to_fit_height(
             self.height_ref * self.arr_scale * 3)
         val_text = Tex("" if value is None else str(value), **self.create_array_args.pop("value_config", {}))
-        val_text.scale_to_fit_height(square.height * ArrayMob.VALS_HEIGHT_FACTOR)
+        if val_text.width < val_text.height:
+            val_text.scale_to_fit_height(square.height * ArrayMob.VALS_HEIGHT_FACTOR)
+        else:
+            val_text.scale_to_fit_width(square.width * ArrayMob.VALS_HEIGHT_FACTOR)
         label = VGroup()
         if self.show_labels:
             label = Text(str(index)).match_height(square).scale(0.2 * self.labels_scale)
@@ -211,7 +210,11 @@ class ArrayMob(VGroup):
         val_text = Tex("" if value is None else f"{value}", **self.create_array_args.pop("value_config", {}))
 
         old_element = self.vals_texts[index]
-        val_text.set_height(self.squares[index].height * ArrayMob.VALS_HEIGHT_FACTOR)
+        if val_text.width < val_text.height:
+            val_text.set_height(self.squares[index].height * ArrayMob.VALS_HEIGHT_FACTOR)
+        else:
+            val_text.set_width(self.squares[index].width * ArrayMob.VALS_HEIGHT_FACTOR)
+
         val_text.move_to(self.squares[index])
 
         if old_element.tex_string == "":
