@@ -1,3 +1,5 @@
+import numpy as np
+
 from tools.consts import *
 from tools.funcs import *
 from tools.tmpGraph import GenericGraph, DiGraph
@@ -9,7 +11,7 @@ from typing import Callable, Iterable, List, Optional, Sequence, Union, Hashable
 MAIN_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(MAIN_PATH.parent.parent))
 
-PRESENTATION_MODE = False
+PRESENTATION_MODE = True
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
@@ -32,10 +34,10 @@ VISITED_TIP_SIZE = TIP_SIZE * 2.1
 LABEL_COLOR = WHITE
 
 DISTANCE_LABEL_BUFFER = 0.02
-DISTANCE_LABEL_SCALE = 0.7
+DISTANCE_LABEL_SCALE = 0.8
 DISTANCE_LABEL_COLOR = ORANGE
 
-LINES_OPACITY = 0.5
+LINES_OFF_OPACITY = 0.5
 
 
 # --------------------------------- BFS --------------------------------- #
@@ -46,7 +48,7 @@ def get_neighbors(graph: GenericGraph, vertex):
 
 
 def create_dist_label(index, graph, label):
-    label = Tex(label, color=DISTANCE_LABEL_COLOR, weight=BOLD)
+    label = MathTex(rf"\mathbf{{{label}}}", color=DISTANCE_LABEL_COLOR)
     if label.width < label.height:
         label.scale_to_fit_height(graph[index].radius * DISTANCE_LABEL_SCALE)
     else:
@@ -67,7 +69,8 @@ class BFSScene(Scene):
         self.rendered_code = self.create_code()
         self.queue_mob, self.u, self.pi = self.create_bfs_vars(self.rendered_code)
         self.dist_mob = VGroup(
-            *([VMobject()] + [create_dist_label(i, self.graph, r"$\infty$") for i in self.vertices]))  # 1-indexed
+            *([VMobject()] + [create_dist_label(i, self.graph, r"\infty") for i in self.vertices]))  # 1-indexed
+        self.mobjects_garbage_collector = VGroup(*[mob for mob in self.dist_mob])
 
     def my_next_section(self, name: str = "unnamed", type: str = pst.SUB_NORMAL, skip_animations: bool = False):
         if PRESENTATION_MODE:
@@ -84,7 +87,9 @@ class BFSScene(Scene):
         self.animate_bfs()
 
         self.play(highlight_code_lines(self.rendered_code, indicate=False))
-        # self.play(Unwrite(self.graph), Unwrite(self.dist_mob))
+        self.my_next_section("BFS finished", pst.SUB_NORMAL)
+        self.play(Unwrite(VGroup(*[edge for edge in self.graph.edges.values()])))
+        self.play(Unwrite(self.graph), Unwrite(self.dist_mob), Unwrite(self.mobjects_garbage_collector))
         self.play(Unwrite(VGroup(self.rendered_code, self.queue_mob, self.u, self.pi)))
         self.wait()
 
@@ -120,14 +125,14 @@ class BFSScene(Scene):
         self.highlight_and_indicate_code([6])
         self.play(pi.draw_array())
         self.play(pi.at(0, "-"))
-
+        visit_all = False
         while queue:
             self.highlight_and_indicate_code([8])
             # animate pop
             cur_vertex = queue.pop(0)
             if cur_vertex == self.start_vertex:
                 self.play(Write(u))
-            self.my_next_section(f"Pop vertex {cur_vertex} from queue", pst.SUB_NORMAL)
+            if not visit_all: self.my_next_section(f"Pop vertex {cur_vertex} from queue", pst.SUB_NORMAL)
             self.highlight_and_indicate_code([9])
             if cur_vertex == self.start_vertex:
                 self.visit_vertex_animation(graph, None, cur_vertex)
@@ -158,6 +163,9 @@ class BFSScene(Scene):
                 self.highlight_and_indicate_code([12])
                 self.my_next_section("Update dist", pst.SUB_NORMAL)
                 self.play(self.change_dist(neighbor, dist[neighbor]))
+
+                if np.Inf not in dist:
+                    visit_all = True
 
                 # animate π[v] ← u
                 parent[neighbor] = cur_vertex
@@ -234,6 +242,7 @@ class BFSScene(Scene):
         visited_mark = Circle(radius=graph[next_vertex].radius, fill_opacity=0, stroke_width=VISITED_VERTEX_WIDTH,
                               stroke_color=VISITED_COLOR).move_to(graph[next_vertex]).scale_to_fit_height(
             graph[next_vertex].height)
+        self.mobjects_garbage_collector += visited_mark
         if parent is not None:
             visited_mark.rotate(graph.edges[(parent, next_vertex)].get_angle() + PI)
             self.play(graph.animate.add_edges((parent, next_vertex),
@@ -246,6 +255,7 @@ class BFSScene(Scene):
     def change_dist(self, index: int, new_dist: int) -> AnimationGroup:
         old_dist = self.dist_mob[index]
         new_dist_tex = create_dist_label(index, self.graph, str(new_dist))
+        self.mobjects_garbage_collector += new_dist_tex
         self.dist_mob[index] = new_dist_tex
         return AnimationGroup(Transform(old_dist, new_dist_tex), Flash(new_dist_tex), lag_ratio=0.5)
 
@@ -310,7 +320,10 @@ class MovingDiGraph(Scene):
                                                            "tip_config": {
                                                                "tip_length": VISITED_TIP_SIZE}}))
         self.wait()
+        self.play(Unwrite(g))
 
+
+# class DFSScene(Scene):
 
 if __name__ == "__main__":
 
