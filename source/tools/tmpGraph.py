@@ -497,6 +497,7 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
                 )
                 self.play(self.camera.auto_zoom(g, margin=1), run_time=0.5)
     """
+    DEFAULT_TIP_CONFIG = {"tip_shape": ArrowTriangleFilledTip, "tip_length": 0.1}
 
     def __init__(
             self,
@@ -580,53 +581,50 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
             edge_config = {}
         default_edge_config = {}
         if edge_config:
-            default_edge_config = {
-                k: v
-                for k, v in edge_config.items()
-                if k not in edges and k[::-1] not in edges and k != "tip_config"
-            }
-        self._edge_config = {}
-        for e in edges:
-            if e in edge_config:
-                self._edge_config[e] = {
-                    k: v for k, v in edge_config[e].items() if k != "tip_config"
-                }
-            elif e[::-1] in edge_config:
-                self._edge_config[e] = {
-                    k: v for k, v in edge_config[e[::-1]].items() if k != "tip_config"
-                }
-            else:
-                self._edge_config[e] = copy(default_edge_config)
+            default_edge_config = {k: v for k, v in edge_config.items()
+                                   if k not in edges and k[::-1] not in edges and k != "tip_config"}
 
+        directed_graph = graph_type == GraphType.DIRECTED
         self.default_edge_config = default_edge_config
+
         self.edges = {}
-        for (u, v) in edges:
-            self.edges[(u, v)] = self.create_edge(edge_type, u, v)
-
-        # Add tips in case of directed graph
-        if graph_type == GraphType.DIRECTED:
-            default_tip_config = {
-                "tip_shape": ArrowTriangleFilledTip,
-                "tip_length": 0.1,
-                # "tip_width": 0.1,
-            }
+        self._edge_config = {}
+        if directed_graph:
             self._tip_config = {}
+            self.default_tip_config = self.DEFAULT_TIP_CONFIG
             if "tip_config" in edge_config:
-                self._tip_config = edge_config["tip_config"]
-            self._tip_config = {**default_tip_config, **self._tip_config}
-
-            for (u, v), edge in self.edges.items():
-                if (u, v) in edge_config and "tip_config" in edge_config[(u, v)]:
-                    self.edges[(u, v)] = edge.add_tip(
-                        **edge_config[(u, v)]["tip_config"]
-                    )
-                else:
-                    self.edges[(u, v)] = edge.add_tip(**self._tip_config)
+                self.default_tip_config = {**self.default_tip_config, **edge_config["tip_config"]}
+        for e in edges:
+            self._add_edge_config(e, edge_config)
+            self.edges[e] = self.create_edge(edge_type, *e)
+            if directed_graph:
+                self.edges[e] = self.edges[e].add_tip(**self._tip_config[e])
 
         self.add(*self.vertices.values())
         self.add(*self.edges.values())
 
         self.add_updater(self.update_edges)
+
+    def _add_edge_config(self, e, edge_config):
+        directed_graph = self.graph_type == GraphType.DIRECTED
+        if e in edge_config:
+            self._edge_config[e] = {k: v for k, v in edge_config[e].items() if k != "tip_config"}
+            if directed_graph and "tip_config" in edge_config[e]:
+                self._tip_config[e] = {**self.default_tip_config, **edge_config[e]["tip_config"]}
+
+        elif e[::-1] in edge_config and not directed_graph:
+            self._edge_config[e] = {k: v for k, v in edge_config[e[::-1]].items() if k != "tip_config"}
+        else:
+            if type(list(edge_config.keys())[0]) != tuple:
+                self._edge_config[e] = {k: v for k, v in edge_config.items() if k != "tip_config"}
+                if directed_graph and "tip_config" in edge_config:
+                    self._tip_config[e] = {**self.default_tip_config, **edge_config["tip_config"]}
+                else:
+                    self._tip_config[e] = copy(self.default_tip_config)
+            else:
+                self._edge_config[e] = copy(self.default_edge_config)
+                if directed_graph:
+                    self._tip_config[e] = copy(self.default_tip_config)
 
     def __getitem__(self: Graph, v: Hashable) -> Mobject:
         return self.vertices[v]
@@ -975,8 +973,6 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
             A group containing all newly added vertices and edges.
 
         """
-        if edge_config is None:
-            edge_config = self.default_edge_config.copy()
         added_mobjects = []
         for v in edge:
             if v not in self.vertices:
@@ -985,24 +981,19 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
 
         self._graph.add_edge(u, v)
 
-        base_edge_config = self.default_edge_config.copy()
-        base_edge_config.update(edge_config)
-        edge_config = base_edge_config
-        self._edge_config[(u, v)] = edge_config
+        self.edges[(u, v)] = self.create_edge(edge_type, u, v)
+        if self.graph_type == GraphType.DIRECTED:
+            self.edges[(u, v)] = self.edges[(u, v)].add_tip(**self._tip_config[(u, v)])
 
-        edge_mobject = self.create_edge(edge_type, u, v)
-
-        self.edges[(u, v)] = edge_mobject
-
-        self.add(edge_mobject)
-        added_mobjects.append(edge_mobject)
+        self.add(self.edges[(u, v)])
+        added_mobjects.append(self.edges[(u, v)])
         return self.get_group_class()(*added_mobjects)
 
     def create_edge(self, edge_type, u, v):
+        """Create an edge mobject between two vertices."""
         if self.graph_type == GraphType.UNDIRECTED:
             edge_mobject = edge_type(self[u].get_center(), self[v].get_center(), z_index=-1,
-                                     **self._edge_config[(u, v)],
-                                     )
+                                     **self._edge_config[(u, v)], )
         else:
             edge_len = np.linalg.norm(self[u].get_center() - self[v].get_center()
                                       ) - (self[v].width + self[u].width) / 2
@@ -1051,29 +1042,16 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
         """
         if edge_config is None:
             edge_config = {}
-        non_edge_settings = {k: v for (k, v) in edge_config.items() if k not in edges}
-        base_edge_config = self.default_edge_config.copy()
-        base_edge_config.update(non_edge_settings)
-        base_edge_config = {e: base_edge_config.copy() for e in edges}
+
         for e in edges:
-            base_edge_config[e].update(edge_config.get(e, {}))
-        edge_config = base_edge_config
+            self._add_edge_config(e, edge_config)
 
         edge_vertices = set(it.chain(*edges))
         new_vertices = [v for v in edge_vertices if v not in self.vertices]
         added_vertices = self.add_vertices(*new_vertices, **kwargs)
 
-        added_mobjects = sum(
-            (
-                self._add_edge(
-                    edge,
-                    edge_type=edge_type,
-                    edge_config=edge_config[edge],
-                ).submobjects
-                for edge in edges
-            ),
-            added_vertices,
-        )
+        added_mobjects = sum((self._add_edge(edge, edge_type=edge_type, edge_config=self._edge_config[edge],
+                                             ).submobjects for edge in edges), added_vertices, )
         return self.get_group_class()(*added_mobjects)
 
     @override_animate(add_edges)
@@ -1083,9 +1061,7 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
         animation = anim_args.pop("animation", Create)
 
         mobjects = self.add_edges(*args, **kwargs)
-        return AnimationGroup(
-            *(animation(mobj, **anim_args) for mobj in mobjects), group=self
-        )
+        return AnimationGroup(*(animation(mobj, **anim_args) for mobj in mobjects), group=self)
 
     def _remove_edge(self, edge: tuple[Hashable]):
         """Remove an edge from the graph.
@@ -1405,10 +1381,6 @@ class DiGraph(GenericGraph):
 
     def update_edges(self, graph):
         for (u, v), edge in graph.edges.items():
-            # Tips need to be repositionned sinced otherwise they can be deformed
-            # import pdb
-
-            # pdb.set_trace()
             edge_type = type(edge)
             tip = edge.pop_tips()
 
@@ -1417,10 +1389,8 @@ class DiGraph(GenericGraph):
             edge.become(new_edge)
             if len(tip) > 0:
                 edge.add_tip(tip[0])
-            # if (u, v) in self._edge_config and "tip_config" in self._edge_config[(u, v)]:
-            #     self.edges[(u, v)] = edge.add_tip(**self._edge_config[(u, v)]["tip_config"])
-            # else:
-            #     self.edges[(u, v)] = edge.add_tip(**self._tip_config)
+
+            edge.set_color(edge.get_color())
 
     def __repr__(self: DiGraph) -> str:
         return f"Directed graph on {len(self.vertices)} vertices and {len(self.edges)} edges"
