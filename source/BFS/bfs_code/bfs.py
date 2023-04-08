@@ -328,8 +328,8 @@ class MovingDiGraph(Scene):
 if __name__ == "__main__":
 
     # scenes_lst = [BigGraphBFS]
-    scenes_lst = [SmallGraphBFS]
-    # scenes_lst = [DirectedGraphBFS]
+    # scenes_lst = [SmallGraphBFS]
+    scenes_lst = [DirectedGraphBFS]
     # scenes_lst = [MovingDiGraph]
 
     for scene in scenes_lst:
