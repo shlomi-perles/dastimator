@@ -211,9 +211,11 @@ class ArrayMob(VGroup):
 
         old_element = self.vals_texts[index]
         if val_text.width < val_text.height:
-            val_text.set_height(self.squares[index].height * ArrayMob.VALS_HEIGHT_FACTOR)
+            val_text.set_height(
+                (self.squares[index].get_top()[1] - self.squares[index].get_bottom()[1]) * ArrayMob.VALS_HEIGHT_FACTOR)
         else:
-            val_text.set_width(self.squares[index].width * ArrayMob.VALS_HEIGHT_FACTOR)
+            val_text.set_width(
+                (self.squares[index].get_left()[0] - self.squares[index].get_right()[0]) * ArrayMob.VALS_HEIGHT_FACTOR)
 
         val_text.move_to(self.squares[index])
 

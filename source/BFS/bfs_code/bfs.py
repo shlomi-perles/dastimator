@@ -2,7 +2,7 @@ import numpy as np
 
 from tools.consts import *
 from tools.funcs import *
-from tools.tmpGraph import GenericGraph, DiGraph
+from tools.tmpGraph import DiGraph
 from pathlib import Path
 from bfs_tools import *
 from manim_editor import PresentationSectionType as pst
@@ -11,7 +11,7 @@ from typing import Callable, Iterable, List, Optional, Sequence, Union, Hashable
 MAIN_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(MAIN_PATH.parent.parent))
 
-PRESENTATION_MODE = True
+PRESENTATION_MODE = False
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
@@ -25,11 +25,14 @@ VERTEX_CONFIG = {"fill_color": VERTEX_COLOR, "stroke_color": VERTEX_STROKE_COLOR
 EDGE_COLOR = GREY
 EDGE_STROKE_WIDTH = DEFAULT_STROKE_WIDTH * 2
 TIP_SIZE = DEFAULT_ARROW_TIP_LENGTH * 0.4
-EDGE_CONFIG = {"tip_config": {"tip_length": 0}, "stroke_color": EDGE_COLOR, "stroke_width": EDGE_STROKE_WIDTH}
+TIP_CONFIG = {"tip_config": {"tip_length": 0}}
+EDGE_CONFIG = {"stroke_width": EDGE_STROKE_WIDTH, "stroke_color": EDGE_COLOR, **TIP_CONFIG}
 
 VISITED_COLOR = PURE_GREEN
 VISITED_EDGE_WIDTH = EDGE_STROKE_WIDTH * 1.5
 VISITED_VERTEX_WIDTH = VERTEX_STROKE_WIDTH * 1.8
+VISITED_VERTEX_CONFIG = {"fill_color": VERTEX_COLOR, "stroke_color": VISITED_COLOR,
+                         "stroke_width": VISITED_VERTEX_WIDTH}
 VISITED_TIP_SIZE = TIP_SIZE * 2.1
 LABEL_COLOR = WHITE
 
@@ -43,7 +46,7 @@ LINES_OFF_OPACITY = 0.5
 # --------------------------------- BFS --------------------------------- #
 
 
-def get_neighbors(graph: GenericGraph, vertex):
+def get_neighbors(graph: DiGraph, vertex):
     return [neighbor for neighbor in graph.vertices if (vertex, neighbor) in graph.edges]
 
 
@@ -58,13 +61,13 @@ def create_dist_label(index, graph, label):
 
 class BFSScene(Scene):
     def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]], start_vertex=1,
-                 directed_graph=False, vertices_locations=None, **kwargs):
+                 directed_graph: bool = False, layout="circular", **kwargs):
         super().__init__(**kwargs)
         self.directed_graph = directed_graph
         self.vertices = vertices
         self.edges = edges
         self.start_vertex = start_vertex
-        self.vertices_locations = vertices_locations
+        self.layout = layout
         self.graph = self.create_graph()
         self.rendered_code = self.create_code()
         self.queue_mob, self.u, self.pi = self.create_bfs_vars(self.rendered_code)
@@ -80,8 +83,13 @@ class BFSScene(Scene):
 
     def construct(self):
         self.my_next_section("BFS", pst.NORMAL)
-
+        self.play(self.pi.draw_array(), Write(self.u), self.queue_mob.draw_array())
+        a = Circle(radius=0.5, color=RED)
         self.play(Write(self.rendered_code))
+        a.match_height(self.pi.squares[0])
+        self.play(Write(a))
+        self.play(self.pi.at(0, "-"))
+        return
         self.play(Write(self.graph))
 
         self.animate_bfs()
@@ -183,7 +191,7 @@ class BFSScene(Scene):
         dist[u] ← ∞
     dist[s] ← 0
     π[s] ← None
-             
+
     while queue ≠ ø do:
         u = queue.pop() 
         for neighbor v of u & dist[v] = ∞:
@@ -216,11 +224,9 @@ class BFSScene(Scene):
                     edge_configs[(k, v)]["tip_config"]["tip_length"] = TIP_SIZE
             edge_config = edge_configs
 
-        graph = DiGraph(self.vertices, self.edges, layout="circular", layout_scale=1.5, labels=True,
+        graph = DiGraph(self.vertices, self.edges, layout=self.layout, layout_scale=1.5, labels=True,
                         label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG, edge_config=edge_config)
         for i, vertex in enumerate(graph.vertices):
-            if self.vertices_locations is not None:
-                graph[vertex].move_to(self.vertices_locations[i])
             graph[vertex][1].scale(VERTEX_LABEL_SCALE)
         relative_scale = config.frame_width * 0.5 if graph.width > graph.height else config.frame_height * 0.7
         graph.scale_to_fit_width(relative_scale).move_to(ORIGIN).to_edge(RIGHT, buff=0.2)
@@ -228,18 +234,22 @@ class BFSScene(Scene):
 
     def create_bfs_vars(self, rendered_code: Code) -> tuple[ArrayMob, Tex, ArrayMob]:
         scale = 1
-        queue_mob = ArrayMob("queue:", self.start_vertex, name_scale=scale).next_to(rendered_code, DOWN,
-                                                                                    buff=0.5).to_edge(LEFT)
+        start_vars_y = rendered_code.get_bottom()[1]
+        lag_y = (config.frame_height / 2 + start_vars_y) / 3
+        queue_mob = ArrayMob("queue:", self.start_vertex, name_scale=scale).set_y(start_vars_y - lag_y, DOWN).to_edge(
+            LEFT)
 
         u = Tex("u:").scale_to_fit_height(queue_mob.height_ref).next_to(queue_mob, DOWN, buff=queue_mob.get_square(
-            0).height * 0.8).align_to(queue_mob.array_name, RIGHT)
+            0).height * 0.8).align_to(queue_mob.array_name, RIGHT).set_y(start_vars_y - 2 * lag_y, DOWN)
         pi = ArrayMob(r"$\pi$:", *[""] * len(self.vertices), name_scale=scale, show_labels=True, labels_pos=DOWN,
                       align_point=u.get_right() + 0.5 * DOWN * (queue_mob.obj_ref.get_bottom()[1] - u.get_top()[1]),
-                      starting_index=1)
+                      starting_index=1).set_y(start_vars_y - 3 * lag_y, DOWN)
+        u.set_y((queue_mob.get_bottom()[1] + pi.get_top()[1]) / 2)
+        VGroup(queue_mob, u, pi).next_to(rendered_code, DOWN).to_edge(LEFT)
         return queue_mob, u, pi
 
-    def visit_vertex_animation(self, graph: GenericGraph, parent, next_vertex):
-        visited_mark = Circle(radius=graph[next_vertex].radius, fill_opacity=0, stroke_width=VISITED_VERTEX_WIDTH,
+    def visit_vertex_animation(self, graph: DiGraph, parent, next_vertex):
+        visited_mark = Circle(radius=graph[next_vertex].radius * 0.9, fill_opacity=0, stroke_width=VISITED_VERTEX_WIDTH,
                               stroke_color=VISITED_COLOR).move_to(graph[next_vertex]).scale_to_fit_height(
             graph[next_vertex].height)
         self.mobjects_garbage_collector += visited_mark
@@ -255,9 +265,9 @@ class BFSScene(Scene):
     def change_dist(self, index: int, new_dist: int) -> AnimationGroup:
         old_dist = self.dist_mob[index]
         new_dist_tex = create_dist_label(index, self.graph, str(new_dist))
-        self.mobjects_garbage_collector += new_dist_tex
+        # self.mobjects_garbage_collector += new_dist_tex
         self.dist_mob[index] = new_dist_tex
-        return AnimationGroup(Transform(old_dist, new_dist_tex), Flash(new_dist_tex), lag_ratio=0.5)
+        return AnimationGroup(old_dist.animate.become(new_dist_tex), Flash(new_dist_tex), lag_ratio=0.5)
 
     def highlight_and_indicate_code(self, lines: list, **kwargs):
         highlight, indicate = highlight_code_lines(self.rendered_code, lines, **kwargs)
@@ -272,8 +282,7 @@ class BigGraphBFS(BFSScene):
                  (2, 8), (3, 4), (6, 1), (6, 2), (7, 2), (7, 4), (3, 6)]
         start_vertex = 1
         super().__init__(vertices, edges, start_vertex, **kwargs)
-    # def construct(self):
-    #     super().construct()
+        # def construct(self):
 
 
 class SmallGraphBFS(BFSScene):
@@ -281,9 +290,11 @@ class SmallGraphBFS(BFSScene):
         vertices = list(range(1, 4))
         edges = [(1, 2), (1, 3), (2, 3)]
         start_vertex = 1
-        super().__init__(vertices, edges, start_vertex, **kwargs)
-    # def construct(self):
-    #     super().construct()
+        super().__init__(vertices, edges, start_vertex, directed_graph=True, **kwargs)
+
+    def construct(self):
+        super().construct()
+        self.play(Create(Circle()))
 
 
 class DirectedGraphBFS(BFSScene):
@@ -293,10 +304,13 @@ class DirectedGraphBFS(BFSScene):
                  (2, 3), (2, 4), (2, 5), (3, 6), (3, 7),
                  (5, 4), (5, 1), (6, 1), (6, 7)]
         start_vertex = 1
-        vertices_locations = [UP * 2, LEFT + UP, RIGHT + UP, 1.5 * LEFT, 0.5 * LEFT, 0.5 * RIGHT, 1.5 * RIGHT]
-        super().__init__(vertices, edges, start_vertex, vertices_locations=vertices_locations, directed_graph=True,
+        vertices_locations = {1: UP * 2, 2: LEFT + UP, 3: RIGHT + UP, 4: 1.5 * LEFT, 5: 0.5 * LEFT, 6: 0.5 * RIGHT,
+                              7: 1.5 * RIGHT}
+        super().__init__(vertices, edges, start_vertex, layout=vertices_locations, directed_graph=True,
                          **kwargs)
+
     # def construct(self):
+    #     self.play(Create(Circle()))
     #     super().construct()
 
 
@@ -307,18 +321,22 @@ class MovingDiGraph(Scene):
                  (2, 3), (2, 4), (2, 5), (3, 6), (3, 7),
                  (5, 4), (5, 1), (6, 1), (6, 7)]
         start_vertex = 1
-        vertices_locations = [UP * 2, LEFT + UP, RIGHT + UP, 1.5 * LEFT, 0.5 * LEFT, 0.5 * RIGHT, 1.5 * RIGHT]
-        g = DiGraph(vertices, edges, layout_scale=1.5, layout="circular", labels=True,
-                    label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG, edge_config=EDGE_CONFIG)
-        for i, vertex in enumerate(g.vertices):
-            g[vertex].move_to(vertices_locations[i])
-        g.scale(2)
+        vertices_locations = {1: UP * 2, 2: LEFT + UP, 3: RIGHT + UP, 4: 1.5 * LEFT, 5: 0.5 * LEFT, 6: 0.5 * RIGHT,
+                              7: 1.5 * RIGHT}
+        g = DiGraph(vertices, edges, layout_scale=1.5, layout=vertices_locations, labels=True,
+                    label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG.copy(), edge_config=EDGE_CONFIG.copy())
+        # g.scale(2)
         g.update_edges(g)
         self.add(g)
         self.play(g.animate.add_edges((2, 4), edge_config={"stroke_color": VISITED_COLOR,
                                                            "stroke_width": VISITED_EDGE_WIDTH,
                                                            "tip_config": {
                                                                "tip_length": VISITED_TIP_SIZE}}))
+        self.play(g[4][0].animate.set_stroke(width=VISITED_VERTEX_WIDTH, color=VISITED_COLOR))
+        g.update_edges(g)
+        # b = Arrow()
+        # self.play(GrowFromEdge(b[1], b.get_left()))
+
         self.wait()
         self.play(Unwrite(g))
 
@@ -328,8 +346,8 @@ class MovingDiGraph(Scene):
 if __name__ == "__main__":
 
     # scenes_lst = [BigGraphBFS]
-    # scenes_lst = [SmallGraphBFS]
-    scenes_lst = [DirectedGraphBFS]
+    scenes_lst = [SmallGraphBFS]
+    # scenes_lst = [DirectedGraphBFS]
     # scenes_lst = [MovingDiGraph]
 
     for scene in scenes_lst:

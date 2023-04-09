@@ -15,12 +15,14 @@ import networkx as nx
 import numpy as np
 from manim import LEFT, RIGHT, UP, DOWN, ORIGIN, UL, UR, DL, DR
 from manim.animation.composition import AnimationGroup
-from manim.animation.creation import Create, Uncreate
-from manim.mobject.geometry import Dot, LabeledDot, Line, ArrowTriangleFilledTip
+from manim.animation.creation import Create, Uncreate, Write
+from manim.animation.growing import GrowFromPoint, GrowFromEdge
+from manim.mobject.geometry.arc import Dot, LabeledDot
+from manim.mobject.geometry.line import Line, ArrowTriangleFilledTip
 from manim.mobject.mobject import Mobject, override_animate
-from manim.mobject.opengl_compatibility import ConvertToOpenGL
-from manim.mobject.types.opengl_point_cloud_mobject import OpenGLMobject
-from manim.mobject.svg.tex_mobject import MathTex
+from manim.mobject.opengl.opengl_compatibility import ConvertToOpenGL
+from manim.mobject.opengl.opengl_mobject import OpenGLMobject
+from manim.mobject.text.tex_mobject import MathTex
 from manim.mobject.types.vectorized_mobject import VMobject
 from manim.utils.color import BLACK
 from manim.scene.scene import Scene
@@ -993,7 +995,7 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
         """Create an edge mobject between two vertices."""
         if self.graph_type == GraphType.UNDIRECTED:
             edge_mobject = edge_type(self[u].get_center(), self[v].get_center(), z_index=-1,
-                                     **self._edge_config[(u, v)], )
+                                     **self._edge_config[(u, v)])
         else:
             edge_len = np.linalg.norm(self[u].get_center() - self[v].get_center()
                                       ) - (self[v].width + self[u].width) / 2
