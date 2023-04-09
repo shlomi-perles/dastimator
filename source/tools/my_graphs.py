@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-__all__ = [
-    "Graph",
-    "DiGraph",
-]
+__all__ = ["Graph", "DiGraph"]
 
 import itertools as it
 from copy import copy

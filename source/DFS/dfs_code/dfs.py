@@ -21,24 +21,20 @@ config.background_color = BACKGROUND_COLOR
 
 DFS_PSEUDO_CODE = '''def DFS(G,s): 
     queue ← Build Queue({s})
-    for all vertices u in V do:
-        dist[u] ← ∞
-    dist[s] ← 0
+    Init dists to ∞, dist[s] ← 0
     π[s] ← None
     time ← 1
 
     while queue ≠ ø do:
         u = queue.pop()
-        pre[u] ← time
-        time += 1
+        pre[u] ← time, time += 1
         for neighbor v of u & dist[v] = ∞:
                 queue.push(v)
                 dist[v] = dist[u] + 1
                 π[v] ← u
                 
-        if π[u] = queue[-1]: # last neighbor
-            post[π[u]] ← time
-            time += 1'''
+        if π[u] = queue[-1]: # checkout
+            post[π[u]] ← time, time += 1'''
 
 
 # --------------------------------- DFS --------------------------------- #
