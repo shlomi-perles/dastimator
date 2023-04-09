@@ -31,11 +31,13 @@ DFS_PSEUDO_CODE = '''def DFS(G,s):
                 queue.push(v)
                 dist[v] = dist[u] + 1
                 π[v] ← u
-        post[π[u]] ← time
-        time += 1'''
+                
+        if π[u] = queue[-1]: # last neighbor
+            post[π[u]] ← time
+            time += 1'''
 
 
-# --------------------------------- BFS --------------------------------- #
+# --------------------------------- DFS --------------------------------- #
 
 class DFSScene(Scene):
     def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]], start_vertex=1,
@@ -304,7 +306,6 @@ class MovingDiGraph(Scene):
 
 
 # class DFSScene(Scene):
-
 
 
 if __name__ == "__main__":
