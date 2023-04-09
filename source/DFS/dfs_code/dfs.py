@@ -1,55 +1,26 @@
-from tools.consts import *
-from tools.funcs import *
-from tools.my_graphs import DiGraph
-from pathlib import Path
-from tools.array import *
-from manim_editor import PresentationSectionType as pst
-from typing import Hashable
+from BFS.bfs_code.bfs import *
 
 MAIN_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(MAIN_PATH.parent.parent))
 
-PRESENTATION_MODE = True
+PRESENTATION_MODE = False
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
 # --------------------------------- constants --------------------------------- #
-VERTEX_COLOR = DARK_BLUE
-VERTEX_STROKE_WIDTH = DEFAULT_STROKE_WIDTH * 1.6
-VERTEX_STROKE_COLOR = BLUE_D
-VERTEX_LABEL_SCALE = 0.7
-VERTEX_CONFIG = {"fill_color": VERTEX_COLOR, "stroke_color": VERTEX_STROKE_COLOR, "stroke_width": VERTEX_STROKE_WIDTH}
 
-EDGE_COLOR = GREY
-EDGE_STROKE_WIDTH = DEFAULT_STROKE_WIDTH * 2
-TIP_SIZE = DEFAULT_ARROW_TIP_LENGTH * 0.4
-DEFAULT_ARROW_TIP_WIDTH = TIP_SIZE
-TIP_CONFIG = {"tip_config": {"tip_length": 0, "tip_width": 0}}
-EDGE_CONFIG = {"stroke_width": EDGE_STROKE_WIDTH, "stroke_color": EDGE_COLOR, **TIP_CONFIG}
-
-VISITED_COLOR = PURE_GREEN
-VISITED_EDGE_WIDTH = EDGE_STROKE_WIDTH * 1.5
-VISITED_VERTEX_WIDTH = VERTEX_STROKE_WIDTH * 1.8
-VISITED_VERTEX_CONFIG = {"fill_color": VERTEX_COLOR, "stroke_color": VISITED_COLOR,
-                         "stroke_width": VISITED_VERTEX_WIDTH}
-VISITED_TIP_SIZE = TIP_SIZE * 2.1
-LABEL_COLOR = WHITE
-
-DISTANCE_LABEL_BUFFER = 0.02
-DISTANCE_LABEL_SCALE = 0.8
-DISTANCE_LABEL_COLOR = ORANGE
-
-LINES_OFF_OPACITY = 0.5
-
-BFS_PSEUDO_CODE = '''def BFS(G,s): 
+BFS_PSEUDO_CODE = '''def DFS(G,s): 
     queue ← Build Queue({s})
     for all vertices u in V do:
         dist[u] ← ∞
     dist[s] ← 0
     π[s] ← None
+    time ← 1
 
     while queue ≠ ø do:
-        u = queue.pop(0) 
+        u = queue.pop()
+        pre[u] ← time
+        time += 1
         for neighbor v of u & dist[v] = ∞:
                 queue.push(v)
                 dist[v] = dist[u] + 1
@@ -72,7 +43,7 @@ def create_dist_label(index, graph, label):
     return label.move_to(graph[index]).next_to(graph[index][1], RIGHT, buff=DISTANCE_LABEL_BUFFER)
 
 
-class BFSScene(Scene):
+class DFSScene(Scene):
     def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]], start_vertex=1,
                  directed_graph: bool = False, layout="circular", **kwargs):
         super().__init__(**kwargs)
@@ -272,7 +243,7 @@ class BFSScene(Scene):
         self.play(indicate)
 
 
-class BigGraphBFS(BFSScene):
+class BigGraphBFS(DFSScene):
     def __init__(self, **kwargs):
         vertices = list(range(1, 9))
         edges = [(1, 7), (1, 8), (2, 3), (2, 4), (2, 5),
@@ -282,7 +253,7 @@ class BigGraphBFS(BFSScene):
         # def construct(self):
 
 
-class SmallGraphBFS(BFSScene):
+class SmallGraphBFS(DFSScene):
     def __init__(self, **kwargs):
         vertices = list(range(1, 4))
         edges = [(1, 2), (1, 3), (2, 3)]
@@ -294,7 +265,7 @@ class SmallGraphBFS(BFSScene):
     #     self.play(Create(Circle()))
 
 
-class DirectedGraphBFS(BFSScene):
+class DirectedGraphBFS(DFSScene):
     def __init__(self, **kwargs):
         vertices = list(range(1, 8))
         edges = [(1, 2), (1, 3),
