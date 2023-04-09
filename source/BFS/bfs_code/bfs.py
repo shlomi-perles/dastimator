@@ -1,9 +1,13 @@
+from __future__ import annotations
+
+from typing import Hashable
+
+from manim_editor import PresentationSectionType as pst
+
+from tools.array import *
 from tools.consts import *
 from tools.funcs import *
-from tools.array import *
 from tools.my_graphs import DiGraph
-from manim_editor import PresentationSectionType as pst
-from typing import Hashable
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
@@ -47,7 +51,7 @@ def create_dist_label(index, graph, label):
 
 class BFSScene(Scene):
     def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]], start_vertex=1,
-                 directed_graph: bool = False, layout="circular", **kwargs):
+                 directed_graph: bool = False, layout: str | dict = "circular", **kwargs):
         super().__init__(**kwargs)
         self.directed_graph = directed_graph
         self.vertices = vertices

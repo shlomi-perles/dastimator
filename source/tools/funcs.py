@@ -1,7 +1,8 @@
-from typing import Tuple
+from __future__ import annotations
 
 from manim import *
 from manim import AnimationGroup
+
 from consts import LINES_OFF_OPACITY
 
 
