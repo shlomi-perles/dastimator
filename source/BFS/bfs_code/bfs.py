@@ -1,12 +1,10 @@
-import numpy as np
-
 from tools.consts import *
 from tools.funcs import *
-from tools.tmpGraph import DiGraph
+from tools.my_graphs import DiGraph
 from pathlib import Path
-from bfs_tools import *
+from tools.array import *
 from manim_editor import PresentationSectionType as pst
-from typing import Callable, Iterable, List, Optional, Sequence, Union, Hashable
+from typing import Hashable
 
 MAIN_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(MAIN_PATH.parent.parent))
@@ -25,7 +23,8 @@ VERTEX_CONFIG = {"fill_color": VERTEX_COLOR, "stroke_color": VERTEX_STROKE_COLOR
 EDGE_COLOR = GREY
 EDGE_STROKE_WIDTH = DEFAULT_STROKE_WIDTH * 2
 TIP_SIZE = DEFAULT_ARROW_TIP_LENGTH * 0.4
-TIP_CONFIG = {"tip_config": {"tip_length": 0}}
+DEFAULT_ARROW_TIP_WIDTH = TIP_SIZE
+TIP_CONFIG = {"tip_config": {"tip_length": 0, "tip_width": 0}}
 EDGE_CONFIG = {"stroke_width": EDGE_STROKE_WIDTH, "stroke_color": EDGE_COLOR, **TIP_CONFIG}
 
 VISITED_COLOR = PURE_GREEN
@@ -41,6 +40,20 @@ DISTANCE_LABEL_SCALE = 0.8
 DISTANCE_LABEL_COLOR = ORANGE
 
 LINES_OFF_OPACITY = 0.5
+
+BFS_PSEUDO_CODE = '''def BFS(G,s): 
+    queue ← Build Queue({s})
+    for all vertices u in V do:
+        dist[u] ← ∞
+    dist[s] ← 0
+    π[s] ← None
+
+    while queue ≠ ø do:
+        u = queue.pop(0) 
+        for neighbor v of u & dist[v] = ∞:
+                queue.push(v)
+                dist[v] = dist[u] + 1
+                π[v] ← u'''
 
 
 # --------------------------------- BFS --------------------------------- #
@@ -83,22 +96,17 @@ class BFSScene(Scene):
 
     def construct(self):
         self.my_next_section("BFS", pst.NORMAL)
-        self.play(self.pi.draw_array(), Write(self.u), self.queue_mob.draw_array())
-        a = Circle(radius=0.5, color=RED)
+
         self.play(Write(self.rendered_code))
-        a.match_height(self.pi.squares[0])
-        self.play(Write(a))
-        self.play(self.pi.at(0, "-"))
-        return
         self.play(Write(self.graph))
 
         self.animate_bfs()
 
         self.play(highlight_code_lines(self.rendered_code, indicate=False))
         self.my_next_section("BFS finished", pst.SUB_NORMAL)
-        self.play(Unwrite(VGroup(*[edge for edge in self.graph.edges.values()])))
         self.play(Unwrite(self.graph), Unwrite(self.dist_mob), Unwrite(self.mobjects_garbage_collector))
-        self.play(Unwrite(VGroup(self.rendered_code, self.queue_mob, self.u, self.pi)))
+        self.play(Unwrite(VGroup(self.queue_mob, self.u, self.pi)))
+        self.play(Uncreate(self.rendered_code))
         self.wait()
 
     def animate_bfs(self):
@@ -106,7 +114,7 @@ class BFSScene(Scene):
         Animate BFS algorithm. We assume that the graph is connected.
         Else, we need to run BFS for each connected component.
         Each step of the algorithm is animated separately.
-        Note: vertices are 1-indexed
+        Note: vertices are 1-indexed.
         """
         graph, rendered_code, dist_mob = self.graph, self.rendered_code, self.dist_mob
         queue_mob, u, pi = self.queue_mob, self.u, self.pi
@@ -185,21 +193,9 @@ class BFSScene(Scene):
             self.play(pop_animation[0])
 
     def create_code(self):
-        code = '''def BFS(G,s): 
-    queue ← Build Queue({s})
-    for all vertices u in V do:
-        dist[u] ← ∞
-    dist[s] ← 0
-    π[s] ← None
-
-    while queue ≠ ø do:
-        u = queue.pop() 
-        for neighbor v of u & dist[v] = ∞:
-                queue.push(v)
-                dist[v] = dist[u] + 1
-                π[v] ← u'''
         Code.set_default(font="Consolas")
-        rendered_code = Code(code=code, tab_width=3, background="window", language="Python", style="fruity").to_corner(
+        rendered_code = Code(code=BFS_PSEUDO_CODE, tab_width=3, background="window", language="Python",
+                             style="fruity").to_corner(
             LEFT + UP)
         rendered_code.scale_to_fit_width(config.frame_width * 0.5).to_corner(LEFT + UP)
         rendered_code.background_mobject[0].set_fill(color=BACKGROUND_COLOR)
@@ -218,17 +214,18 @@ class BFSScene(Scene):
             edge_configs = {}
             for k, v in self.edges:
                 if (v, k) in self.edges:
-                    edge_configs[(k, v)] = EDGE_CONFIG
+                    edge_configs[(k, v)] = EDGE_CONFIG.copy()
                 else:
-                    edge_configs[(k, v)] = EDGE_CONFIG
+                    edge_configs[(k, v)] = EDGE_CONFIG.copy()
                     edge_configs[(k, v)]["tip_config"]["tip_length"] = TIP_SIZE
+                    edge_configs[(k, v)]["tip_config"]["tip_width"] = DEFAULT_ARROW_TIP_WIDTH
             edge_config = edge_configs
 
         graph = DiGraph(self.vertices, self.edges, layout=self.layout, layout_scale=1.5, labels=True,
                         label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG, edge_config=edge_config)
         for i, vertex in enumerate(graph.vertices):
             graph[vertex][1].scale(VERTEX_LABEL_SCALE)
-        relative_scale = config.frame_width * 0.5 if graph.width > graph.height else config.frame_height * 0.7
+        relative_scale = config.frame_width * 0.4 if graph.width > graph.height else config.frame_height * 0.7
         graph.scale_to_fit_width(relative_scale).move_to(ORIGIN).to_edge(RIGHT, buff=0.2)
         return graph
 
@@ -292,9 +289,9 @@ class SmallGraphBFS(BFSScene):
         start_vertex = 1
         super().__init__(vertices, edges, start_vertex, directed_graph=True, **kwargs)
 
-    def construct(self):
-        super().construct()
-        self.play(Create(Circle()))
+    # def construct(self):
+    #     super().construct()
+    #     self.play(Create(Circle()))
 
 
 class DirectedGraphBFS(BFSScene):
@@ -346,8 +343,8 @@ class MovingDiGraph(Scene):
 if __name__ == "__main__":
 
     # scenes_lst = [BigGraphBFS]
-    scenes_lst = [SmallGraphBFS]
-    # scenes_lst = [DirectedGraphBFS]
+    # scenes_lst = [SmallGraphBFS]
+    scenes_lst = [DirectedGraphBFS]
     # scenes_lst = [MovingDiGraph]
 
     for scene in scenes_lst:
