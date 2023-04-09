@@ -1,7 +1,13 @@
-from BFS.bfs_code.bfs import *
+from tools.consts import *
+from tools.funcs import *
+from tools.array import *
+from tools.my_graphs import DiGraph
+from manim_editor import PresentationSectionType as pst
+from typing import Hashable, Union
+from BFS.bfs_code.bfs import BFS_PSEUDO_CODE, get_neighbors, create_dist_label
 
-MAIN_PATH = Path(__file__).resolve().parent.parent
-sys.path.append(str(MAIN_PATH.parent.parent))
+ROOT_PATH = Path(__file__).resolve().parent.parent
+sys.path.append(str(ROOT_PATH.parent.parent))
 
 PRESENTATION_MODE = False
 DISABLE_CACHING = False
@@ -9,7 +15,7 @@ config.background_color = BACKGROUND_COLOR
 
 # --------------------------------- constants --------------------------------- #
 
-BFS_PSEUDO_CODE = '''def DFS(G,s): 
+DFS_PSEUDO_CODE = '''def DFS(G,s): 
     queue ← Build Queue({s})
     for all vertices u in V do:
         dist[u] ← ∞
@@ -24,24 +30,12 @@ BFS_PSEUDO_CODE = '''def DFS(G,s):
         for neighbor v of u & dist[v] = ∞:
                 queue.push(v)
                 dist[v] = dist[u] + 1
-                π[v] ← u'''
+                π[v] ← u
+        post[π[u]] ← time
+        time += 1'''
 
 
 # --------------------------------- BFS --------------------------------- #
-
-
-def get_neighbors(graph: DiGraph, vertex):
-    return [neighbor for neighbor in graph.vertices if (vertex, neighbor) in graph.edges]
-
-
-def create_dist_label(index, graph, label):
-    label = MathTex(rf"\mathbf{{{label}}}", color=DISTANCE_LABEL_COLOR)
-    if label.width < label.height:
-        label.scale_to_fit_height(graph[index].radius * DISTANCE_LABEL_SCALE)
-    else:
-        label.scale_to_fit_width(graph[index].radius * DISTANCE_LABEL_SCALE)
-    return label.move_to(graph[index]).next_to(graph[index][1], RIGHT, buff=DISTANCE_LABEL_BUFFER)
-
 
 class DFSScene(Scene):
     def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]], start_vertex=1,
@@ -265,7 +259,7 @@ class SmallGraphBFS(DFSScene):
     #     self.play(Create(Circle()))
 
 
-class DirectedGraphBFS(DFSScene):
+class DirectedGraphDFS(DFSScene):
     def __init__(self, **kwargs):
         vertices = list(range(1, 8))
         edges = [(1, 2), (1, 3),
@@ -311,16 +305,12 @@ class MovingDiGraph(Scene):
 
 # class DFSScene(Scene):
 
-if __name__ == "__main__":
 
+
+if __name__ == "__main__":
     # scenes_lst = [BigGraphBFS]
     # scenes_lst = [SmallGraphBFS]
-    scenes_lst = [DirectedGraphBFS]
+    scenes_lst = [DirectedGraphDFS]
     # scenes_lst = [MovingDiGraph]
 
-    for scene in scenes_lst:
-        quality = "fourk_quality" if PRESENTATION_MODE else "low_quality"
-
-        with tempconfig({"quality": quality, "preview": True, "media_dir": MAIN_PATH / "media", "save_sections": True,
-                         "disable_caching": DISABLE_CACHING}):
-            scene().render()
+    run_scenes(scenes_lst, MEDIA_PATH / "dfs", PRESENTATION_MODE, DISABLE_CACHING)

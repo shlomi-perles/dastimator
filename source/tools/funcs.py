@@ -2,9 +2,19 @@ from typing import Tuple
 
 from manim import *
 from manim import AnimationGroup
+from consts import LINES_OFF_OPACITY
 
 
-def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = 0.5, indicate=True,
+def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, disable_caching: bool = False, **kwargs):
+    for scene in scenes_lst:
+        quality = "fourk_quality" if presentation_mode else "low_quality"
+
+        with tempconfig({"quality": quality, "preview": True, "media_dir": media_path, "save_sections": True,
+                         "disable_caching": disable_caching}):
+            scene().render()
+
+
+def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = LINES_OFF_OPACITY, indicate=True,
                          **kwargs) -> AnimationGroup | tuple[AnimationGroup, AnimationGroup]:
     code = code.code
     lines_highlighted_animation = []

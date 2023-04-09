@@ -1,45 +1,18 @@
 from tools.consts import *
 from tools.funcs import *
-from tools.my_graphs import DiGraph
-from pathlib import Path
 from tools.array import *
+from tools.my_graphs import DiGraph
 from manim_editor import PresentationSectionType as pst
 from typing import Hashable
 
-MAIN_PATH = Path(__file__).resolve().parent.parent
-sys.path.append(str(MAIN_PATH.parent.parent))
+ROOT_PATH = Path(__file__).resolve().parent.parent
+sys.path.append(str(ROOT_PATH.parent.parent))
 
 PRESENTATION_MODE = True
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
 # --------------------------------- constants --------------------------------- #
-VERTEX_COLOR = DARK_BLUE
-VERTEX_STROKE_WIDTH = DEFAULT_STROKE_WIDTH * 1.6
-VERTEX_STROKE_COLOR = BLUE_D
-VERTEX_LABEL_SCALE = 0.7
-VERTEX_CONFIG = {"fill_color": VERTEX_COLOR, "stroke_color": VERTEX_STROKE_COLOR, "stroke_width": VERTEX_STROKE_WIDTH}
-
-EDGE_COLOR = GREY
-EDGE_STROKE_WIDTH = DEFAULT_STROKE_WIDTH * 2
-TIP_SIZE = DEFAULT_ARROW_TIP_LENGTH * 0.4
-DEFAULT_ARROW_TIP_WIDTH = TIP_SIZE
-TIP_CONFIG = {"tip_config": {"tip_length": 0, "tip_width": 0}}
-EDGE_CONFIG = {"stroke_width": EDGE_STROKE_WIDTH, "stroke_color": EDGE_COLOR, **TIP_CONFIG}
-
-VISITED_COLOR = PURE_GREEN
-VISITED_EDGE_WIDTH = EDGE_STROKE_WIDTH * 1.5
-VISITED_VERTEX_WIDTH = VERTEX_STROKE_WIDTH * 1.8
-VISITED_VERTEX_CONFIG = {"fill_color": VERTEX_COLOR, "stroke_color": VISITED_COLOR,
-                         "stroke_width": VISITED_VERTEX_WIDTH}
-VISITED_TIP_SIZE = TIP_SIZE * 2.1
-LABEL_COLOR = WHITE
-
-DISTANCE_LABEL_BUFFER = 0.02
-DISTANCE_LABEL_SCALE = 0.8
-DISTANCE_LABEL_COLOR = ORANGE
-
-LINES_OFF_OPACITY = 0.5
 
 BFS_PSEUDO_CODE = '''def BFS(G,s): 
     queue ← Build Queue({s})
@@ -341,15 +314,9 @@ class MovingDiGraph(Scene):
 # class DFSScene(Scene):
 
 if __name__ == "__main__":
-
     # scenes_lst = [BigGraphBFS]
     # scenes_lst = [SmallGraphBFS]
     scenes_lst = [DirectedGraphBFS]
     # scenes_lst = [MovingDiGraph]
 
-    for scene in scenes_lst:
-        quality = "fourk_quality" if PRESENTATION_MODE else "low_quality"
-
-        with tempconfig({"quality": quality, "preview": True, "media_dir": MAIN_PATH / "media", "save_sections": True,
-                         "disable_caching": DISABLE_CACHING}):
-            scene().render()
+    run_scenes(scenes_lst, MEDIA_PATH / "bfs", PRESENTATION_MODE, DISABLE_CACHING)
