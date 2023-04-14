@@ -11,8 +11,9 @@ from tools.my_graphs import DiGraph
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
+OUT_DIR = MEDIA_PATH / Path(__file__).stem
 
-PRESENTATION_MODE = True
+PRESENTATION_MODE = False
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
@@ -323,4 +324,5 @@ if __name__ == "__main__":
     scenes_lst = [DirectedGraphBFS]
     # scenes_lst = [MovingDiGraph]
 
-    run_scenes(scenes_lst, MEDIA_PATH / "bfs", PRESENTATION_MODE, DISABLE_CACHING)
+    # run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING,gif_scenes = [28 + i for i in range(6)])
+    create_scene_gif(OUT_DIR, scenes_lst[0].__name__, section_num_lst=[28 + i for i in range(6)])

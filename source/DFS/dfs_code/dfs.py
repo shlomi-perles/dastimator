@@ -12,6 +12,7 @@ from tools.my_graphs import DiGraph
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
+OUT_DIR = MEDIA_PATH / Path(__file__).stem
 
 PRESENTATION_MODE = False
 DISABLE_CACHING = False
@@ -311,7 +312,7 @@ class MovingDiGraph(Scene):
 if __name__ == "__main__":
     # scenes_lst = [BigGraphBFS]
     # scenes_lst = [SmallGraphBFS]
-    scenes_lst = [DirectedGraphDFS]
-    # scenes_lst = [MovingDiGraph]
+    # scenes_lst = [DirectedGraphDFS]
+    scenes_lst = [MovingDiGraph]
 
-    run_scenes(scenes_lst, MEDIA_PATH / "dfs", PRESENTATION_MODE, DISABLE_CACHING)
+    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING)

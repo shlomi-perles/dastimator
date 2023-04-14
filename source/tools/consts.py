@@ -3,7 +3,7 @@ from manim import *
 BACKGROUND_COLOR: str = "#242424"  # Also, 1C1D21 or 242424 or 2C2F33
 
 # ----------------------------------    Paths     ---------------------------------- #
-MEDIA_PATH: Path = Path(__file__).resolve().parent.parent.parent.parent / "media"
+MEDIA_PATH: Path = Path(__file__).resolve().parent.parent.parent / "media"
 
 # ---------------------------------- Graph consts ---------------------------------- #
 VERTEX_COLOR: str = DARK_BLUE
@@ -34,3 +34,6 @@ DISTANCE_LABEL_COLOR: str = ORANGE
 
 # ---------------------------------- Code consts ---------------------------------- #
 LINES_OFF_OPACITY: float = 0.5
+
+# ----------------------------------    Manim    ---------------------------------- #
+QUALITY_TO_DIR = {"l": "480p15", "h": "1080p60", "k": "2160p60"}
