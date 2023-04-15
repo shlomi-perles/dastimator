@@ -20,7 +20,7 @@ config.background_color = BACKGROUND_COLOR
 
 # --------------------------------- constants --------------------------------- #
 
-DFS_PSEUDO_CODE = '''def DFS(G,s): 
+DFS_PSEUDO_CODE = '''def DFS(G,s):
     queue ← Build Queue({s})
     Init dists to ∞, dist[s] ← 0
     π[s] ← None
@@ -50,7 +50,7 @@ class DFSScene(Scene):
         self.start_vertex = start_vertex
         self.layout = layout
         self.graph = self.create_graph()
-        self.rendered_code = self.create_code()
+        self.rendered_code = create_code(DFS_PSEUDO_CODE)
         self.queue_mob, self.u, self.pi = self.create_bfs_vars(self.rendered_code)
         self.dist_mob = VGroup(
             *([VMobject()] + [create_dist_label(i, self.graph, r"\infty") for i in self.vertices]))  # 1-indexed
@@ -63,8 +63,12 @@ class DFSScene(Scene):
             self.wait()
 
     def construct(self):
-        self.my_next_section("BFS", pst.NORMAL)
+        # self.my_next_section("BFS to DFS", pst.NORMAL) # TODO: add
+        # self.animate_bfs_dfs_comparison() # TODO: add
 
+        self.add(self.rendered_code)  # TODO: remove
+
+        self.my_next_section("DFS", pst.NORMAL)
         self.play(Write(self.rendered_code))
         self.play(Write(self.graph))
 
@@ -76,6 +80,30 @@ class DFSScene(Scene):
         self.play(Unwrite(VGroup(self.queue_mob, self.u, self.pi)))
         self.play(Uncreate(self.rendered_code))
         self.wait()
+
+    def animate_bfs_dfs_comparison(self):
+        bfs_code = create_code(BFS_PSEUDO_CODE)
+        self.add(bfs_code)
+        self.play(transform_code_lines(bfs_code, self.rendered_code, {1: 1, 2: 2, 3: 3, 4: 3, 5: 3}))
+
+        self.my_next_section("Change pop")
+        self.play(Indicate(bfs_code.code[8]))
+        self.play(transform_code_lines(bfs_code, self.rendered_code, {6: 4, 7: 6, 8: 7, 9: 8}))
+        self.play(Indicate(self.rendered_code.code[7]))
+
+        self.my_next_section("add time mark")
+        self.rendered_code[0][0].set_z_index(0)
+        self.play(TransformMatchingShapes(bfs_code.background_mobject[0], self.rendered_code.background_mobject[0],
+                                          transform_mismatches=True))
+        self.play(Create(self.rendered_code.line_numbers[13:]))
+        self.play(AnimationGroup(
+            *[Write(self.rendered_code.code[4]), Write(self.rendered_code.code[8]),
+              Write(self.rendered_code.code[14:16])], lag_ratio=0.5))
+
+        bfs_code.set_opacity(0)
+        self.remove(bfs_code)
+        self.add(self.rendered_code)
+        self.play(highlight_code_lines(self.rendered_code, lines=[5, 9, 15, 16], indicate=False))
 
     def animate_bfs(self):
         """
@@ -160,15 +188,6 @@ class DFSScene(Scene):
 
             self.play(pop_animation[0])
 
-    def create_code(self):
-        Code.set_default(font="Consolas")
-        rendered_code = Code(code=BFS_PSEUDO_CODE, tab_width=3, background="window", language="Python",
-                             style="fruity").to_corner(
-            LEFT + UP)
-        rendered_code.scale_to_fit_width(config.frame_width * 0.5).to_corner(LEFT + UP)
-        rendered_code.background_mobject[0].set_fill(color=BACKGROUND_COLOR)
-        return rendered_code
-
     def create_graph(self):
         """
         Create graph and add labels to vertices,
@@ -240,7 +259,7 @@ class DFSScene(Scene):
         self.play(indicate)
 
 
-class BigGraphBFS(DFSScene):
+class BigGraphDFS(DFSScene):
     def __init__(self, **kwargs):
         vertices = list(range(1, 9))
         edges = [(1, 7), (1, 8), (2, 3), (2, 4), (2, 5),
@@ -250,7 +269,7 @@ class BigGraphBFS(DFSScene):
         # def construct(self):
 
 
-class SmallGraphBFS(DFSScene):
+class SmallGraphDFS(DFSScene):
     def __init__(self, **kwargs):
         vertices = list(range(1, 4))
         edges = [(1, 2), (1, 3), (2, 3)]
@@ -308,11 +327,10 @@ class MovingDiGraph(Scene):
 
 # class DFSScene(Scene):
 
-
 if __name__ == "__main__":
-    # scenes_lst = [BigGraphBFS]
-    # scenes_lst = [SmallGraphBFS]
-    # scenes_lst = [DirectedGraphDFS]
-    scenes_lst = [MovingDiGraph]
+    # scenes_lst = [BigGraphDFS]
+    # scenes_lst = [SmallGraphDFS]
+    scenes_lst = [DirectedGraphDFS]
+    # scenes_lst = [MovingDiGraph]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING)
+    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])

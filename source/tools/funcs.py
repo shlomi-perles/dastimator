@@ -3,7 +3,7 @@ from __future__ import annotations
 from manim import *
 from manim import AnimationGroup
 from moviepy.editor import VideoFileClip, concatenate_videoclips
-from .consts import LINES_OFF_OPACITY, MEDIA_PATH
+from .consts import LINES_OFF_OPACITY, MEDIA_PATH, BACKGROUND_COLOR
 import imageio.v3 as iio
 
 QFLAGS_TO_QUALITY = {v["flag"]: k for k, v in QUALITIES.items() if v["flag"] is not None}
@@ -42,6 +42,26 @@ def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, di
             create_scene_gif(media_path, scene.__name__, DEFAULT_GIF_SCENES if gif_scenes is None else gif_scenes)
 
 
+def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int]):
+    """
+    Create a gif from the video file.
+    :param out_dir: Name of the directory run_scenes() was called with.
+    :param section_num_lst: Number of the section to create a gif from.
+    """
+    out_dir = Path(out_dir) if isinstance(out_dir, str) else out_dir
+    gif_dir = out_dir / "gifs"
+    gif_dir.mkdir(parents=True, exist_ok=True)
+
+    clips = [VideoFileClip(str(out_dir / SECTIONS_MEDIA_PATH / SCENE_CLIP_NAME.format(scene_name=scene_name,
+                                                                                      section_num=i))).resize(
+        DEFAULT_GIF_RESIZE) for i in section_num_lst]
+
+    concatenate_videoclips(clips).write_gif(str(gif_dir / f"{scene_name}.gif"), fps=13)
+    # clip.write_gif(gif_path, fps=10)
+    # frames = np.vstack(gifs)
+    # iio.imwrite(str(gif_dir / f"{scene_name}.gif"), frames, duration=iio.immeta(gif_path)["duration"])
+
+
 def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = LINES_OFF_OPACITY, indicate=True,
                          **kwargs) -> AnimationGroup | tuple[AnimationGroup, AnimationGroup]:
     code = code.code
@@ -63,21 +83,34 @@ def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = LI
     return AnimationGroup(*lines_highlighted_animation, **kwargs)
 
 
-def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int]):
-    """
-    Create a gif from the video file.
-    :param out_dir: Name of the directory run_scenes() was called with.
-    :param section_num_lst: Number of the section to create a gif from.
-    """
-    out_dir = Path(out_dir) if isinstance(out_dir, str) else out_dir
-    gif_dir = out_dir / "gifs"
-    gif_dir.mkdir(parents=True, exist_ok=True)
+def transform_code_lines(code: Code, target_code: Code, lines_transform_dict: dict, **kwargs) -> AnimationGroup:
+    code = code.code
+    target_code = target_code.code
+    lines_transform_dict = {k - 1: v - 1 for k, v in lines_transform_dict.items()}
+    lines_transform_animation = []
+    added_lines = set()
 
-    clips = [VideoFileClip(str(out_dir / SECTIONS_MEDIA_PATH / SCENE_CLIP_NAME.format(scene_name=scene_name,
-                                                                                      section_num=i))).resize(
-        DEFAULT_GIF_RESIZE) for i in section_num_lst]
+    for line_number, line in enumerate(code):
+        if line_number in lines_transform_dict and line_number not in added_lines:
 
-    concatenate_videoclips(clips).write_gif(str(gif_dir / f"{scene_name}.gif"), fps=13)
-    # clip.write_gif(gif_path, fps=10)
-    # frames = np.vstack(gifs)
-    # iio.imwrite(str(gif_dir / f"{scene_name}.gif"), frames, duration=iio.immeta(gif_path)["duration"])
+            target_line_num = lines_transform_dict[line_number]
+            transform_lines = VGroup()
+            for key, val in lines_transform_dict.items():
+                if val == target_line_num:
+                    added_lines.add(key)
+                    transform_lines += code[key]
+
+            lines_transform_animation.append(
+                TransformMatchingShapes(transform_lines, target_code[lines_transform_dict[line_number]]))
+        # else:
+        #     lines_transform_animation.append(line.animate.set_opacity(off_opacity))
+    return AnimationGroup(*lines_transform_animation, **kwargs)
+
+
+def create_code(code_str: str):
+    Code.set_default(font="Consolas")
+    rendered_code = Code(code=code_str, tab_width=3, background="window", language="Python",
+                         style="fruity").to_corner(LEFT + UP)
+    rendered_code.scale_to_fit_width(config.frame_width * 0.5).to_corner(LEFT + UP)
+    rendered_code.background_mobject[0].set_fill(opacity=0)
+    return rendered_code
