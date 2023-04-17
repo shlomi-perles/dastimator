@@ -23,6 +23,7 @@ from manim.mobject.text.tex_mobject import MathTex
 from manim.mobject.types.vectorized_mobject import VMobject
 from manim.utils.color import BLACK
 from manim.scene.scene import Scene
+from manim.constants import DEFAULT_ARROW_TIP_LENGTH
 
 
 class GraphType(Enum):
@@ -496,7 +497,10 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
                 )
                 self.play(self.camera.auto_zoom(g, margin=1), run_time=0.5)
     """
-    DEFAULT_TIP_CONFIG = {"tip_shape": ArrowTriangleFilledTip, "tip_length": 0.1}
+    DEFAULT_TIP_SCALE_FACTOR = 0.35
+    DEFAULT_TIP_CONFIG = {"tip_shape": ArrowTriangleFilledTip,
+                          "tip_length": DEFAULT_ARROW_TIP_LENGTH * DEFAULT_TIP_SCALE_FACTOR,
+                          "tip_width": DEFAULT_ARROW_TIP_LENGTH * DEFAULT_TIP_SCALE_FACTOR * 1.2}
 
     def __init__(
             self,
@@ -614,7 +618,7 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
         elif e[::-1] in edge_config and not directed_graph:
             self._edge_config[e] = {k: v for k, v in edge_config[e[::-1]].items() if k != "tip_config"}
         else:
-            if type(list(edge_config.keys())[0]) != tuple:
+            if list(edge_config.keys()) and type(list(edge_config.keys())[0]) != tuple:
                 self._edge_config[e] = {k: v for k, v in edge_config.items() if k != "tip_config"}
                 if directed_graph and "tip_config" in edge_config:
                     self._tip_config[e] = {**self.default_tip_config, **edge_config["tip_config"]}

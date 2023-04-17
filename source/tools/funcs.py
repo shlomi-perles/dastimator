@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from manim import *
 from manim import AnimationGroup
+from manim_fonts import *
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from .consts import LINES_OFF_OPACITY, MEDIA_PATH, BACKGROUND_COLOR
 import imageio.v3 as iio
@@ -62,6 +63,8 @@ def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int]
     # iio.imwrite(str(gif_dir / f"{scene_name}.gif"), frames, duration=iio.immeta(gif_path)["duration"])
 
 
+# ---------------------------- Code ----------------------------
+
 def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = LINES_OFF_OPACITY, indicate=True,
                          **kwargs) -> AnimationGroup | tuple[AnimationGroup, AnimationGroup]:
     code = code.code
@@ -108,9 +111,26 @@ def transform_code_lines(code: Code, target_code: Code, lines_transform_dict: di
 
 
 def create_code(code_str: str):
-    Code.set_default(font="Consolas")
+    with RegisterFont("JetBrains Mono") as fonts:
+        Code.set_default(font="JetBrains Mono")
     rendered_code = Code(code=code_str, tab_width=3, background="window", language="Python",
                          style="fruity").to_corner(LEFT + UP)
     rendered_code.scale_to_fit_width(config.frame_width * 0.5).to_corner(LEFT + UP)
     rendered_code.background_mobject[0].set_fill(opacity=0)
     return rendered_code
+
+
+# --------------------------------- Graphs --------------------------------- #
+
+
+def get_neighbors(graph: DiGraph, vertex):
+    return [neighbor for neighbor in graph.vertices if (vertex, neighbor) in graph.edges]
+
+
+def create_dist_label(index, graph, label):
+    label = MathTex(rf"\mathbf{{{label}}}", color=DISTANCE_LABEL_COLOR)
+    if label.width < label.height:
+        label.scale_to_fit_height(graph[index].radius * DISTANCE_LABEL_SCALE)
+    else:
+        label.scale_to_fit_width(graph[index].radius * DISTANCE_LABEL_SCALE)
+    return label.move_to(graph[index]).next_to(graph[index][1], RIGHT, buff=DISTANCE_LABEL_BUFFER)

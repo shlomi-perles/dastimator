@@ -4,14 +4,14 @@ from typing import Hashable
 
 from manim_editor import PresentationSectionType as pst
 
-from BFS.bfs_code.bfs import BFS_PSEUDO_CODE, get_neighbors, create_dist_label
+from BFS.bfs import BFS_PSEUDO_CODE
 from tools.array import *
 from tools.consts import *
 from tools.funcs import *
 from tools.my_graphs import DiGraph
 
-ROOT_PATH = Path(__file__).resolve().parent.parent
-sys.path.append(str(ROOT_PATH.parent.parent))
+ROOT_PATH = Path(__file__).resolve().parent
+sys.path.append(str(ROOT_PATH.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).stem
 
 PRESENTATION_MODE = False
@@ -19,6 +19,8 @@ DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
 # --------------------------------- constants --------------------------------- #
+EDGE_COLOR = GREY
+EDGE_CONFIG["stroke_color"] = EDGE_COLOR
 
 DFS_PSEUDO_CODE = '''def DFS(G,s):
     queue ← Build Queue({s})
@@ -66,16 +68,16 @@ class DFSScene(Scene):
         # self.my_next_section("BFS to DFS", pst.NORMAL) # TODO: add
         # self.animate_bfs_dfs_comparison() # TODO: add
 
-        self.add(self.rendered_code)  # TODO: remove
-
         self.my_next_section("DFS", pst.NORMAL)
-        self.play(Write(self.rendered_code))
-        self.play(Write(self.graph))
+        self.add(self.rendered_code)  # TODO: remove
+        self.add(self.graph)  # TODO: remove
+        # self.play(Write(self.rendered_code))
+        # self.play(Write(self.graph))
 
-        self.animate_bfs()
+        self.animate_dfs()
 
         self.play(highlight_code_lines(self.rendered_code, indicate=False))
-        self.my_next_section("BFS finished", pst.SUB_NORMAL)
+        self.my_next_section("DFS finished", pst.SUB_NORMAL)
         self.play(Unwrite(self.graph), Unwrite(self.dist_mob), Unwrite(self.mobjects_garbage_collector))
         self.play(Unwrite(VGroup(self.queue_mob, self.u, self.pi)))
         self.play(Uncreate(self.rendered_code))
@@ -105,7 +107,7 @@ class DFSScene(Scene):
         self.add(self.rendered_code)
         self.play(highlight_code_lines(self.rendered_code, lines=[5, 9, 15, 16], indicate=False))
 
-    def animate_bfs(self):
+    def animate_dfs(self):
         """
         Animate BFS algorithm. We assume that the graph is connected.
         Else, we need to run BFS for each connected component.
@@ -121,37 +123,34 @@ class DFSScene(Scene):
         self.play(queue_mob.draw_array())
 
         dist = [np.Inf] * (len(graph.vertices) + 1)
-        self.my_next_section("Initialize dist", pst.SUB_NORMAL)
-        self.highlight_and_indicate_code([3, 4])
+        self.my_next_section("Initialize dists", pst.SUB_NORMAL)
+        self.highlight_and_indicate_code([3])
         self.play(AnimationGroup(*[anim(dist_mob[i]) for i in range(1, len(dist_mob)) for anim in [Write, Flash]],
                                  lag_ratio=0.3))
-
         dist[self.start_vertex] = 0
-        self.my_next_section("Init first vertex dist", pst.SUB_NORMAL)
-        self.highlight_and_indicate_code([5])
-        self.wait(0.2)
         self.play(self.change_dist(self.start_vertex, 0))
 
         parent = [None] * (len(graph.vertices) + 1)
         self.my_next_section("Init first vertex parent", pst.SUB_NORMAL)
-        self.highlight_and_indicate_code([6])
+        self.highlight_and_indicate_code([4])
         self.play(pi.draw_array())
         self.play(pi.at(0, "-"))
         visit_all = False
         while queue:
-            self.highlight_and_indicate_code([8])
+            self.highlight_and_indicate_code([7])
             # animate pop
-            cur_vertex = queue.pop(0)
+            cur_vertex = queue.pop()
             if cur_vertex == self.start_vertex:
                 self.play(Write(u))
             if not visit_all: self.my_next_section(f"Pop vertex {cur_vertex} from queue", pst.SUB_NORMAL)
-            self.highlight_and_indicate_code([9])
+            self.highlight_and_indicate_code([8])
             if cur_vertex == self.start_vertex:
                 self.visit_vertex_animation(graph, None, cur_vertex)
-            pop_item = queue_mob.get_square(0)
-            self.play(queue_mob.indicate_at(0))
-            self.play(pop_item.animate.match_y(u))
-            pop_animation = queue_mob.pop(0, shift=RIGHT).animations
+            pop_item = queue_mob.get_square(len(queue))
+            self.play(queue_mob.indicate_at(len(queue)))
+            self.play(pop_item.animate.match_y(u), run_time=0.5)
+            self.play(pop_item.animate.next_to(self.u, RIGHT), run_time=0.5)
+            pop_animation = queue_mob.pop(len(queue), shift=RIGHT).animations
             self.play(AnimationGroup(*pop_animation[1:]))
 
             for neighbor in get_neighbors(graph, cur_vertex):

@@ -9,8 +9,8 @@ from tools.consts import *
 from tools.funcs import *
 from tools.my_graphs import DiGraph
 
-ROOT_PATH = Path(__file__).resolve().parent.parent
-sys.path.append(str(ROOT_PATH.parent.parent))
+ROOT_PATH = Path(__file__).resolve().parent
+sys.path.append(str(ROOT_PATH.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).stem
 
 PRESENTATION_MODE = False
@@ -18,6 +18,8 @@ DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
 # --------------------------------- constants --------------------------------- #
+EDGE_COLOR = GREY
+EDGE_CONFIG["stroke_color"] = EDGE_COLOR
 
 BFS_PSEUDO_CODE = '''def BFS(G,s): 
     queue ← Build Queue({s})
@@ -34,21 +36,7 @@ BFS_PSEUDO_CODE = '''def BFS(G,s):
                 π[v] ← u'''
 
 
-# --------------------------------- BFS --------------------------------- #
-
-
-def get_neighbors(graph: DiGraph, vertex):
-    return [neighbor for neighbor in graph.vertices if (vertex, neighbor) in graph.edges]
-
-
-def create_dist_label(index, graph, label):
-    label = MathTex(rf"\mathbf{{{label}}}", color=DISTANCE_LABEL_COLOR)
-    if label.width < label.height:
-        label.scale_to_fit_height(graph[index].radius * DISTANCE_LABEL_SCALE)
-    else:
-        label.scale_to_fit_width(graph[index].radius * DISTANCE_LABEL_SCALE)
-    return label.move_to(graph[index]).next_to(graph[index][1], RIGHT, buff=DISTANCE_LABEL_BUFFER)
-
+# --------------------------------- scenes --------------------------------- #
 
 class BFSScene(Scene):
     def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]], start_vertex=1,
@@ -169,7 +157,6 @@ class BFSScene(Scene):
                 self.play(pi.at(neighbor - 1, cur_vertex))
 
             self.play(pop_animation[0])
-
 
     def create_graph(self):
         """
