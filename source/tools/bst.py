@@ -29,6 +29,7 @@ class Node(LabeledDot):
         self.key = label if key is None else key
         self.left = None
         self.right = None
+        self.parent = None
         self.tree_height = tree_height
 
 
@@ -66,22 +67,26 @@ class BST(VGroup):
         if keys is not None:
             self.insert_keys(keys)
             self.create_tree()
+        self.add_updater(self.update_edges)
 
     def get_height(self):
         return max(self.nodes, key=lambda node: node.tree_height).tree_height
 
-    def _insert_key(self, key: int | Node, node: Node = None, tree_height: int = 0) -> Node:
+    def _insert_key(self, key: int | Node, node: Node = None, parent: Node = None, tree_height: int = 0) -> Node:
         if node is None:
             ret_key = key if isinstance(key, Node) else Node(key, tree_height=tree_height)
+            if parent != None:
+                ret_key.parent = parent
+                # self.create_edge(parent, ret_key)
             self.nodes += ret_key
             self.add(ret_key)
             return ret_key
 
         key_val = key.key if isinstance(key, Node) else key
         if key_val < node.key:
-            node.left = self._insert_key(key, node.left, tree_height=tree_height + 1)
+            node.left = self._insert_key(key, node.left, parent=node, tree_height=tree_height + 1)
         else:
-            node.right = self._insert_key(key, node.right, tree_height=tree_height + 1)
+            node.right = self._insert_key(key, node.right, parent=node, tree_height=tree_height + 1)
         return node
 
     def insert_keys(self, keys: list | int, set_root=True):
@@ -191,18 +196,35 @@ class BST(VGroup):
         if self.layout is None:
             self.create_layout()
 
-        for node in self.layout:
+        self.update_nodes()
+
+        for node in self.nodes:
+            for child in [n for n in [node.left, node.right] if n is not None]:
+                if (node, child) not in self.edges:
+                    self.create_edge(node, child)
+        # self.traverse(self.create_edge)
+
+    def create_edge(self, node, child, **kwargs):
+        edge_params = dict(start=node, end=child, buff=0, z_index=-10)
+        if self.weighted:
+            edge_params["weight"] = create_bst_weight("<" if node.left is child else r"\geq", node)
+        self.edges[(node, child)] = Edge(**edge_params)
+        self.add(self.edges[(node, child)])
+
+    def update_nodes(self):
+        for node in self.nodes:
             node.move_to(self.layout[node])
 
-        self.traverse(self.create_edge)
+    def update_layout(self):
+        self.create_layout()
+        self.update_nodes()
 
-    def create_edge(self, current_node, **kwargs):
-        for child in [n for n in [current_node.left, current_node.right] if n is not None]:
-            edge_params = dict(start=current_node, end=child, buff=0, z_index=-10)
+    def update_edges(self, graph):
+        for (u, v), edge in graph.edges.items():
+            # self.create_edge(u, v)
+            edge.put_start_and_end_on(u.get_center(), v.get_center())
             if self.weighted:
-                edge_params["weight"] = create_bst_weight("<" if current_node.left is child else r"\geq", current_node)
-            self.edges[child] = Edge(**edge_params)
-            self.add(self.edges[child])
+                edge.weight_mob.move_to(edge.get_center())
 
 
 def get_depth(current_node: Node):
@@ -233,19 +255,17 @@ def eliminate_overlap(current_node: Node, relative_positions: dict[Node, int], b
 
     rightmost_in_left, leftmost_in_right = {}, {}
 
-    def tmp(depth, depth_to_most_col, rightmost, relative_positions, **kwargs):
+    def update_depth_col(node: Node, depth: int, depth_to_most_col: dict[int, int], rightmost: bool,
+                         relative_positions: dict[Node, int], **kwargs):
         operator = max if rightmost else min
 
         depth_to_most_col[depth] = operator(depth_to_most_col[depth], relative_positions[
-            current_node]) if depth in depth_to_most_col.keys() else relative_positions[current_node]
+            node]) if depth in depth_to_most_col.keys() else relative_positions[node]
 
-    # bst.traverse_sub_tree(current_node.left, tmp, depth_to_most_col=rightmost_in_left, rightmost=True,
-    #                       relative_positions=relative_positions)
-    # bst.traverse_sub_tree(current_node.left, tmp, depth_to_most_col=leftmost_in_right, rightmost=False,
-    #                       relative_positions=relative_positions)
-    #
-    compute_rightmost_or_leftmost(current_node.left, 0, rightmost_in_left, True, relative_positions)
-    compute_rightmost_or_leftmost(current_node.right, 0, leftmost_in_right, False, relative_positions)
+    bst.traverse_sub_tree(current_node.left, update_depth_col, depth=0, depth_to_most_col=rightmost_in_left,
+                          rightmost=True, relative_positions=relative_positions)
+    bst.traverse_sub_tree(current_node.right, update_depth_col, depth=0, depth_to_most_col=leftmost_in_right,
+                          rightmost=False, relative_positions=relative_positions)
 
     overlap_given_depth = {depth: rightmost_in_left[depth] - leftmost_in_right[depth]
                            for depth in set(rightmost_in_left.keys()).intersection(leftmost_in_right.keys())}
@@ -267,30 +287,16 @@ def shift_tree_cols(bst: BST, amount_to_shift: float, relative_positions: dict[N
     bst.traverse_sub_tree(node.right, shift_func, amount_to_shift=amount_to_shift)
 
 
-def compute_rightmost_or_leftmost(current_node: Node, depth: int, depth_to_most_col: dict[int, int],
-                                  rightmost: bool, relative_positions: dict[Node, int]):
-    """Calculates and stores either the rightmost or leftmost position
-     in a given subtree for every depth level"""
-    if current_node is None:
-        return
-    operator = max if rightmost else min
-
-    depth_to_most_col[depth] = operator(depth_to_most_col[depth], relative_positions[
-        current_node]) if depth in depth_to_most_col.keys() else relative_positions[current_node]
-
-    compute_rightmost_or_leftmost(current_node.left, depth + 1, depth_to_most_col, rightmost, relative_positions)
-    compute_rightmost_or_leftmost(current_node.right, depth + 1, depth_to_most_col, rightmost, relative_positions)
-
-
 def insert_bst(scene: Scene, bst: BST, key: int, left=-7, width=14, top=4, height=8):
     """Inserts the given key to the BST and animates the process"""
-    position_bst_layout(bst, left, width, top, height)
+    # position_bst_layout(bst, left, width, top, height)
     shift_bst = bst.copy()
-    old_scale = position_bst_layout(shift_bst, left, width, top, height, True)
+    # old_scale = position_bst_layout(shift_bst, left, width, top, height, True)
 
     bst.insert_keys(key)
     new_bst = bst.copy()
-    new_scale = position_bst_layout(new_bst, left, width, top, height)
+    # new_scale = position_bst_layout(new_bst, left, width, top, height)
+    new_bst.create_tree()
     key_node, path = bst.search(key)
 
     tracing_circle = Node(key=key, color=YELLOW)

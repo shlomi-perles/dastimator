@@ -16,7 +16,7 @@ sys.path.append(str(ROOT_PATH.parent.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
 PRESENTATION_MODE = False
-DISABLE_CACHING = True
+DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
 # ----------------------------------    trees    ---------------------------------- #
@@ -71,16 +71,28 @@ class InsertAllElements(Scene):
 
     def construct(self):
         # random_list = sample(range(20), 10)
+        start_insert = 4
         random_list = [10, 5, 15, 7, 12, 6, 13, 8, 11]
-        bst = BST([random_list[0]])
-
-        for num in random_list[1:]:
-            to_remove = insert_bst(self, bst, num)
-            self.remove(*to_remove)
+        bst = BST(random_list[:start_insert])
+        bst.create_tree()
+        self.add(bst)
+        self.wait()
+        bst.insert_keys(random_list[start_insert:start_insert + 1])
+        self.play(list(bst.edges.values())[0].animate.shift(LEFT * 0.5))
+        self.play(bst.animate.update_layout())
+        # c = deepcopy(bst).shift(RIGHT)
+        # c = BST(random_list[:start_insert + 1])
+        # self.play(FadeIn(c))
+        # self.play(FadeOut(c))
+        # self.play(transform_bst(bst, c))
+        # self.play(TransformMatchingShapes(bst, c, transform_mismatches=True))
+        # for num in random_list[start_insert:]:
+        #     to_remove = insert_bst(self, bst, num)
+        #     self.remove(*to_remove)
 
 
 if __name__ == "__main__":
-    rnd.seed(3)
+    rnd.seed(1)
     scenes_lst = [DrawOneBST]
     # scenes_lst = [InsertAllElements]
 
