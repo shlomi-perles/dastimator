@@ -20,6 +20,15 @@ DEFAULT_ARROW_TIP_WIDTH: float = TIP_SIZE
 TIP_CONFIG: dict = {"tip_config": {"tip_length": 0, "tip_width": 0}}
 EDGE_CONFIG: dict = {"stroke_width": EDGE_STROKE_WIDTH, "stroke_color": EDGE_COLOR, **TIP_CONFIG}
 
+WEIGHT_COLOR: str = BACKGROUND_COLOR
+WEIGHT_STROKE_WIDTH: float = DEFAULT_STROKE_WIDTH * 1.6
+WEIGHT_STROKE_COLOR: str = BACKGROUND_COLOR
+WEIGHT_LABEL_FONT_COLOR: str = WHITE
+WEIGHT_SCALE: float = 1  # TODO: check values. 0.7 is too probably too big.
+WEIGHT_LABEL_SCALE: float = 0.8  # TODO: check values. 0.7 is too probably too big.
+WEIGHT_CONFIG: dict = {"fill_color": WEIGHT_COLOR, "stroke_color": WEIGHT_STROKE_COLOR,
+                       "stroke_width": WEIGHT_STROKE_WIDTH}
+
 VISITED_COLOR: str = PURE_GREEN
 VISITED_EDGE_WIDTH: float = EDGE_STROKE_WIDTH * 1.5
 VISITED_VERTEX_WIDTH: float = VERTEX_STROKE_WIDTH * 1.8

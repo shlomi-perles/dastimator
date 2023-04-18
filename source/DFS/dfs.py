@@ -12,7 +12,7 @@ from tools.my_graphs import DiGraph
 
 ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
-OUT_DIR = MEDIA_PATH / Path(__file__).stem
+OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
 PRESENTATION_MODE = False
 DISABLE_CACHING = False
