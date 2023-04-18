@@ -37,8 +37,6 @@ class DrawOneBST(Scene):
     def construct(self):
         bst = BST(BASE_TREE_VERTICES)
         bst = BST(rnd.sample(range(30), 30))
-
-        get_bst_layout(bst)
         self.add(bst)
         self.wait()
 

@@ -41,28 +41,31 @@ class Edge(Line):
         self.end = end
 
         if weight is not None:
-            self.weight = weight if isinstance(weight, VMobject) else LabeledDot(
+            self.weight = weight if not isinstance(weight, VMobject) else weight[1].tex_string
+            self.weight_mob = weight if isinstance(weight, VMobject) else LabeledDot(
                 label=MathTex(weight, fill_color=WEIGHT_LABEL_FONT_COLOR), **WEIGHT_CONFIG)
 
             if weight is not isinstance(weight, VMobject):
-                self.weight.scale(WEIGHT_SCALE)
-                self.weight[1].scale(WEIGHT_LABEL_SCALE)
+                self.weight_mob.scale(WEIGHT_SCALE)
+                self.weight_mob[1].scale(WEIGHT_LABEL_SCALE)
 
-            self.weight.move_to(self.get_center())
-            self.add(self.weight)
+            self.weight_mob.move_to(self.get_center())
+            self.add(self.weight_mob)
 
 
 class BST(VGroup):
     """Class that represents a full binary search tree"""
 
-    def __init__(self, keys: list = None, weighted: bool = True, **kwargs):
+    def __init__(self, keys: list = None, weighted: bool = True, layout=None, **kwargs):
         super().__init__(**kwargs)
         self.root = None
         self.edges = {}
         self.nodes = VGroup()
         self.weighted = weighted
+        self.layout = layout
         if keys is not None:
             self.insert_keys(keys)
+            self.create_tree()
 
     def get_height(self):
         return max(self.nodes, key=lambda node: node.tree_height).tree_height
@@ -130,16 +133,76 @@ class BST(VGroup):
             if parent is None:
                 self.root = temp.left
 
-    def traverse(self, func, *args):
+    def traverse(self, func, **kwargs):
         """Traverses the tree in a depth-first manner"""
-        self.traverse_sub_tree(self.root, func, 0, *args)
+        self.traverse_sub_tree(self.root, func, **kwargs)
 
-    def traverse_sub_tree(self, node: Node, func, depth: int, *args):
+    def traverse_sub_tree(self, node: Node, func, **kwargs):
         if node is None:
             return
-        func(node, depth, *args)
-        self.traverse_sub_tree(node.left, func, depth + 1, *args)
-        self.traverse_sub_tree(node.right, func, depth + 1, *args)
+        func(node, **kwargs)
+        if "depth" in kwargs:
+            kwargs["depth"] += 1
+        self.traverse_sub_tree(node.left, func, **kwargs)
+        self.traverse_sub_tree(node.right, func, **kwargs)
+
+    # ----------------- Layout ----------------- #
+
+    def create_layout(self, left=-config.frame_width / 2, width=config.frame_width, top=config.frame_height / 2,
+                      height=config.frame_height, extra_space_at_top=False):
+        """
+        Positions the nodes of the given binary search tree in a way that
+        minimizes overlap and maximizes horizontal distance.
+        :param bst: the binary search tree to position.
+        :param left: the leftmost x-coordinate of the bounding box.
+        :param width: the width of the bounding box.
+        :param top: the topmost y-coordinate of the bounding box.
+        :param height: the height of the bounding box.
+        :param extra_space_at_top: whether to leave extra space at the top of the bounding box.
+        :return:
+        """
+        relative_cols_positions = {}
+
+        get_column_positions_from_root(self.root, 0, relative_cols_positions)
+
+        eliminate_overlap(self.root, relative_cols_positions, self)
+
+        num_cols = max(relative_cols_positions.values()) - min(relative_cols_positions.values()) + 1
+        horiz_increment = width / (num_cols + 1)
+        vert_increment = height / (get_depth(self.root) + 1 + extra_space_at_top)
+        minimum_position = min(relative_cols_positions.values())
+
+        if extra_space_at_top:
+            top -= vert_increment
+
+        def locate_nodes(current_node: Node, depth: int, layout: dict[Node, np.ndarray]):
+            """Converts the relative horizontal coordinates to circle objects in the canvas"""
+            x_coord = left + (relative_cols_positions[current_node] - minimum_position + 1) * horiz_increment
+            y_coord = top - (depth + 1) * vert_increment
+            layout[current_node] = RIGHT * x_coord + UP * y_coord
+
+        self.layout = {}
+        self.traverse(locate_nodes, depth=0, layout=self.layout)
+
+    # ----------------- Draw ----------------- #
+
+    def create_tree(self):
+        """Creates the tree from the root node"""
+        if self.layout is None:
+            self.create_layout()
+
+        for node in self.layout:
+            node.move_to(self.layout[node])
+
+        self.traverse(self.create_edge)
+
+    def create_edge(self, current_node, **kwargs):
+        for child in [n for n in [current_node.left, current_node.right] if n is not None]:
+            edge_params = dict(start=current_node, end=child, buff=0, z_index=-10)
+            if self.weighted:
+                edge_params["weight"] = create_bst_weight("<" if current_node.left is child else r"\geq", current_node)
+            self.edges[child] = Edge(**edge_params)
+            self.add(self.edges[child])
 
 
 def get_depth(current_node: Node):
@@ -169,6 +232,18 @@ def eliminate_overlap(current_node: Node, relative_positions: dict[Node, int], b
     eliminate_overlap(current_node.right, relative_positions, bst)
 
     rightmost_in_left, leftmost_in_right = {}, {}
+
+    def tmp(depth, depth_to_most_col, rightmost, relative_positions, **kwargs):
+        operator = max if rightmost else min
+
+        depth_to_most_col[depth] = operator(depth_to_most_col[depth], relative_positions[
+            current_node]) if depth in depth_to_most_col.keys() else relative_positions[current_node]
+
+    # bst.traverse_sub_tree(current_node.left, tmp, depth_to_most_col=rightmost_in_left, rightmost=True,
+    #                       relative_positions=relative_positions)
+    # bst.traverse_sub_tree(current_node.left, tmp, depth_to_most_col=leftmost_in_right, rightmost=False,
+    #                       relative_positions=relative_positions)
+    #
     compute_rightmost_or_leftmost(current_node.left, 0, rightmost_in_left, True, relative_positions)
     compute_rightmost_or_leftmost(current_node.right, 0, leftmost_in_right, False, relative_positions)
 
@@ -180,19 +255,17 @@ def eliminate_overlap(current_node: Node, relative_positions: dict[Node, int], b
 
     amount_to_shift = max(overlap_given_depth.values()) / 2 + 1
 
-    def shift_subtree(current_node: Node, depth, amount_to_shift: int):
-        """Shifts the entire subtree rooted at the given node to the right by some given amount (could be negative)"""
-        relative_positions[current_node] += amount_to_shift
-    # shift sutree as lambda function
-    c = lambda node, depth, amount_to_shift: relative_positions.update({node: relative_positions[node] + amount_to_shift})
-    bst.traverse_sub_tree(current_node.left, c, 0, - amount_to_shift)
-    bst.traverse_sub_tree(current_node.right, c, 0, amount_to_shift)
+    shift_tree_cols(bst, amount_to_shift, relative_positions, current_node)
 
-def shift_tree_cols(bst: BST, relative_positions: dict[Node, int]):
+
+def shift_tree_cols(bst: BST, amount_to_shift: float, relative_positions: dict[Node, int], node=None):
     """Shifts the entire tree to the right by some given amount (could be negative)"""
-    amount_to_shift = min(relative_positions.values()) - 1
-    bst.traverse_sub_tree(lambda node, depth, amount_to_shift: relative_positions.update({node: relative_positions[node] - amount_to_shift}),
-                 amount_to_shift)
+    node = node if node is not None else bst.root
+    shift_func = lambda pos_node, amount_to_shift, **kwargs: relative_positions.update(
+        {pos_node: relative_positions[pos_node] + amount_to_shift})
+    bst.traverse_sub_tree(node.left, shift_func, amount_to_shift=- amount_to_shift)
+    bst.traverse_sub_tree(node.right, shift_func, amount_to_shift=amount_to_shift)
+
 
 def compute_rightmost_or_leftmost(current_node: Node, depth: int, depth_to_most_col: dict[int, int],
                                   rightmost: bool, relative_positions: dict[Node, int]):
@@ -200,7 +273,6 @@ def compute_rightmost_or_leftmost(current_node: Node, depth: int, depth_to_most_
      in a given subtree for every depth level"""
     if current_node is None:
         return
-
     operator = max if rightmost else min
 
     depth_to_most_col[depth] = operator(depth_to_most_col[depth], relative_positions[
@@ -208,65 +280,6 @@ def compute_rightmost_or_leftmost(current_node: Node, depth: int, depth_to_most_
 
     compute_rightmost_or_leftmost(current_node.left, depth + 1, depth_to_most_col, rightmost, relative_positions)
     compute_rightmost_or_leftmost(current_node.right, depth + 1, depth_to_most_col, rightmost, relative_positions)
-
-
-def get_bst_layout(bst: BST, left=-config.frame_width / 2, width=config.frame_width, top=config.frame_height / 2,
-                   height=config.frame_height, extra_space_at_top=False):
-    """
-    Positions the nodes of the given binary search tree in a way that
-    minimizes overlap and maximizes horizontal distance.
-    :param bst: the binary search tree to position.
-    :param left: the leftmost x-coordinate of the bounding box.
-    :param width: the width of the bounding box.
-    :param top: the topmost y-coordinate of the bounding box.
-    :param height: the height of the bounding box.
-    :param extra_space_at_top: whether to leave extra space at the top of the bounding box.
-    :return:
-    """
-    relative_cols_positions = {}
-
-    get_column_positions_from_root(bst.root, 0, relative_cols_positions)
-
-    eliminate_overlap(bst.root, relative_cols_positions, bst)
-
-    num_cols = max(relative_cols_positions.values()) - min(relative_cols_positions.values()) + 1
-    horiz_increment = width / (num_cols + 1)
-    vert_increment = height / (get_depth(bst.root) + 1 + extra_space_at_top)
-    scale_factor = min(horiz_increment, vert_increment)
-    minimum_position = min(relative_cols_positions.values())
-
-    if extra_space_at_top:
-        top -= vert_increment
-
-    def locate_nodes(current_node: Node, depth: int, layout: dict[Node, np.ndarray]):
-        """Converts the relative horizontal coordinates to circle objects in the canvas"""
-        x_coord = left + (relative_cols_positions[current_node] - minimum_position + 1) * horiz_increment
-        y_coord = top - (depth + 1) * vert_increment
-        layout[current_node] = RIGHT * x_coord + UP * y_coord
-
-    layout = {}
-    bst.traverse(locate_nodes, layout)
-    for node in layout:
-        node.move_to(layout[node])
-
-    def create_edges(current_node: Node):
-        """Creates arrow objects in the canvas mapping from circle center to circle center"""
-        if current_node is None:
-            return
-
-        for child in [n for n in [current_node.left, current_node.right] if n is not None]:
-            edge_params = dict(start=current_node, end=child, buff=0, stroke_width=scale_factor * 3, z_index=-10)
-            if bst.weighted:
-                edge_params["weight"] = create_bst_weight("<" if current_node.left is child else r"\geq", current_node)
-            bst.edges[child] = Edge(**edge_params)
-            bst.add(bst.edges[child])
-
-        create_edges(current_node.left)
-        create_edges(current_node.right)
-
-    create_edges(bst.root)
-
-    return scale_factor
 
 
 def insert_bst(scene: Scene, bst: BST, key: int, left=-7, width=14, top=4, height=8):
