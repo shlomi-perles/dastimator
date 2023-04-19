@@ -55,7 +55,7 @@ class BFSScene(SectionsScene):
         self.mobjects_garbage_collector = VGroup(*[mob for mob in self.dist_mob])
 
     def construct(self):
-        self.my_next_section("BFS", pst.NORMAL)
+        self.next_section("BFS", pst.NORMAL)
 
         self.play(Write(self.rendered_code))
         self.play(Write(self.graph))
@@ -63,7 +63,7 @@ class BFSScene(SectionsScene):
         self.animate_bfs()
 
         self.play(highlight_code_lines(self.rendered_code, indicate=False))
-        self.my_next_section("BFS finished")
+        self.next_section("BFS finished")
         self.play(Unwrite(self.graph), Unwrite(self.dist_mob), Unwrite(self.mobjects_garbage_collector))
         self.play(Unwrite(VGroup(self.queue_mob, self.u, self.pi)))
         self.play(Uncreate(self.rendered_code))
@@ -80,24 +80,24 @@ class BFSScene(SectionsScene):
         queue_mob, u, pi = self.queue_mob, self.u, self.pi
 
         queue = [self.start_vertex]
-        self.my_next_section("Initialize queue")
+        self.next_section("Initialize queue")
         self.highlight_and_indicate_code([2])
         self.play(queue_mob.draw_array())
 
         dist = [np.Inf] * (len(graph.vertices) + 1)
-        self.my_next_section("Initialize dist")
+        self.next_section("Initialize dist")
         self.highlight_and_indicate_code([3, 4])
         self.play(AnimationGroup(*[anim(dist_mob[i]) for i in range(1, len(dist_mob)) for anim in [Write, Flash]],
                                  lag_ratio=0.3))
 
         dist[self.start_vertex] = 0
-        self.my_next_section("Init first vertex dist")
+        self.next_section("Init first vertex dist")
         self.highlight_and_indicate_code([5])
         self.wait(0.2)
         self.play(self.change_dist(self.start_vertex, 0))
 
         parent = [None] * (len(graph.vertices) + 1)
-        self.my_next_section("Init first vertex parent")
+        self.next_section("Init first vertex parent")
         self.highlight_and_indicate_code([6])
         self.play(pi.draw_array())
         self.play(pi.at(0, "-"))
@@ -108,7 +108,7 @@ class BFSScene(SectionsScene):
             cur_vertex = queue.pop(0)
             if cur_vertex == self.start_vertex:
                 self.play(Write(u))
-            if not visit_all: self.my_next_section(f"Pop vertex {cur_vertex} from queue")
+            if not visit_all: self.next_section(f"Pop vertex {cur_vertex} from queue")
             self.highlight_and_indicate_code([9])
             if cur_vertex == self.start_vertex:
                 self.visit_vertex_animation(graph, None, cur_vertex)
@@ -122,22 +122,22 @@ class BFSScene(SectionsScene):
                 if dist[neighbor] != np.Inf:
                     continue
                 # animate for neighbor v of u & dist[v] = ∞
-                self.my_next_section("Visit neighbor")
+                self.next_section("Visit neighbor")
                 self.highlight_and_indicate_code([10])
-                self.my_next_section("Update visit")
+                self.next_section("Update visit")
                 self.visit_vertex_animation(graph, cur_vertex, neighbor)
 
                 # animate queue.push(v)
                 queue.append(neighbor)
-                self.my_next_section(f"Add vertex {neighbor} to queue")
+                self.next_section(f"Add vertex {neighbor} to queue")
                 self.highlight_and_indicate_code([11])
                 self.play(queue_mob.push(neighbor))
 
                 # animate dist[v] = dist[u] + 1
                 dist[neighbor] = dist[cur_vertex] + 1
-                self.my_next_section(f"Set distance {dist[cur_vertex] + 1} to vertex {neighbor}")
+                self.next_section(f"Set distance {dist[cur_vertex] + 1} to vertex {neighbor}")
                 self.highlight_and_indicate_code([12])
-                self.my_next_section("Update dist")
+                self.next_section("Update dist")
                 self.play(self.change_dist(neighbor, dist[neighbor]))
 
                 if np.Inf not in dist:
@@ -145,9 +145,9 @@ class BFSScene(SectionsScene):
 
                 # animate π[v] ← u
                 parent[neighbor] = cur_vertex
-                self.my_next_section(f"Add parent {cur_vertex} to vertex {neighbor}")
+                self.next_section(f"Add parent {cur_vertex} to vertex {neighbor}")
                 self.highlight_and_indicate_code([13])
-                self.my_next_section("Update parent")
+                self.next_section("Update parent")
                 self.play(pi.at(neighbor - 1, cur_vertex))
 
             self.play(pop_animation[0])

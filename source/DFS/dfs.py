@@ -59,10 +59,10 @@ class DFSScene(SectionsScene):
         self.mobjects_garbage_collector = VGroup(*[mob for mob in self.dist_mob])
 
     def construct(self):
-        # self.my_next_section("BFS to DFS", pst.NORMAL) # TODO: add
+        # self.next_section("BFS to DFS", pst.NORMAL) # TODO: add
         # self.animate_bfs_dfs_comparison() # TODO: add
 
-        self.my_next_section("DFS", pst.NORMAL)
+        self.next_section("DFS", pst.NORMAL)
         self.add(self.rendered_code)  # TODO: remove
         self.add(self.graph)  # TODO: remove
         # self.play(Write(self.rendered_code))
@@ -71,7 +71,7 @@ class DFSScene(SectionsScene):
         self.animate_dfs()
 
         self.play(highlight_code_lines(self.rendered_code, indicate=False))
-        self.my_next_section("DFS finished", pst.SUB_NORMAL)
+        self.next_section("DFS finished", pst.SUB_NORMAL)
         self.play(Unwrite(self.graph), Unwrite(self.dist_mob), Unwrite(self.mobjects_garbage_collector))
         self.play(Unwrite(VGroup(self.queue_mob, self.u, self.pi)))
         self.play(Uncreate(self.rendered_code))
@@ -82,12 +82,12 @@ class DFSScene(SectionsScene):
         self.add(bfs_code)
         self.play(transform_code_lines(bfs_code, self.rendered_code, {1: 1, 2: 2, 3: 3, 4: 3, 5: 3}))
 
-        self.my_next_section("Change pop")
+        self.next_section("Change pop")
         self.play(Indicate(bfs_code.code[8]))
         self.play(transform_code_lines(bfs_code, self.rendered_code, {6: 4, 7: 6, 8: 7, 9: 8}))
         self.play(Indicate(self.rendered_code.code[7]))
 
-        self.my_next_section("add time mark")
+        self.next_section("add time mark")
         self.rendered_code[0][0].set_z_index(0)
         self.play(TransformMatchingShapes(bfs_code.background_mobject[0], self.rendered_code.background_mobject[0],
                                           transform_mismatches=True))
@@ -112,12 +112,12 @@ class DFSScene(SectionsScene):
         queue_mob, u, pi = self.queue_mob, self.u, self.pi
 
         queue = [self.start_vertex]
-        self.my_next_section("Initialize queue", pst.SUB_NORMAL)
+        self.next_section("Initialize queue", pst.SUB_NORMAL)
         self.highlight_and_indicate_code([2])
         self.play(queue_mob.draw_array())
 
         dist = [np.Inf] * (len(graph.vertices) + 1)
-        self.my_next_section("Initialize dists", pst.SUB_NORMAL)
+        self.next_section("Initialize dists", pst.SUB_NORMAL)
         self.highlight_and_indicate_code([3])
         self.play(AnimationGroup(*[anim(dist_mob[i]) for i in range(1, len(dist_mob)) for anim in [Write, Flash]],
                                  lag_ratio=0.3))
@@ -125,7 +125,7 @@ class DFSScene(SectionsScene):
         self.play(self.change_dist(self.start_vertex, 0))
 
         parent = [None] * (len(graph.vertices) + 1)
-        self.my_next_section("Init first vertex parent", pst.SUB_NORMAL)
+        self.next_section("Init first vertex parent", pst.SUB_NORMAL)
         self.highlight_and_indicate_code([4])
         self.play(pi.draw_array())
         self.play(pi.at(0, "-"))
@@ -136,7 +136,7 @@ class DFSScene(SectionsScene):
             cur_vertex = queue.pop()
             if cur_vertex == self.start_vertex:
                 self.play(Write(u))
-            if not visit_all: self.my_next_section(f"Pop vertex {cur_vertex} from queue", pst.SUB_NORMAL)
+            if not visit_all: self.next_section(f"Pop vertex {cur_vertex} from queue", pst.SUB_NORMAL)
             self.highlight_and_indicate_code([8])
             if cur_vertex == self.start_vertex:
                 self.visit_vertex_animation(graph, None, cur_vertex)
@@ -151,22 +151,22 @@ class DFSScene(SectionsScene):
                 if dist[neighbor] != np.Inf:
                     continue
                 # animate for neighbor v of u & dist[v] = ∞
-                self.my_next_section("Visit neighbor", pst.SUB_NORMAL)
+                self.next_section("Visit neighbor", pst.SUB_NORMAL)
                 self.highlight_and_indicate_code([10])
-                self.my_next_section("Update visit", pst.SUB_NORMAL)
+                self.next_section("Update visit", pst.SUB_NORMAL)
                 self.visit_vertex_animation(graph, cur_vertex, neighbor)
 
                 # animate queue.push(v)
                 queue.append(neighbor)
-                self.my_next_section(f"Add vertex {neighbor} to queue", pst.SUB_NORMAL)
+                self.next_section(f"Add vertex {neighbor} to queue", pst.SUB_NORMAL)
                 self.highlight_and_indicate_code([11])
                 self.play(queue_mob.push(neighbor))
 
                 # animate dist[v] = dist[u] + 1
                 dist[neighbor] = dist[cur_vertex] + 1
-                self.my_next_section(f"Set distance {dist[cur_vertex] + 1} to vertex {neighbor}", pst.SUB_NORMAL)
+                self.next_section(f"Set distance {dist[cur_vertex] + 1} to vertex {neighbor}", pst.SUB_NORMAL)
                 self.highlight_and_indicate_code([12])
-                self.my_next_section("Update dist", pst.SUB_NORMAL)
+                self.next_section("Update dist", pst.SUB_NORMAL)
                 self.play(self.change_dist(neighbor, dist[neighbor]))
 
                 if np.Inf not in dist:
@@ -174,9 +174,9 @@ class DFSScene(SectionsScene):
 
                 # animate π[v] ← u
                 parent[neighbor] = cur_vertex
-                self.my_next_section(f"Add parent {cur_vertex} to vertex {neighbor}", pst.SUB_NORMAL)
+                self.next_section(f"Add parent {cur_vertex} to vertex {neighbor}", pst.SUB_NORMAL)
                 self.highlight_and_indicate_code([13])
-                self.my_next_section("Update parent", pst.SUB_NORMAL)
+                self.next_section("Update parent", pst.SUB_NORMAL)
                 self.play(pi.at(neighbor - 1, cur_vertex))
 
             self.play(pop_animation[0])
