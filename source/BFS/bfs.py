@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import Hashable
 
-from manim_editor import PresentationSectionType as pst
-
 from tools.array import *
 from tools.consts import *
 from tools.funcs import *
+from tools.scenes import *
 from tools.my_graphs import DiGraph
 
 ROOT_PATH = Path(__file__).resolve().parent
@@ -19,7 +18,8 @@ config.background_color = BACKGROUND_COLOR
 
 # --------------------------------- constants --------------------------------- #
 EDGE_COLOR = GREY
-EDGE_CONFIG["stroke_color"] = EDGE_COLOR
+BFS_EDGE_CONFIG = EDGE_CONFIG.copy()
+BFS_EDGE_CONFIG["stroke_color"] = EDGE_COLOR
 
 BFS_PSEUDO_CODE = '''def BFS(G,s): 
     queue ← Build Queue({s})
@@ -38,7 +38,7 @@ BFS_PSEUDO_CODE = '''def BFS(G,s):
 
 # --------------------------------- scenes --------------------------------- #
 
-class BFSScene(Scene):
+class BFSScene(SectionsScene):
     def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]], start_vertex=1,
                  directed_graph: bool = False, layout: str | dict = "circular", **kwargs):
         super().__init__(**kwargs)
@@ -53,12 +53,6 @@ class BFSScene(Scene):
         self.dist_mob = VGroup(
             *([VMobject()] + [create_dist_label(i, self.graph, r"\infty") for i in self.vertices]))  # 1-indexed
         self.mobjects_garbage_collector = VGroup(*[mob for mob in self.dist_mob])
-
-    def my_next_section(self, name: str = "unnamed", type: str = pst.SUB_NORMAL, skip_animations: bool = False):
-        if PRESENTATION_MODE:
-            self.next_section(name, type, skip_animations)
-        else:
-            self.wait()
 
     def construct(self):
         self.my_next_section("BFS", pst.NORMAL)
@@ -166,14 +160,14 @@ class BFSScene(Scene):
         if not self.directed_graph:
             self.edges += [(v, u) for u, v in self.edges]
 
-        edge_config = EDGE_CONFIG
+        edge_config = BFS_EDGE_CONFIG.copy()
         if self.directed_graph:
             edge_configs = {}
             for k, v in self.edges:
                 if (v, k) in self.edges:
-                    edge_configs[(k, v)] = EDGE_CONFIG.copy()
+                    edge_configs[(k, v)] = BFS_EDGE_CONFIG.copy()
                 else:
-                    edge_configs[(k, v)] = EDGE_CONFIG.copy()
+                    edge_configs[(k, v)] = BFS_EDGE_CONFIG.copy()
                     edge_configs[(k, v)]["tip_config"]["tip_length"] = TIP_SIZE
                     edge_configs[(k, v)]["tip_config"]["tip_width"] = DEFAULT_ARROW_TIP_WIDTH
             edge_config = edge_configs
@@ -278,7 +272,8 @@ class MovingDiGraph(Scene):
         vertices_locations = {1: UP * 2, 2: LEFT + UP, 3: RIGHT + UP, 4: 1.5 * LEFT, 5: 0.5 * LEFT, 6: 0.5 * RIGHT,
                               7: 1.5 * RIGHT}
         g = DiGraph(vertices, edges, layout_scale=1.5, layout=vertices_locations, labels=True,
-                    label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG.copy(), edge_config=EDGE_CONFIG.copy())
+                    label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG.copy(),
+                    edge_config=BFS_EDGE_CONFIG.copy())
         # g.scale(2)
         g.update_edges(g)
         self.add(g)

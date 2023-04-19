@@ -42,7 +42,7 @@ DFS_PSEUDO_CODE = '''def DFS(G,s):
 
 # --------------------------------- DFS --------------------------------- #
 
-class DFSScene(Scene):
+class DFSScene(SectionsScene):
     def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]], start_vertex=1,
                  directed_graph: bool = False, layout: str | dict = "circular", **kwargs):
         super().__init__(**kwargs)
@@ -57,12 +57,6 @@ class DFSScene(Scene):
         self.dist_mob = VGroup(
             *([VMobject()] + [create_dist_label(i, self.graph, r"\infty") for i in self.vertices]))  # 1-indexed
         self.mobjects_garbage_collector = VGroup(*[mob for mob in self.dist_mob])
-
-    def my_next_section(self, name: str = "unnamed", type: str = pst.SUB_NORMAL, skip_animations: bool = False):
-        if PRESENTATION_MODE:
-            self.next_section(name, type, skip_animations)
-        else:
-            self.wait()
 
     def construct(self):
         # self.my_next_section("BFS to DFS", pst.NORMAL) # TODO: add

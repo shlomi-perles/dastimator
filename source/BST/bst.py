@@ -8,6 +8,7 @@ from tools.array import *
 from tools.consts import *
 from tools.funcs import *
 from tools.bst import *
+from tools.scenes import *
 from tools.my_graphs import DiGraph
 import random as rnd
 
@@ -66,34 +67,45 @@ class InsertOneElement(Scene):
         insert_bst(self, BST(random_list[:-1]), random_list[-1])
 
 
-class InsertAllElements(Scene):
+class InsertAllElements(SectionsScene):
     """Builds a BST with a random list of elements"""
 
     def construct(self):
         # random_list = sample(range(20), 10)
         start_insert = 4
         random_list = [10, 5, 15, 7, 12, 6, 13, 8, 11]
+        random_list = BASE_TREE_VERTICES[:start_insert + 2]
         bst = BST(random_list[:start_insert])
         bst.create_tree()
         self.add(bst)
+        # self.add(*[edge.weight_mob for edge in bst.edges.values()])
         self.wait()
-        bst.insert_keys(random_list[start_insert:start_insert + 1])
-        self.play(list(bst.edges.values())[0].animate.shift(LEFT * 0.5))
-        self.play(bst.animate.update_layout())
-        # c = deepcopy(bst).shift(RIGHT)
-        # c = BST(random_list[:start_insert + 1])
-        # self.play(FadeIn(c))
-        # self.play(FadeOut(c))
-        # self.play(transform_bst(bst, c))
-        # self.play(TransformMatchingShapes(bst, c, transform_mismatches=True))
-        # for num in random_list[start_insert:]:
-        #     to_remove = insert_bst(self, bst, num)
-        #     self.remove(*to_remove)
+        fast_insert = False
+        run_time_factor = 0.5 if fast_insert else 1
+
+        for i in random_list[start_insert:]:
+            self.next_section(f"Inserting key {i}", skip_section=fast_insert)
+            new_key = bst.insert_keys([i])[0]
+            path = bst.search(new_key)[1]
+            new_key.next_to(bst.root, UP)
+            self.play(Write(new_key), run_time=1 * run_time_factor)
+
+            for node in path:
+                if node.parent is not None and not fast_insert:
+                    self.next_section("Wiggle weight")
+                    self.play(Wiggle(bst.edges[(node.parent, node)].weight_mob, scale_value=2, n_wiggles=14,
+                                     rotation_angle=0.02 * TAU, run_time=2))
+                self.play(new_key.animate(run_time=1 * run_time_factor).next_to(node, UP))
+
+            self.play(bst.animate(run_time=1 * run_time_factor).update_tree_layout())
+            new_edge = bst.create_edge(new_key.parent, new_key)
+            new_edge.draw_edge(self, run_time=1.5 * run_time_factor)
+            self.wait()
 
 
 if __name__ == "__main__":
     rnd.seed(1)
-    scenes_lst = [DrawOneBST]
-    # scenes_lst = [InsertAllElements]
+    # scenes_lst = [DrawOneBST]
+    scenes_lst = [InsertAllElements]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])

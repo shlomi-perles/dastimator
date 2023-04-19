@@ -24,7 +24,7 @@ WEIGHT_COLOR: str = BACKGROUND_COLOR
 WEIGHT_STROKE_WIDTH: float = DEFAULT_STROKE_WIDTH * 1.6
 WEIGHT_STROKE_COLOR: str = BACKGROUND_COLOR
 WEIGHT_LABEL_FONT_COLOR: str = WHITE
-WEIGHT_SCALE: float = 1  # TODO: check values. 0.7 is too probably too big.
+WEIGHT_SCALE: float = 0.5  # TODO: check values. 0.7 is too probably too big.
 WEIGHT_LABEL_SCALE: float = 0.8  # TODO: check values. 0.7 is too probably too big.
 WEIGHT_CONFIG: dict = {"fill_color": WEIGHT_COLOR, "stroke_color": WEIGHT_STROKE_COLOR,
                        "stroke_width": WEIGHT_STROKE_WIDTH}

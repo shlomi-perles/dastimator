@@ -5,6 +5,7 @@ from manim import AnimationGroup
 from manim_fonts import *
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from .consts import LINES_OFF_OPACITY, MEDIA_PATH, BACKGROUND_COLOR
+from .scenes import SectionsScene
 import imageio.v3 as iio
 
 QFLAGS_TO_QUALITY = {v["flag"]: k for k, v in QUALITIES.items() if v["flag"] is not None}
@@ -38,6 +39,8 @@ def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, di
         with tempconfig(
                 {"quality": quality, "preview": preview, "media_dir": media_path, "save_sections": save_sections,
                  "disable_caching": disable_caching}):
+            if isinstance(scene, SectionsScene):
+                scene.PRESENTATION_MODE = presentation_mode
             scene().render()
         if create_gif:
             create_scene_gif(media_path, scene.__name__, DEFAULT_GIF_SCENES if gif_scenes is None else gif_scenes)

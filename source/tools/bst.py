@@ -11,19 +11,19 @@ BST_WEIGHT_FONT_COLOR = BLACK
 # BST_WEIGHT_COLOR = BACKGROUND_COLOR
 # BST_WEIGHT_FONT_COLOR = WHITE
 
-BST_WEIGHT_LABEL_SCALE = 0.8
-BST_WEIGHT_SCALE = 0.5
+NODES_RELATIVE_HEIGHT = config.frame_height * 0.09
 
 
 class Node(LabeledDot):
     """Simple class that represents a BST node"""
 
-    def __init__(self, key=None, label=None, tree_height=0, **kwargs):
+    def __init__(self, key=None, label=None, tree_height=0, relative_height=None, **kwargs):
         if label is not isinstance(label, SVGMobject) and label is not None:
             label = MathTex(label, fill_color=LABEL_COLOR)
         label_scale = kwargs.pop("label_scale", VERTEX_LABEL_SCALE)
         kwargs = {**VERTEX_CONFIG, **kwargs}
         super().__init__(label=MathTex(key, fill_color=LABEL_COLOR) if label is None else label, **kwargs)
+        self.scale_to_fit_height(NODES_RELATIVE_HEIGHT if relative_height is None else relative_height)
         self[1].scale(label_scale)
         self.label = self[1]
         self.key = label if key is None else key
@@ -31,6 +31,37 @@ class Node(LabeledDot):
         self.right = None
         self.parent = None
         self.tree_height = tree_height
+
+    def __str__(self):
+        return str(self.key)
+
+    def __lt__(self, other):
+        if isinstance(other, Node):
+            return self.key < other.key
+        if isinstance(other, (float, int)):
+            return self.key < other
+        return False
+
+    def __gt__(self, other):
+        if isinstance(other, Node):
+            return self.key > other.key
+        if isinstance(other, (float, int)):
+            return self.key > other
+        return False
+
+    def __le__(self, other):
+        if isinstance(other, Node):
+            return self.key <= other.key
+        if isinstance(other, (float, int)):
+            return self.key <= other
+        return False
+
+    def __ge__(self, other):
+        if isinstance(other, Node):
+            return self.key >= other.key
+        if isinstance(other, (float, int)):
+            return self.key >= other
+        return False
 
 
 class Edge(Line):
@@ -46,12 +77,25 @@ class Edge(Line):
             self.weight_mob = weight if isinstance(weight, VMobject) else LabeledDot(
                 label=MathTex(weight, fill_color=WEIGHT_LABEL_FONT_COLOR), **WEIGHT_CONFIG)
 
-            if weight is not isinstance(weight, VMobject):
-                self.weight_mob.scale(WEIGHT_SCALE)
-                self.weight_mob[1].scale(WEIGHT_LABEL_SCALE)
-
-            self.weight_mob.move_to(self.get_center())
+            self.update_weight(self)
             self.add(self.weight_mob)
+            self.add_updater(self.update_weight)
+
+    def __str__(self):
+        return f"Edge({self.start.key}, {self.end.key}{(',' + self.weight) if self.weight is not None else ''})"
+
+    def update_weight(self, edge):
+        if self.weight_mob is not None:
+            self.weight_mob.move_to(edge.get_center())
+
+    def draw_edge(self, scene: Scene, relative_line_run_time=0.3, run_time=1.5, **kwargs):
+        weight = self.weight_mob
+        self.remove(self.weight_mob)
+        self.weight_mob = None
+        scene.play(FadeIn(self), run_time=relative_line_run_time * run_time, **kwargs)
+        self.add(weight)
+        self.weight_mob = weight
+        scene.play(Write(self.weight_mob), run_time=run_time * (1 - relative_line_run_time), **kwargs)
 
 
 class BST(VGroup):
@@ -65,7 +109,7 @@ class BST(VGroup):
         self.weighted = weighted
         self.layout = layout
         if keys is not None:
-            self.insert_keys(keys)
+            self.insert_keys(keys, set_root=True)
             self.create_tree()
         self.add_updater(self.update_edges)
 
@@ -77,24 +121,27 @@ class BST(VGroup):
             ret_key = key if isinstance(key, Node) else Node(key, tree_height=tree_height)
             if parent != None:
                 ret_key.parent = parent
-                # self.create_edge(parent, ret_key)
             self.nodes += ret_key
             self.add(ret_key)
             return ret_key
 
-        key_val = key.key if isinstance(key, Node) else key
-        if key_val < node.key:
+        if key < node:
             node.left = self._insert_key(key, node.left, parent=node, tree_height=tree_height + 1)
         else:
             node.right = self._insert_key(key, node.right, parent=node, tree_height=tree_height + 1)
         return node
 
-    def insert_keys(self, keys: list | int, set_root=True):
+    def insert_keys(self, keys: list | int, set_root=False):
         """Inserts a list of keys into the BST recursively"""
         keys = [keys] if isinstance(keys, int) else keys
+        nodes = []
         for key in keys:
             node = self._insert_key(key, self.root)
-            self.root = node if set_root else self.root
+            if set_root:
+                self.root = node
+                set_root = False
+            nodes.append(self.nodes[-1])
+        return nodes
 
     def search(self, key: int | Node) -> tuple[Node | None, list[Any]]:
         """Returns a list of nodes containing the path from root to target node"""
@@ -104,22 +151,23 @@ class BST(VGroup):
             if node is None:
                 return None
             path.append(node)
-            if key < node.key:
+            if key < node:
                 return search_helper(node.left, key)
-            elif key > node.key:
+            elif key > node:
                 return search_helper(node.right, key)
+            elif node.right is not None and node.right.key == key:
+                return search_helper(node.left, key)
             else:
                 return node
 
-        key_val = key.key if isinstance(key, Node) else key
-        return search_helper(self.root, key_val), path[:-1]
+        return search_helper(self.root, key), path[:-1]
 
     def delete_key(self, key):  # TODO: update heights and remove edges and node from self and self.edges
         """Deletes the node with the given key from the tree"""
         parent, temp, is_left_child = None, self.root, False
         while temp.key != key:
             parent = temp
-            if key < temp.key:
+            if key < temp:
                 is_left_child = True
                 temp = temp.left
             else:
@@ -153,8 +201,8 @@ class BST(VGroup):
 
     # ----------------- Layout ----------------- #
 
-    def create_layout(self, left=-config.frame_width / 2, width=config.frame_width, top=config.frame_height / 2,
-                      height=config.frame_height, extra_space_at_top=False):
+    def set_layout(self, left=-config.frame_width / 2, width=config.frame_width, top=config.frame_height / 2,
+                   height=config.frame_height, extra_space_at_top=False):
         """
         Positions the nodes of the given binary search tree in a way that
         minimizes overlap and maximizes horizontal distance.
@@ -192,9 +240,9 @@ class BST(VGroup):
     # ----------------- Draw ----------------- #
 
     def create_tree(self):
-        """Creates the tree from the root node"""
+        """Creates the tree layout and edges and updates the nodes"""
         if self.layout is None:
-            self.create_layout()
+            self.set_layout()
 
         self.update_nodes()
 
@@ -202,7 +250,6 @@ class BST(VGroup):
             for child in [n for n in [node.left, node.right] if n is not None]:
                 if (node, child) not in self.edges:
                     self.create_edge(node, child)
-        # self.traverse(self.create_edge)
 
     def create_edge(self, node, child, **kwargs):
         edge_params = dict(start=node, end=child, buff=0, z_index=-10)
@@ -210,20 +257,25 @@ class BST(VGroup):
             edge_params["weight"] = create_bst_weight("<" if node.left is child else r"\geq", node)
         self.edges[(node, child)] = Edge(**edge_params)
         self.add(self.edges[(node, child)])
+        return self.edges[(node, child)]
 
     def update_nodes(self):
+        """Updates the nodes to their new positions in the layout"""
         for node in self.nodes:
             node.move_to(self.layout[node])
 
-    def update_layout(self):
-        self.create_layout()
+    def update_tree_layout(self):
+        self.set_layout()
         self.update_nodes()
 
     def update_edges(self, graph):
         for (u, v), edge in graph.edges.items():
-            # self.create_edge(u, v)
+            if edge.weight_mob is not None:
+                edge.remove(edge.weight_mob)
             edge.put_start_and_end_on(u.get_center(), v.get_center())
-            if self.weighted:
+            if edge.weight_mob is not None:
+                edge.add(edge.weight_mob)
+            if self.weighted and edge.weight_mob is not None:
                 edge.weight_mob.move_to(edge.get_center())
 
 
@@ -287,48 +339,13 @@ def shift_tree_cols(bst: BST, amount_to_shift: float, relative_positions: dict[N
     bst.traverse_sub_tree(node.right, shift_func, amount_to_shift=amount_to_shift)
 
 
-def insert_bst(scene: Scene, bst: BST, key: int, left=-7, width=14, top=4, height=8):
-    """Inserts the given key to the BST and animates the process"""
-    # position_bst_layout(bst, left, width, top, height)
-    shift_bst = bst.copy()
-    # old_scale = position_bst_layout(shift_bst, left, width, top, height, True)
-
-    bst.insert_keys(key)
-    new_bst = bst.copy()
-    # new_scale = position_bst_layout(new_bst, left, width, top, height)
-    new_bst.create_tree()
-    key_node, path = bst.search(key)
-
-    tracing_circle = Node(key=key, color=YELLOW)
-    tracing_circle.next_to(shift_bst.search(path[0])[0], UP)
-
-    # scene.add(*old_arrows.values(), *old_circles.values())
-
-    scene.play(transform_bst(bst, shift_bst), FadeIn(tracing_circle))
-    scene.wait()
-
-    for node in path[1:]:
-        scene.play(tracing_circle.animate.next_to(shift_bst.search(node)[0], UP))
-        scene.wait()
-
-    scene.play(transform_bst(bst, new_bst), Transform(tracing_circle, new_bst.search(key_node)[0]))
-    scene.wait()
-
-    # scene.play(FadeIn(new_bst.edges[key_node]))
-    scene.wait()
-
-    to_remove = [bst, tracing_circle, new_bst]
-
-    return to_remove
-
-
 def create_bst_weight(weight: str | LabeledDot, relative_node: Node, **kwargs) -> LabeledDot:
     params = {**WEIGHT_CONFIG, **{"fill_color": BST_WEIGHT_COLOR, "stroke_color": BST_WEIGHT_COLOR,
                                   "stroke_width": 0}}
     weight_mob = LabeledDot(label=MathTex(weight, fill_color=BST_WEIGHT_FONT_COLOR), **params).scale_to_fit_height(
-        relative_node.height * BST_WEIGHT_SCALE) if isinstance(weight,
-                                                               str) else weight
-    weight_mob[1].scale(BST_WEIGHT_LABEL_SCALE)
+        relative_node.height * WEIGHT_SCALE) if isinstance(weight,
+                                                           str) else weight
+    weight_mob[1].scale(WEIGHT_LABEL_SCALE)
     return weight_mob
 
 
