@@ -74,14 +74,13 @@ class InsertAllElements(SectionsScene):
         # random_list = sample(range(20), 10)
         start_insert = 4
         random_list = [10, 5, 15, 7, 12, 6, 13, 8, 11]
-        random_list = BASE_TREE_VERTICES[:start_insert + 2]
+        random_list = BASE_TREE_VERTICES[:start_insert + 5]
         bst = BST(random_list[:start_insert])
         bst.create_tree()
         self.add(bst)
-        # self.add(*[edge.weight_mob for edge in bst.edges.values()])
         self.wait()
-        fast_insert = False
-        run_time_factor = 0.5 if fast_insert else 1
+        fast_insert = True
+        run_time_factor = 0.2 if fast_insert else 1
 
         for i in random_list[start_insert:]:
             self.next_section(f"Inserting key {i}", skip_section=fast_insert)
@@ -92,7 +91,7 @@ class InsertAllElements(SectionsScene):
 
             for node in path:
                 if node.parent is not None and not fast_insert:
-                    self.next_section("Wiggle weight")
+                    self.next_section("Wiggle weight", skip_section=fast_insert)
                     self.play(Wiggle(bst.edges[(node.parent, node)].weight_mob, scale_value=2, n_wiggles=14,
                                      rotation_angle=0.02 * TAU, run_time=2))
                 self.play(new_key.animate(run_time=1 * run_time_factor).next_to(node, UP))
@@ -100,7 +99,6 @@ class InsertAllElements(SectionsScene):
             self.play(bst.animate(run_time=1 * run_time_factor).update_tree_layout())
             new_edge = bst.create_edge(new_key.parent, new_key)
             new_edge.draw_edge(self, run_time=1.5 * run_time_factor)
-            self.wait()
 
 
 if __name__ == "__main__":
