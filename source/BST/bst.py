@@ -31,79 +31,50 @@ BASE_TREE_EDGES = [(10, 13), (10, 14), (14, 20), (14, 23), (23, 31), (31, 25), (
 
 # ----------------------------------    BST scenes   ---------------------------------- #
 
-
-class DrawOneBST(Scene):
-    """Draws one binary search tree of 30 random numbers"""
-
-    def construct(self):
-        bst = BST(BASE_TREE_VERTICES)
-        bst = BST(rnd.sample(range(30), 30))
-        self.add(bst)
-        self.wait()
-
-
-class DrawManyBSTs(Scene):
-    """Draws many binary search trees, transitioning between them"""
+class BSTScene(SectionsScene):
+    def __init__(self, keys: list = None, **kwargs):
+        super().__init__(**kwargs)
+        self.bst = BST(keys)
+        self.bst.create_tree()
+        self.add(self.bst)
 
     def construct(self):
-        bst = BST(rnd.sample(range(100), 30))
-        position_bst_layout(bst)
-        self.add(bst)
-        self.wait()
+        pass
 
-        for i in range(30):
-            new_bst = BST(rnd.sample(range(100), 30))
-            position_bst_layout(bst)
-            self.add(bst)
-            self.play(Transform(bst, new_bst))
-            self.wait()
-
-
-class InsertOneElement(Scene):
-    """Inserts a random element to a random BST of size 30"""
-
-    def construct(self):
-        random_list = rnd.sample(range(100), 31)
-        insert_bst(self, BST(random_list[:-1]), random_list[-1])
-
-
-class InsertAllElements(SectionsScene):
-    """Builds a BST with a random list of elements"""
-
-    def construct(self):
-        # random_list = sample(range(20), 10)
-        start_insert = 4
-        random_list = [10, 5, 15, 7, 12, 6, 13, 8, 11]
-        random_list = BASE_TREE_VERTICES[:start_insert + 5]
-        bst = BST(random_list[:start_insert])
-        bst.create_tree()
-        self.add(bst)
-        self.wait()
-        fast_insert = True
+    def insert_keys_anim(self, keys: list, fast_insert: bool = False):
         run_time_factor = 0.2 if fast_insert else 1
-
-        for i in random_list[start_insert:]:
+        for i in keys:
             self.next_section(f"Inserting key {i}", skip_section=fast_insert)
-            new_key = bst.insert_keys([i])[0]
-            path = bst.search(new_key)[1]
-            new_key.next_to(bst.root, UP)
+            new_key = self.bst.insert_keys([i])[0]
+            path = self.bst.search(new_key)[1]
+            new_key.next_to(self.bst.root, UP)
             self.play(Write(new_key), run_time=1 * run_time_factor)
 
             for node in path:
                 if node.parent is not None and not fast_insert:
                     self.next_section("Wiggle weight", skip_section=fast_insert)
-                    self.play(Wiggle(bst.edges[(node.parent, node)].weight_mob, scale_value=2, n_wiggles=14,
+                    self.play(Wiggle(self.bst.edges[(node.parent, node)].weight_mob, scale_value=2, n_wiggles=14,
                                      rotation_angle=0.02 * TAU, run_time=2))
                 self.play(new_key.animate(run_time=1 * run_time_factor).next_to(node, UP))
 
-            self.play(bst.animate(run_time=1 * run_time_factor).update_tree_layout())
-            new_edge = bst.create_edge(new_key.parent, new_key)
+            self.play(self.bst.animate(run_time=1 * run_time_factor).update_tree_layout())
+            new_edge = self.bst.create_edge(new_key.parent, new_key)
             new_edge.draw_edge(self, run_time=1.5 * run_time_factor)
+
+
+class SimpleBST(BSTScene):
+    def __init__(self, **kwargs):
+        keys = BASE_TREE_VERTICES[:5]
+        super().__init__(keys=keys, **kwargs)
+
+    def construct(self):
+        super().construct()
+        self.insert_keys_anim(BASE_TREE_VERTICES[5:])
 
 
 if __name__ == "__main__":
     rnd.seed(1)
     # scenes_lst = [DrawOneBST]
-    scenes_lst = [InsertAllElements]
+    scenes_lst = [SimpleBST]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])

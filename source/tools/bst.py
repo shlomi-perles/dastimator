@@ -17,7 +17,7 @@ NODES_RELATIVE_HEIGHT = config.frame_height * 0.09
 class Node(LabeledDot):
     """Simple class that represents a BST node"""
 
-    def __init__(self, key=None, label=None, tree_height=0, relative_height=None, **kwargs):
+    def __init__(self, key=None, label=None, relative_height=None, **kwargs):
         if label is not isinstance(label, SVGMobject) and label is not None:
             label = MathTex(label, fill_color=LABEL_COLOR)
         label_scale = kwargs.pop("label_scale", VERTEX_LABEL_SCALE)
@@ -30,7 +30,6 @@ class Node(LabeledDot):
         self.left = None
         self.right = None
         self.parent = None
-        self.tree_height = tree_height
 
     def __str__(self):
         return str(self.key)
@@ -113,12 +112,9 @@ class BST(VGroup):
             self.create_tree()
         self.add_updater(self.update_edges)
 
-    def get_height(self):
-        return max(self.nodes, key=lambda node: node.tree_height).tree_height
-
-    def _insert_key(self, key: int | Node, node: Node = None, parent: Node = None, tree_height: int = 0) -> Node:
+    def _insert_key(self, key: int | Node, node: Node = None, parent: Node = None) -> Node:
         if node is None:
-            ret_key = key if isinstance(key, Node) else Node(key, tree_height=tree_height)
+            ret_key = key if isinstance(key, Node) else Node(key)
             if parent != None:
                 ret_key.parent = parent
             self.nodes += ret_key
@@ -126,9 +122,9 @@ class BST(VGroup):
             return ret_key
 
         if key < node:
-            node.left = self._insert_key(key, node.left, parent=node, tree_height=tree_height + 1)
+            node.left = self._insert_key(key, node.left, parent=node)
         else:
-            node.right = self._insert_key(key, node.right, parent=node, tree_height=tree_height + 1)
+            node.right = self._insert_key(key, node.right, parent=node)
         return node
 
     def insert_keys(self, keys: list | int, set_root=False):
@@ -162,29 +158,43 @@ class BST(VGroup):
 
         return search_helper(self.root, key), path[:-1]
 
-    def delete_key(self, key):  # TODO: update heights and remove edges and node from self and self.edges
+    def delete_key(self,
+                   key: Node | float | int):  # TODO: update heights and remove edges and node from self and self.edges
         """Deletes the node with the given key from the tree"""
-        parent, temp, is_left_child = None, self.root, False
-        while temp.key != key:
-            parent = temp
-            if key < temp:
-                is_left_child = True
-                temp = temp.left
-            else:
-                temp = temp.right
+        key = key if isinstance(key, Node) else self.search(key)[0]
+        if key is None:
+            return
 
-        if temp.left is None and temp.right is None:
-            if parent is None:
-                self.root = None
-                return
-            if is_left_child:
-                parent.left = None
-            else:
-                parent.right = None
+        if key.left is None:
+            self.transplant(key, key.right)
+        elif key.right is None:
+            self.transplant(key, key.left)
+        else:
+            y = self.minimum(key.right)
+            if y.parent != key:
+                self.transplant(y, y.right)
+                y.right = key.right
+                y.right.parent = y
+            self.transplant(key, y)
+            y.left = key.left
+            y.left.parent = y
 
-        elif temp.left is None or temp.right is None:
-            if parent is None:
-                self.root = temp.left
+    def minimum(self, node: Node) -> Node:
+        """Returns the minimum node in the sub-tree"""
+        while node.left is not None:
+            node = node.left
+        return node
+
+    def transplant(self, u: Node, v: Node):
+        if u.parent is None:
+            self.root = v
+            self.root.parent = None
+        elif u == u.parent.left:
+            u.parent.left = v
+        else:
+            u.parent.right = v
+        if v is not None:
+            v.parent = u.parent
 
     def traverse(self, func, **kwargs):
         """Traverses the tree in a depth-first manner"""
