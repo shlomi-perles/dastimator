@@ -4,9 +4,8 @@ from manim import *
 from manim import AnimationGroup
 from manim_fonts import *
 from moviepy.editor import VideoFileClip, concatenate_videoclips
-from .consts import LINES_OFF_OPACITY, MEDIA_PATH, BACKGROUND_COLOR
+from .consts import LINES_OFF_OPACITY, DISTANCE_LABEL_COLOR, DISTANCE_LABEL_SCALE, DISTANCE_LABEL_BUFFER
 from .scenes import SectionsScene
-import imageio.v3 as iio
 
 QFLAGS_TO_QUALITY = {v["flag"]: k for k, v in QUALITIES.items() if v["flag"] is not None}
 DEFAULT_GIF_SCENES = list(range(1, 3))
@@ -61,9 +60,6 @@ def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int]
         DEFAULT_GIF_RESIZE) for i in section_num_lst]
 
     concatenate_videoclips(clips).write_gif(str(gif_dir / f"{scene_name}.gif"), fps=13)
-    # clip.write_gif(gif_path, fps=10)
-    # frames = np.vstack(gifs)
-    # iio.imwrite(str(gif_dir / f"{scene_name}.gif"), frames, duration=iio.immeta(gif_path)["duration"])
 
 
 # ---------------------------- Code ----------------------------
