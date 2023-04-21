@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from manim import *
 from typing import Hashable, Iterable, Optional, Tuple, Union, List, Any
 from .consts import *
-from copy import deepcopy
 
 BST_WEIGHT_COLOR = WHITE
 BST_WEIGHT_FONT_COLOR = BLACK
@@ -84,6 +82,7 @@ class Edge(Line):
         return f"Edge({self.start.key}, {self.end.key}{(',' + self.weight) if self.weight is not None else ''})"
 
     def update_weight(self, edge):
+        self.move_to(self)
         if self.weight_mob is not None:
             self.weight_mob.move_to(edge.get_center())
 
@@ -95,6 +94,11 @@ class Edge(Line):
         self.add(weight)
         self.weight_mob = weight
         scene.play(Write(self.weight_mob), run_time=run_time * (1 - relative_line_run_time), **kwargs)
+
+    def fix_z_index(self):
+        self.start.set_z_index(0)
+        self.end.set_z_index(0)
+        self.set_z_index(-10)
 
 
 class BST(VGroup):
@@ -178,6 +182,7 @@ class BST(VGroup):
             self.transplant(key, y)
             y.left = key.left
             y.left.parent = y
+        return key
 
     def minimum(self, node: Node) -> Node:
         """Returns the minimum node in the sub-tree"""
@@ -185,10 +190,12 @@ class BST(VGroup):
             node = node.left
         return node
 
-    def transplant(self, u: Node, v: Node):
+    def transplant(self, u: Node, v: Node, **kwargs) -> list[Animation]:
+        animations = []
         if u.parent is None:
             self.root = v
             self.root.parent = None
+            return self.edges[(u.parent, u)]
         elif u == u.parent.left:
             u.parent.left = v
         else:

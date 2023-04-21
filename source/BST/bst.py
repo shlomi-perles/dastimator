@@ -41,25 +41,40 @@ class BSTScene(SectionsScene):
     def construct(self):
         pass
 
-    def insert_keys_anim(self, keys: list, fast_insert: bool = False):
+    def animate_key_insert(self, key: int, fast_insert: bool = False):
         run_time_factor = 0.2 if fast_insert else 1
-        for i in keys:
-            self.next_section(f"Inserting key {i}", skip_section=fast_insert)
-            new_key = self.bst.insert_keys([i])[0]
-            path = self.bst.search(new_key)[1]
-            new_key.next_to(self.bst.root, UP)
-            self.play(Write(new_key), run_time=1 * run_time_factor)
+        self.next_section(f"Inserting key {key}", skip_section=fast_insert)
+        new_key = self.bst.insert_keys([key])[0]
+        path = self.bst.search(new_key)[1]
+        new_key.next_to(self.bst.root, UP)
+        self.play(Write(new_key), run_time=1 * run_time_factor)
+        animations = []
+        for node in path:
+            if node.parent is not None and not fast_insert:
+                self.next_section("Wiggle weight", skip_section=fast_insert)
+                animations.append(self.bst.edges[(node.parent, node)].animate(run_time=0.001).fix_z_index())
+                animations.append(Wiggle(self.bst.edges[(node.parent, node)].weight_mob, scale_value=2, n_wiggles=14,
+                                         rotation_angle=0.02 * TAU, run_time=2))
+            animations.append(new_key.animate(run_time=1 * run_time_factor).next_to(node, UP))
+            self.play(AnimationGroup(*animations, lag_ratio=0.5, suspend_mobject_updating=False))
 
-            for node in path:
-                if node.parent is not None and not fast_insert:
-                    self.next_section("Wiggle weight", skip_section=fast_insert)
-                    self.play(Wiggle(self.bst.edges[(node.parent, node)].weight_mob, scale_value=2, n_wiggles=14,
-                                     rotation_angle=0.02 * TAU, run_time=2))
-                self.play(new_key.animate(run_time=1 * run_time_factor).next_to(node, UP))
+        self.play(self.bst.animate(run_time=1 * run_time_factor).update_tree_layout())
+        new_edge = self.bst.create_edge(new_key.parent, new_key)
+        new_edge.draw_edge(self, run_time=1.5 * run_time_factor)
 
-            self.play(self.bst.animate(run_time=1 * run_time_factor).update_tree_layout())
-            new_edge = self.bst.create_edge(new_key.parent, new_key)
-            new_edge.draw_edge(self, run_time=1.5 * run_time_factor)
+    def delete_key(self, key: int, fast_delete: bool = False):
+        run_time_factor = 0.2 if fast_delete else 1
+        self.next_section(f"Deleting key {key}", skip_section=fast_delete)
+        node = self.bst.delete_key(key)
+        if node.right is not None and node.left is not None:
+            pass
+        edge_to_delete = self.bst.edges[(node.parent, node)]
+        edge_to_update = self.bst.edges[(node, node.right_child)] if node.right_child is not None else None
+        self.play(node.animate(run_time=1 * run_time_factor).set_color(RED))
+        self.play(node.animate(run_time=1 * run_time_factor).set_color(WHITE))
+        self.bst.delete_key(key)
+        self.play(self.bst.animate(run_time=1 * run_time_factor).update_tree_layout())
+        self.next_section(f"Key {key} deleted", skip_section=fast_delete)
 
 
 class SimpleBST(BSTScene):
@@ -69,7 +84,8 @@ class SimpleBST(BSTScene):
 
     def construct(self):
         super().construct()
-        self.insert_keys_anim(BASE_TREE_VERTICES[5:])
+        for key in BASE_TREE_VERTICES[5:7]:
+            self.animate_key_insert(key)
 
 
 if __name__ == "__main__":
