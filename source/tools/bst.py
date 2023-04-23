@@ -29,6 +29,20 @@ class Node(LabeledDot):
         self.right = None
         self.parent = None
 
+    def indicate(self, scene: Scene, **kwargs):
+        self.remove(self.label)
+        scene.add(self.label)
+        self.label.set_z_index(self.z_index + 1)
+
+        def on_finish(scene: Scene):
+            scene.remove(self.label)
+            self.label.set_z_index(self.z_index)
+            self.add(self.label)
+
+        label_kwargs = {k: v for k, v in kwargs.items() if k != "color"}
+        return AnimationGroup(Indicate(self, **kwargs), Indicate(self.label, color=self.label.color, **label_kwargs),
+                              group=self, _on_finish=on_finish)
+
     def __str__(self):
         return str(self.key)
 
@@ -100,6 +114,21 @@ class Edge(Line):
         self.end.set_z_index(0)
         self.set_z_index(-10)
 
+    def animate_move_along_path(self, scene: Scene, flash_color=VISITED_COLOR, width_factor=1, **kwargs):
+        self.fix_z_index()
+        self.remove(self.weight_mob)
+        scene.add(self.weight_mob)
+        self.weight_mob.set_z_index(self.z_index + 1)
+
+        def on_finish(scene: Scene):
+            scene.remove(self.weight_mob)
+            self.weight_mob.set_z_index(self.z_index)
+            self.add(self.weight_mob)
+
+        return AnimationGroup(
+            ShowPassingFlash(self.copy().set_color(flash_color).set_stroke_width(width_factor * self.stroke_width),
+                             **kwargs), group=self, _on_finish=on_finish)
+
 
 class BST(VGroup):
     """Class that represents a full binary search tree"""
@@ -107,8 +136,8 @@ class BST(VGroup):
     def __init__(self, keys: list = None, weighted: bool = True, layout=None, **kwargs):
         super().__init__(**kwargs)
         self.root = None
-        self.edges = {}
-        self.nodes = VGroup()
+        self.edges = {}  # edges are not added as a group. They are added one by one to the scene when they are created.
+        self.nodes = VGroup()  # same as edges.
         self.weighted = weighted
         self.layout = layout
         if keys is not None:
@@ -162,19 +191,23 @@ class BST(VGroup):
 
         return search_helper(self.root, key), path[:-1]
 
-    def delete_key(self,
-                   key: Node | float | int):  # TODO: update heights and remove edges and node from self and self.edges
+    def delete_key(self, key: Node | float | int) -> tuple[Node | None, Node | None, Edge | None, Edge | None] | None:
+        # TODO: update heights and remove edges and node from self and self.edges
         """Deletes the node with the given key from the tree"""
+        remove_edge, update_edge, min_key = None, None, None
         key = key if isinstance(key, Node) else self.search(key)[0]
         if key is None:
             return
 
         if key.left is None:
             self.transplant(key, key.right)
+            remove_edge = self.edges.pop((key.parent, key))
         elif key.right is None:
             self.transplant(key, key.left)
+            remove_edge = self.edges.pop((key.parent, key))
         else:
-            y = self.minimum(key.right)
+            y = min_key = self.minimum(key.right)
+            remove_edge = self.edges.pop((y.parent, y))
             if y.parent != key:
                 self.transplant(y, y.right)
                 y.right = key.right
@@ -182,20 +215,15 @@ class BST(VGroup):
             self.transplant(key, y)
             y.left = key.left
             y.left.parent = y
-        return key
 
-    def minimum(self, node: Node) -> Node:
-        """Returns the minimum node in the sub-tree"""
-        while node.left is not None:
-            node = node.left
-        return node
+        self.remove(remove_edge)
+        self.remove(key)
+        return key, min_key, remove_edge, update_edge
 
-    def transplant(self, u: Node, v: Node, **kwargs) -> list[Animation]:
-        animations = []
+    def transplant(self, u: Node, v: Node):
         if u.parent is None:
             self.root = v
             self.root.parent = None
-            return self.edges[(u.parent, u)]
         elif u == u.parent.left:
             u.parent.left = v
         else:
@@ -215,6 +243,12 @@ class BST(VGroup):
             kwargs["depth"] += 1
         self.traverse_sub_tree(node.left, func, **kwargs)
         self.traverse_sub_tree(node.right, func, **kwargs)
+
+    def minimum(self, node: Node) -> Node:
+        """Returns the minimum node in the sub-tree"""
+        while node.left is not None:
+            node = node.left
+        return node
 
     # ----------------- Layout ----------------- #
 

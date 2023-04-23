@@ -19,7 +19,11 @@ OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 PRESENTATION_MODE = False
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
-
+# ----------------------------------    consts   ---------------------------------- #
+NODE_INDICATE_COLOR = GREEN
+MOVE_PATH_RUNTIME = 4
+MOVE_PATH_WIDTH_FACTOR = 2
+PATH_TIME_WIDTH = 0.6
 # ----------------------------------    trees    ---------------------------------- #
 LAYOUT_CONFIG = {"vertex_spacing": (1, 1.2)}
 
@@ -48,49 +52,79 @@ class BSTScene(SectionsScene):
         path = self.bst.search(new_key)[1]
         new_key.next_to(self.bst.root, UP)
         self.play(Write(new_key), run_time=1 * run_time_factor)
-        animations = []
         for node in path:
+            animations = []
             if node.parent is not None and not fast_insert:
                 self.next_section("Wiggle weight", skip_section=fast_insert)
-                animations.append(self.bst.edges[(node.parent, node)].animate(run_time=0.001).fix_z_index())
+                animations.append(self.bst.edges[(node.parent, node)].animate(
+                    run_time=0.001).fix_z_index())  # TODO: create wiggle anim
                 animations.append(Wiggle(self.bst.edges[(node.parent, node)].weight_mob, scale_value=2, n_wiggles=14,
                                          rotation_angle=0.02 * TAU, run_time=2))
             animations.append(new_key.animate(run_time=1 * run_time_factor).next_to(node, UP))
-            self.play(AnimationGroup(*animations, lag_ratio=0.5, suspend_mobject_updating=False))
+            self.play(AnimationGroup(*animations, lag_ratio=0.8, suspend_mobject_updating=False))
 
         self.play(self.bst.animate(run_time=1 * run_time_factor).update_tree_layout())
         new_edge = self.bst.create_edge(new_key.parent, new_key)
         new_edge.draw_edge(self, run_time=1.5 * run_time_factor)
 
-    def delete_key(self, key: int, fast_delete: bool = False):
+    def animate_delete_key(self, key: int, fast_delete: bool = False):
         run_time_factor = 0.2 if fast_delete else 1
         self.next_section(f"Deleting key {key}", skip_section=fast_delete)
-        node = self.bst.delete_key(key)
-        if node.right is not None and node.left is not None:
-            pass
-        edge_to_delete = self.bst.edges[(node.parent, node)]
-        edge_to_update = self.bst.edges[(node, node.right_child)] if node.right_child is not None else None
-        self.play(node.animate(run_time=1 * run_time_factor).set_color(RED))
-        self.play(node.animate(run_time=1 * run_time_factor).set_color(WHITE))
-        self.bst.delete_key(key)
-        self.play(self.bst.animate(run_time=1 * run_time_factor).update_tree_layout())
-        self.next_section(f"Key {key} deleted", skip_section=fast_delete)
+        key, min_key, remove_edge, update_edge = self.bst.delete_key(key)
+        self.add(key, remove_edge)
+        # self.play(remove_edge.animate_move_along_path(self, run_time=4 * run_time_factor, flash_color=GREEN,
+        #                                               width_factor=2, time_width=0.6))
+        # self.play(min_key.indicate(self, color=GREEN, scale_factor=1.5, run_time=1 * run_time_factor))
+        self.animate_minimum_find(min_key, min_key, remove_edge, run_time_factor)
+        # self.play(Unwrite(key), run_time=1 * run_time_factor)
+
+    def animate_minimum_find(self, node: Node, min_key: Node, remove_edge: Edge, run_time_factor: float,
+                             **kwargs) -> AnimationGroup:
+        animations_lst = [
+            node.indicate(self, color=NODE_INDICATE_COLOR, scale_factor=1.3, run_time=1 * run_time_factor)]
+        while node.left.key != min_key.key:
+            animations_lst.append(
+                self.bst.edges[(node, node.left)].animate_move_along_path(self,
+                                                                          run_time=MOVE_PATH_RUNTIME * run_time_factor,
+                                                                          flash_color=NODE_INDICATE_COLOR,
+                                                                          width_factor=MOVE_PATH_WIDTH_FACTOR,
+                                                                          time_width=PATH_TIME_WIDTH))
+            animations_lst.append(node.left.indicate(self, color=NODE_INDICATE_COLOR, scale_factor=1.5,
+                                                     run_time=1 * run_time_factor))
+            node = node.left
+
+        animations_lst.append(remove_edge.animate_move_along_path(self, run_time=MOVE_PATH_RUNTIME * run_time_factor,
+                                                                  flash_color=NODE_INDICATE_COLOR,
+                                                                  width_factor=MOVE_PATH_WIDTH_FACTOR,
+                                                                  time_width=PATH_TIME_WIDTH))
+        animations_lst.append(Flash(node.left, run_time=1 * run_time_factor))
+        return AnimationGroup(*animations_lst, lag_ratio=0.8 * run_time_factor, **kwargs)
 
 
-class SimpleBST(BSTScene):
+class CheckBSTInsert(BSTScene):
     def __init__(self, **kwargs):
         keys = BASE_TREE_VERTICES[:5]
         super().__init__(keys=keys, **kwargs)
 
     def construct(self):
         super().construct()
-        for key in BASE_TREE_VERTICES[5:7]:
+        for key in BASE_TREE_VERTICES[5:]:
             self.animate_key_insert(key)
+
+
+class CheckBSTDelete(BSTScene):
+    def __init__(self, **kwargs):
+        keys = BASE_TREE_VERTICES
+        super().__init__(keys=keys, **kwargs)
+
+    def construct(self):
+        super().construct()
+        self.animate_delete_key(23)
 
 
 if __name__ == "__main__":
     rnd.seed(1)
-    # scenes_lst = [DrawOneBST]
-    scenes_lst = [SimpleBST]
+    # scenes_lst = [CheckBSTInsert]
+    scenes_lst = [CheckBSTDelete]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])
