@@ -1,15 +1,8 @@
 from __future__ import annotations
 
-from typing import Hashable
-
-from manim_editor import PresentationSectionType as pst
-
-from tools.array import *
-from tools.consts import *
 from tools.funcs import *
 from tools.bst import *
 from tools.scenes import *
-from tools.my_graphs import DiGraph
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
@@ -75,6 +68,7 @@ class BSTScene(SectionsScene):
         minimum_scenario = key_node.left is not None and key_node.right is not None
         if minimum_scenario:
             self.play(self.animate_minimum_find(key_node.right, run_time_factor))
+        self.bst.remove_updater(self.bst.update_edges)
         key, min_key, remove_edge, update_edge = self.bst.delete_key(key)
         if key is not None:
             self.add(key)
@@ -92,6 +86,10 @@ class BSTScene(SectionsScene):
             self.play(
                 update_edge.animate(run_time=1 * run_time_factor).put_start_and_end_on(update_edge.start.get_center(),
                                                                                        update_edge.end.get_center()))
+        if minimum_scenario:
+            self.play(min_key.animate(run_time=1 * run_time_factor).set_color(fill_color=VERTEX_COLOR,
+                                                                              stroke_color=VERTEX_STROKE_COLOR))
+        self.bst.add_updater(self.bst.update_edges)
         self.play(self.bst.animate.update_tree_layout(), run_time=1 * run_time_factor)
 
     def animate_minimum_find(self, node: Node, run_time_factor: float, **kwargs) -> AnimationGroup:
@@ -110,7 +108,8 @@ class BSTScene(SectionsScene):
                 IndicateNode(node, fill_color=GREEN_E, stroke_color=NODE_INDICATE_COLOR, run_time=1 * run_time_factor))
             animations_lst.append(AnimationGroup(*mini_anim, lag_ratio=0.15 * run_time_factor))
             node = node.left
-        animations_lst.append(IndicateNode(node, run_time=1 * run_time_factor, scale_factor=1.5))
+        animations_lst.append(
+            IndicateNode(node, run_time=1 * run_time_factor, scale_factor=1.5, preserve_indicate_color=True))
         return AnimationGroup(*animations_lst, lag_ratio=0.5 * run_time_factor, **kwargs)
 
 
@@ -133,6 +132,9 @@ class CheckBSTDelete(BSTScene):
     def construct(self):
         super().construct()
         self.animate_delete_key(23)
+        self.animate_delete_key(25)
+        self.animate_delete_key(34)
+        self.animate_delete_key(10)
 
 
 if __name__ == "__main__":
