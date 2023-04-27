@@ -10,7 +10,6 @@ from tools.funcs import *
 from tools.bst import *
 from tools.scenes import *
 from tools.my_graphs import DiGraph
-import random as rnd
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
@@ -65,7 +64,7 @@ class BSTScene(SectionsScene):
 
         self.play(self.bst.animate(run_time=1 * run_time_factor).update_tree_layout())
         new_edge = self.bst.create_edge(new_key.parent, new_key)
-        new_edge.draw_edge(self, run_time=1.5 * run_time_factor)
+        self.play(new_edge.draw_edge(run_time=1.5 * run_time_factor))
 
     def animate_delete_key(self, key: int, fast_delete: bool = False):
         run_time_factor = 0.2 if fast_delete else 1
@@ -135,7 +134,6 @@ class CheckBSTDelete(BSTScene):
 
 
 if __name__ == "__main__":
-    rnd.seed(1)
     # scenes_lst = [CheckBSTInsert]
     scenes_lst = [CheckBSTDelete]
 
