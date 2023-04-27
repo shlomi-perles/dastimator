@@ -12,6 +12,40 @@ BST_WEIGHT_FONT_COLOR = BLACK
 NODES_RELATIVE_HEIGHT = config.frame_height * 0.09
 
 
+class IndicateNode(Transform):
+    def __init__(
+            self, mobject: "Mobject", scale_factor: float = 1.2, fill_color: str = YELLOW_E, stroke_color: str = YELLOW,
+            return_to_color=True, rate_func: Callable[[float, Optional[float]], np.ndarray] = there_and_back,
+            **kwargs) -> None:
+        self.fill_color = fill_color
+        self.stroke_color = stroke_color
+        self.return_to_color = return_to_color
+        self.scale_factor = scale_factor
+        super().__init__(mobject, rate_func=rate_func, **kwargs)
+        Indicate
+
+    def create_target(self) -> "Mobject":
+        self.mobject.label.set_z_index(self.mobject.z_index + 1)
+        target = self.mobject.copy()
+        target.scale(self.scale_factor)
+        target.set_fill(self.fill_color)
+        target.set_stroke(self.stroke_color)
+        target.label.set_color(WHITE)
+        target.label.set_z_index(target.z_index + 1)
+        return target
+
+    def interpolate_submobject(self, sub, st_mob, tg, alpha):
+        sub.interpolate(st_mob, tg, alpha, self.path_func)
+        # use next row instead if its flashing
+        # sub.interpolate(st_mob, tg, rate_functions.there_and_back(alpha), self.path_func)
+        if alpha > 0.8 and not self.return_to_color and isinstance(st_mob, Node):
+            st_mob.set_fill(self.fill_color)
+            st_mob.set_stroke(self.stroke_color)
+            st_mob.label.set_color(WHITE)
+            st_mob.label.set_z_index(st_mob.z_index + 20)
+        return self
+
+
 class Node(LabeledDot):
     """Simple class that represents a BST node"""
 
@@ -28,20 +62,6 @@ class Node(LabeledDot):
         self.left = None
         self.right = None
         self.parent = None
-
-    def indicate(self, scene: Scene, **kwargs):
-        self.remove(self.label)
-        scene.add(self.label)
-        self.label.set_z_index(self.z_index + 1)
-
-        def on_finish(scene: Scene):
-            scene.remove(self.label)
-            self.label.set_z_index(self.z_index)
-            self.add(self.label)
-
-        label_kwargs = {k: v for k, v in kwargs.items() if k != "color"}
-        return AnimationGroup(Indicate(self, **kwargs), Indicate(self.label, color=self.label.color, **label_kwargs),
-                              group=self, _on_finish=on_finish)
 
     def __str__(self):
         return str(self.key)
@@ -119,6 +139,8 @@ class Edge(VGroup):
                               lag_ratio=lag_ratio)
 
     def fix_z_index(self):
+        if self.start is None or self.end is None:
+            return
         self.start.set_z_index(self.NODE_Z_INDEX)
         self.start.label.set_z_index(self.LABEL_Z_INDEX)
         self.end.set_z_index(self.NODE_Z_INDEX)
@@ -207,29 +229,46 @@ class BST(VGroup):
             return
 
         if key.left is None:
-            update_edge = self.transplant(key, key.right)
-            remove_edge = self.edges.pop((key, key.right), None)
+            self.transplant(key, key.right)
+            remove_edge, update_edge = self.update_transplant_edges(key, key.right)
         elif key.right is None:
-            update_edge = self.transplant(key, key.left)
-            remove_edge = self.edges.pop((key, key.left), None)
+            self.transplant(key, key.left)
+            remove_edge, update_edge = self.update_transplant_edges(key, key.left)
         else:
             y = min_key = self.minimum(key.right)
             remove_edge = self.edges.pop((y, y.right), None)
             if y.parent != key:
-                update_edge = self.transplant(y, y.right)
+                self.transplant(y, y.right)
+                update_edge = self.update_transplant_edges(y, y.right)[1]
                 y.right = key.right
                 y.right.parent = y
             self.transplant(key, y)
             y.left = key.left
             y.left.parent = y
 
+            if y.right is not None:
+                self.edges[(y, y.right)] = self.edges.pop((key, key.right))
+            if y.left is not None:
+                self.edges[(y, y.left)] = self.edges.pop((key, key.left))
+
         self.nodes.remove(key)
         self.remove(remove_edge)
         self.remove(key)
         return key, min_key, remove_edge, update_edge
 
-    def transplant(self, u: Node, v: Node) -> Edge | None:
-        update_edge = None
+    def update_transplant_edges(self, key: Node, child: Node):
+        update_edge, remove_edge = None, None
+        if child is not None:
+            remove_edge = self.edges.pop((key, child), None)
+            update_edge = self.edges.pop((key.parent, key))
+            update_edge.end = child
+            update_edge.parent = child.parent
+            self.edges[(child.parent, child)] = update_edge
+        else:
+            remove_edge = self.edges.pop((key.parent, key), None)
+        return remove_edge, update_edge
+
+    def transplant(self, u: Node, v: Node):
         if u.parent is None:
             self.root = v
             self.root.parent = None
@@ -238,13 +277,14 @@ class BST(VGroup):
             u.parent.left = v
         else:
             u.parent.right = v
-        if (u.parent, u) in self.edges:
-            update_edge = self.edges.pop((u.parent, u))
-            update_edge.end = v
-            self.edges[(u.parent, v)] = update_edge
+        # if (u.parent, u) in self.edges:
+        #     update_edge = self.edges.pop((u.parent, u))
+        #     if v is not None:
+        #         update_edge.end = v
+        #         self.edges[(u.parent, v)] = update_edge
         if v is not None:
             v.parent = u.parent
-        return update_edge
+            # return update_edge
 
     def traverse(self, func, **kwargs):
         """Traverses the tree in a depth-first manner"""

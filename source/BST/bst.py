@@ -16,7 +16,7 @@ sys.path.append(str(ROOT_PATH.parent.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
 PRESENTATION_MODE = False
-DISABLE_CACHING = False
+DISABLE_CACHING = True
 config.background_color = BACKGROUND_COLOR
 # ----------------------------------    consts   ---------------------------------- #
 NODE_INDICATE_COLOR = GREEN
@@ -76,7 +76,11 @@ class BSTScene(SectionsScene):
         if minimum_scenario:
             self.play(self.animate_minimum_find(key_node.right, run_time_factor))
         key, min_key, remove_edge, update_edge = self.bst.delete_key(key)
-        self.add(key, remove_edge)
+        if key is not None:
+            self.add(key)
+        if remove_edge is not None:
+            self.add(remove_edge)
+
         remove_key_anim = []
         remove_key_anim.append(Unwrite(key, run_time=1 * run_time_factor))
         if min_key is not None:
@@ -102,13 +106,11 @@ class BSTScene(SectionsScene):
                                                                           flash_color=NODE_INDICATE_COLOR,
                                                                           width_factor=MOVE_PATH_WIDTH_FACTOR,
                                                                           time_width=PATH_TIME_WIDTH))
-            mini_anim.append(node.indicate(self, color=NODE_INDICATE_COLOR, scale_factor=1.5,
-                                           run_time=1 * run_time_factor))
-
+            mini_anim.append(
+                IndicateNode(node, fill_color=GREEN_E, stroke_color=NODE_INDICATE_COLOR, run_time=1 * run_time_factor))
             animations_lst.append(AnimationGroup(*mini_anim, lag_ratio=0.15 * run_time_factor))
             node = node.left
-        animations_lst.append(
-            node.indicate(self, color=YELLOW, scale_factor=1.5, run_time=1 * run_time_factor))
+        animations_lst.append(IndicateNode(node, run_time=1 * run_time_factor, scale_factor=1.5))
         return AnimationGroup(*animations_lst, lag_ratio=0.5 * run_time_factor, **kwargs)
 
 
