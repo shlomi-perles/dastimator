@@ -70,35 +70,47 @@ class BSTScene(SectionsScene):
     def animate_delete_key(self, key: int, fast_delete: bool = False):
         run_time_factor = 0.2 if fast_delete else 1
         self.next_section(f"Deleting key {key}", skip_section=fast_delete)
+        key_node = self.bst.search(key)[0]
+        if key_node is None:
+            return
+        minimum_scenario = key_node.left is not None and key_node.right is not None
+        if minimum_scenario:
+            self.play(self.animate_minimum_find(key_node.right, run_time_factor))
         key, min_key, remove_edge, update_edge = self.bst.delete_key(key)
         self.add(key, remove_edge)
-        # self.play(remove_edge.animate_move_along_path(self, run_time=4 * run_time_factor, flash_color=GREEN,
-        #                                               width_factor=2, time_width=0.6))
-        # self.play(min_key.indicate(self, color=GREEN, scale_factor=1.5, run_time=1 * run_time_factor))
-        self.animate_minimum_find(min_key, min_key, remove_edge, run_time_factor)
-        # self.play(Unwrite(key), run_time=1 * run_time_factor)
+        remove_key_anim = []
+        remove_key_anim.append(Unwrite(key, run_time=1 * run_time_factor))
+        if min_key is not None:
+            remove_key_anim.append(min_key.animate(run_time=1 * run_time_factor).move_to(key.get_center()))
+        self.play(AnimationGroup(*remove_key_anim, lag_ratio=0.8))
+        if remove_edge is not None:
+            self.play(Unwrite(remove_edge), run_time=1 * run_time_factor)
+        if update_edge is not None:
+            self.play(
+                update_edge.animate(run_time=1 * run_time_factor).put_start_and_end_on(update_edge.start.get_center(),
+                                                                                       update_edge.end.get_center()))
+        self.play(self.bst.animate.update_tree_layout(), run_time=1 * run_time_factor)
 
-    def animate_minimum_find(self, node: Node, min_key: Node, remove_edge: Edge, run_time_factor: float,
-                             **kwargs) -> AnimationGroup:
-        animations_lst = [
-            node.indicate(self, color=NODE_INDICATE_COLOR, scale_factor=1.3, run_time=1 * run_time_factor)]
-        while node.left.key != min_key.key:
-            animations_lst.append(
+    def animate_minimum_find(self, node: Node, run_time_factor: float, **kwargs) -> AnimationGroup:
+
+        animations_lst = []
+        while node.left is not None:
+            # flash_color = YELLOW if node.left.left is None or node == start_node else NODE_INDICATE_COLOR
+            mini_anim = []
+            mini_anim.append(
                 self.bst.edges[(node, node.left)].animate_move_along_path(self,
                                                                           run_time=MOVE_PATH_RUNTIME * run_time_factor,
                                                                           flash_color=NODE_INDICATE_COLOR,
                                                                           width_factor=MOVE_PATH_WIDTH_FACTOR,
                                                                           time_width=PATH_TIME_WIDTH))
-            animations_lst.append(node.left.indicate(self, color=NODE_INDICATE_COLOR, scale_factor=1.5,
-                                                     run_time=1 * run_time_factor))
-            node = node.left
+            mini_anim.append(node.indicate(self, color=NODE_INDICATE_COLOR, scale_factor=1.5,
+                                           run_time=1 * run_time_factor))
 
-        animations_lst.append(remove_edge.animate_move_along_path(self, run_time=MOVE_PATH_RUNTIME * run_time_factor,
-                                                                  flash_color=NODE_INDICATE_COLOR,
-                                                                  width_factor=MOVE_PATH_WIDTH_FACTOR,
-                                                                  time_width=PATH_TIME_WIDTH))
-        animations_lst.append(Flash(node.left, run_time=1 * run_time_factor))
-        return AnimationGroup(*animations_lst, lag_ratio=0.8 * run_time_factor, **kwargs)
+            animations_lst.append(AnimationGroup(*mini_anim, lag_ratio=0.15 * run_time_factor))
+            node = node.left
+        animations_lst.append(
+            node.indicate(self, color=YELLOW, scale_factor=1.5, run_time=1 * run_time_factor))
+        return AnimationGroup(*animations_lst, lag_ratio=0.5 * run_time_factor, **kwargs)
 
 
 class CheckBSTInsert(BSTScene):

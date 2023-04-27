@@ -75,11 +75,11 @@ class Node(LabeledDot):
         return False
 
 
-class Edge(Line):
+class Edge(VGroup):
     """Simple class that represents a BST edge"""
 
     def __init__(self, start: Node, end: Node, weight: str | int | VMobject = None, **kwargs):
-        super().__init__(start.get_center(), end.get_center(), **kwargs)
+        self.edge = Line(start.get_center(), end.get_center(), **kwargs)
         self.start = start
         self.end = end
 
@@ -94,6 +94,15 @@ class Edge(Line):
 
     def __str__(self):
         return f"Edge({self.start.key}, {self.end.key}{(',' + self.weight) if self.weight is not None else ''})"
+
+    def put_start_and_end_on(self, start, end):
+        self.fix_z_index()
+        weight = self.weight_mob
+        self.remove(self.weight_mob)
+        self.weight_mob = None
+        super().put_start_and_end_on(start, end)
+        self.add(weight)
+        self.weight_mob = weight
 
     def update_weight(self, edge):
         self.move_to(self)
@@ -110,9 +119,11 @@ class Edge(Line):
         scene.play(Write(self.weight_mob), run_time=run_time * (1 - relative_line_run_time), **kwargs)
 
     def fix_z_index(self):
-        self.start.set_z_index(0)
-        self.end.set_z_index(0)
-        self.set_z_index(-10)
+        self.start.set_z_index(1)
+        self.start.label.set_z_index(2)
+        self.end.set_z_index(1)
+        self.end.label.set_z_index(2)
+        self.set_z_index(0)
 
     def animate_move_along_path(self, scene: Scene, flash_color=VISITED_COLOR, width_factor=1, **kwargs):
         self.fix_z_index()
@@ -200,36 +211,44 @@ class BST(VGroup):
             return
 
         if key.left is None:
-            self.transplant(key, key.right)
-            remove_edge = self.edges.pop((key.parent, key))
+            update_edge = self.transplant(key, key.right)
+            remove_edge = self.edges.pop((key, key.right), None)
         elif key.right is None:
-            self.transplant(key, key.left)
-            remove_edge = self.edges.pop((key.parent, key))
+            update_edge = self.transplant(key, key.left)
+            remove_edge = self.edges.pop((key, key.left), None)
         else:
             y = min_key = self.minimum(key.right)
-            remove_edge = self.edges.pop((y.parent, y))
+            remove_edge = self.edges.pop((y, y.right), None)
             if y.parent != key:
-                self.transplant(y, y.right)
+                update_edge = self.transplant(y, y.right)
                 y.right = key.right
                 y.right.parent = y
             self.transplant(key, y)
             y.left = key.left
             y.left.parent = y
 
+        self.nodes.remove(key)
         self.remove(remove_edge)
         self.remove(key)
         return key, min_key, remove_edge, update_edge
 
-    def transplant(self, u: Node, v: Node):
+    def transplant(self, u: Node, v: Node) -> Edge | None:
+        update_edge = None
         if u.parent is None:
             self.root = v
             self.root.parent = None
+            return
         elif u == u.parent.left:
             u.parent.left = v
         else:
             u.parent.right = v
+        if (u.parent, u) in self.edges:
+            update_edge = self.edges.pop((u.parent, u))
+            update_edge.end = v
+            self.edges[(u.parent, v)] = update_edge
         if v is not None:
             v.parent = u.parent
+        return update_edge
 
     def traverse(self, func, **kwargs):
         """Traverses the tree in a depth-first manner"""
@@ -321,6 +340,7 @@ class BST(VGroup):
 
     def update_edges(self, graph):
         for (u, v), edge in graph.edges.items():
+            edge.fix_z_index()
             if edge.weight_mob is not None:
                 edge.remove(edge.weight_mob)
             edge.put_start_and_end_on(u.get_center(), v.get_center())
