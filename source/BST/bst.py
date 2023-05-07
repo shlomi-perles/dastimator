@@ -9,7 +9,7 @@ sys.path.append(str(ROOT_PATH.parent.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
 PRESENTATION_MODE = False
-DISABLE_CACHING = True
+DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 # ----------------------------------    consts   ---------------------------------- #
 NODE_INDICATE_COLOR = GREEN
@@ -138,7 +138,7 @@ class CheckBSTDelete(BSTScene):
 
 
 if __name__ == "__main__":
-    # scenes_lst = [CheckBSTInsert]
-    scenes_lst = [CheckBSTDelete]
+    scenes_lst = [CheckBSTInsert]
+    # scenes_lst = [CheckBSTDelete]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])

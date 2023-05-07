@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Hashable, Iterable, Optional, Tuple, Union, List, Any
+from typing import Optional
 from .consts import *
 
 BST_WEIGHT_COLOR = WHITE

@@ -33,7 +33,7 @@ BFS_PSEUDO_CODE = '''def BFS(G,s):
         for neighbor v of u & dist[v] = ∞:
                 queue.push(v)
                 dist[v] = dist[u] + 1
-                π[v] ← u'''
+                π[v] = u'''
 
 
 # --------------------------------- scenes --------------------------------- #
