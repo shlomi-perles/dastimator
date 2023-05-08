@@ -8,7 +8,7 @@ from BFS.bfs import BFS_PSEUDO_CODE
 from tools.array import *
 from tools.consts import *
 from tools.funcs import *
-from tools.my_graphs import DiGraph
+from tools.graphs.my_graphs import DiGraph
 
 ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tools.funcs import *
-from tools.bst import *
+from tools.graphs.bst import *
 from tools.scenes import *
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
@@ -120,7 +120,7 @@ class CheckBSTInsert(BSTScene):
 
     def construct(self):
         super().construct()
-        for key in BASE_TREE_VERTICES[5:]:
+        for key in BASE_TREE_VERTICES[5:6]:
             self.animate_key_insert(key)
 
 
