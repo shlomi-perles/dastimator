@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ..consts import *
 from .node import Node
 
@@ -15,6 +17,7 @@ class Edge(VGroup):
         self.edge_line = Line(start.get_center(), end.get_center(), **kwargs)
         self.start = start
         self.end = end
+        self.weight_mob = None
 
         self.add(self.edge_line)
         if weight is not None:
@@ -56,7 +59,7 @@ class Edge(VGroup):
         if self.weight_mob is not None:
             self.weight_mob.set_z_index(self.WEIGHT_Z_INDEX)
 
-    def animate_move_along_path(self, scene: Scene, flash_color=VISITED_COLOR, width_factor=1, **kwargs):
+    def animate_move_along_path(self, flash_color=VISITED_COLOR, width_factor=1, **kwargs):
         self.fix_z_index()
 
         return AnimationGroup(

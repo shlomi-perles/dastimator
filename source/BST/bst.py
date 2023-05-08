@@ -28,9 +28,11 @@ BASE_TREE_EDGES = [(10, 13), (10, 14), (14, 20), (14, 23), (23, 31), (31, 25), (
 # ----------------------------------    BST scenes   ---------------------------------- #
 
 class BSTScene(SectionsScene):
-    def __init__(self, keys: list = None, **kwargs):
+    def __init__(self, keys: list = None, bst: BST = None, **kwargs):
         super().__init__(**kwargs)
-        self.bst = BST(keys)
+        self.bst = bst
+        if self.bst is None:
+            self.bst = BST(keys, tree_width=config.frame_width * 0.7, tree_left=-config.frame_width * 0.25)
         self.bst.create_tree()
         self.add(self.bst)
 
@@ -99,13 +101,12 @@ class BSTScene(SectionsScene):
             # flash_color = YELLOW if node.left.left is None or node == start_node else NODE_INDICATE_COLOR
             mini_anim = []
             mini_anim.append(
-                self.bst.edges[(node, node.left)].animate_move_along_path(self,
-                                                                          run_time=MOVE_PATH_RUNTIME * run_time_factor,
-                                                                          flash_color=NODE_INDICATE_COLOR,
+                self.bst.edges[(node, node.left)].animate_move_along_path(flash_color=NODE_INDICATE_COLOR,
                                                                           width_factor=MOVE_PATH_WIDTH_FACTOR,
+                                                                          run_time=MOVE_PATH_RUNTIME * run_time_factor,
                                                                           time_width=PATH_TIME_WIDTH))
             mini_anim.append(
-                IndicateNode(node, fill_color=GREEN_E, stroke_color=NODE_INDICATE_COLOR, run_time=1 * run_time_factor))
+                IndicateNode(node, color_theme="green", run_time=1 * run_time_factor))
             animations_lst.append(AnimationGroup(*mini_anim, lag_ratio=0.15 * run_time_factor))
             node = node.left
         animations_lst.append(
@@ -120,7 +121,7 @@ class CheckBSTInsert(BSTScene):
 
     def construct(self):
         super().construct()
-        for key in BASE_TREE_VERTICES[5:6]:
+        for key in BASE_TREE_VERTICES[5:8]:
             self.animate_key_insert(key)
 
 
@@ -132,9 +133,9 @@ class CheckBSTDelete(BSTScene):
     def construct(self):
         super().construct()
         self.animate_delete_key(23)
-        self.animate_delete_key(25)
-        self.animate_delete_key(34)
-        self.animate_delete_key(10)
+        # self.animate_delete_key(25)
+        # self.animate_delete_key(34)
+        # self.animate_delete_key(10)
 
 
 if __name__ == "__main__":

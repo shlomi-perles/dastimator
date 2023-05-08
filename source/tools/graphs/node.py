@@ -2,6 +2,11 @@ from ..consts import *
 from typing import Optional
 
 NODES_RELATIVE_HEIGHT = config.frame_height * 0.09
+GREEN_THEME = {"fill_color": GREEN_E, "stroke_color": GREEN}
+YELLOW_THEME = {"fill_color": YELLOW_E, "stroke_color": YELLOW}
+RED_THEME = {"fill_color": RED_E, "stroke_color": RED}
+BLUE_THEME = {"fill_color": VERTEX_COLOR, "stroke_color": VERTEX_STROKE_COLOR}
+THEME_DICT = {"green": GREEN_THEME, "yellow": YELLOW_THEME, "red": RED_THEME, "blue": BLUE_THEME}
 
 
 class Node(LabeledDot):
@@ -65,11 +70,15 @@ class Node(LabeledDot):
 
 class IndicateNode(Transform):
     def __init__(
-            self, mobject: "Mobject", scale_factor: float = 1.2, fill_color: str = YELLOW_E, stroke_color: str = YELLOW,
+            self, mobject: "Mobject", scale_factor: float = 1.2, color_theme=None,
+            fill_color: str = YELLOW_THEME["fill_color"], stroke_color: str = YELLOW_THEME["stroke_color"],
             preserve_indicate_color=False, rate_func: Callable[[float, Optional[float]], np.ndarray] = linear,
             **kwargs) -> None:
         self.fill_color = fill_color
         self.stroke_color = stroke_color
+        if color_theme is not None:
+            self.fill_color = THEME_DICT[color_theme]["fill_color"]
+            self.stroke_color = THEME_DICT[color_theme]["stroke_color"]
         self.preserve_indicate_color = preserve_indicate_color
         self.scale_factor = scale_factor
         super().__init__(mobject, rate_func=rate_func, **kwargs)

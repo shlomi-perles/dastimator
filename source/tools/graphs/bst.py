@@ -13,13 +13,21 @@ BST_WEIGHT_FONT_COLOR = BLACK
 class BST(VGroup):
     """Class that represents a full binary search tree"""
 
-    def __init__(self, keys: list = None, weighted: bool = True, layout=None, **kwargs):
+    def __init__(self, keys: list = None, weighted: bool = True, layout=None, tree_left=-config.frame_width / 2,
+                 tree_width=config.frame_width, tree_top=config.frame_height / 2, tree_height=config.frame_height,
+                 extra_space_at_top=False, node_type=Node, **kwargs):
         super().__init__(**kwargs)
         self.root = None
         self.edges = {}  # edges are not added as a group. They are added one by one to the scene when they are created.
         self.nodes = VGroup()  # same as edges.
         self.weighted = weighted
         self.layout = layout
+        self.tree_left = tree_left  # the leftmost x-coordinate of the bounding box.
+        self.tree_width = tree_width
+        self.tree_top = tree_top
+        self.tree_height = tree_height
+        self.extra_space_at_top = extra_space_at_top
+        self.node_type = node_type
         if keys is not None:
             self.insert_keys(keys, set_root=True)
             self.create_tree()
@@ -27,7 +35,7 @@ class BST(VGroup):
 
     def _insert_key(self, key: int | Node, node: Node = None, parent: Node = None) -> Node:
         if node is None:
-            ret_key = key if isinstance(key, Node) else Node(key)
+            ret_key = key if isinstance(key, Node) else self.node_type(key)
             if parent != None:
                 ret_key.parent = parent
             self.nodes += ret_key
@@ -159,17 +167,11 @@ class BST(VGroup):
 
     # ----------------- Layout ----------------- #
 
-    def set_layout(self, left=-config.frame_width / 2, width=config.frame_width, top=config.frame_height / 2,
-                   height=config.frame_height, extra_space_at_top=False):
+    def set_layout(self):
         """
         Positions the nodes of the given binary search tree in a way that
         minimizes overlap and maximizes horizontal distance.
         :param bst: the binary search tree to position.
-        :param left: the leftmost x-coordinate of the bounding box.
-        :param width: the width of the bounding box.
-        :param top: the topmost y-coordinate of the bounding box.
-        :param height: the height of the bounding box.
-        :param extra_space_at_top: whether to leave extra space at the top of the bounding box.
         :return:
         """
         relative_cols_positions = {}
@@ -179,17 +181,17 @@ class BST(VGroup):
         eliminate_overlap(self.root, relative_cols_positions, self)
 
         num_cols = max(relative_cols_positions.values()) - min(relative_cols_positions.values()) + 1
-        horiz_increment = width / (num_cols + 1)
-        vert_increment = height / (get_depth(self.root) + 1 + extra_space_at_top)
+        horiz_increment = self.tree_width / (num_cols + 1)
+        vert_increment = self.tree_height / (get_depth(self.root) + 1 + self.extra_space_at_top)
         minimum_position = min(relative_cols_positions.values())
 
-        if extra_space_at_top:
-            top -= vert_increment
+        if self.extra_space_at_top:
+            self.tree_top -= vert_increment
 
         def locate_nodes(current_node: Node, depth: int, layout: dict[Node, np.ndarray]):
             """Converts the relative horizontal coordinates to circle objects in the canvas"""
-            x_coord = left + (relative_cols_positions[current_node] - minimum_position + 1) * horiz_increment
-            y_coord = top - (depth + 1) * vert_increment
+            x_coord = self.tree_left + (relative_cols_positions[current_node] - minimum_position + 1) * horiz_increment
+            y_coord = self.tree_top - (depth + 1) * vert_increment
             layout[current_node] = RIGHT * x_coord + UP * y_coord
 
         self.layout = {}
