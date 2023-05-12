@@ -83,7 +83,7 @@ class IndicateNode(Transform):
         self.scale_factor = scale_factor
         super().__init__(mobject, rate_func=rate_func, **kwargs)
 
-    def create_target(self) -> "Mobject":
+    def create_target(self) -> "Mobject":  # TODO: use Node set color
         self.mobject.label.set_z_index(self.mobject.z_index + 1)
         target = self.mobject.copy()
         target.scale(self.scale_factor)

@@ -39,7 +39,7 @@ class BSTScene(SectionsScene):
     def construct(self):
         pass
 
-    def animate_key_insert(self, key: int, fast_insert: bool = False):
+    def animate_key_insert(self, key: int, fast_insert: bool = False, show_path=False):
         run_time_factor = 0.2 if fast_insert else 1
         self.next_section(f"Inserting key {key}", skip_section=fast_insert)
         new_key = self.bst.insert_keys([key])[0]
@@ -54,7 +54,13 @@ class BSTScene(SectionsScene):
                     run_time=0.001).fix_z_index())  # TODO: create wiggle anim
                 animations.append(Wiggle(self.bst.edges[(node.parent, node)].weight_mob, scale_value=2, n_wiggles=14,
                                          rotation_angle=0.02 * TAU, run_time=2))
-            animations.append(new_key.animate(run_time=1 * run_time_factor).next_to(node, UP))
+                down_anim = [new_key.animate(run_time=1 * run_time_factor).next_to(node, UP)]
+                if show_path:
+                    down_anim.append(
+                        self.bst.edges[(node.parent, node)].animate_move_along_path(time_width=PATH_TIME_WIDTH * 2,
+                                                                                    preserve_state=True,
+                                                                                    run_time=1 * run_time_factor))
+                animations.append(AnimationGroup(*down_anim))
             self.play(AnimationGroup(*animations, lag_ratio=0.8, suspend_mobject_updating=False))
 
         self.play(self.bst.animate(run_time=1 * run_time_factor).update_tree_layout())
@@ -133,13 +139,13 @@ class CheckBSTDelete(BSTScene):
     def construct(self):
         super().construct()
         self.animate_delete_key(23)
-        # self.animate_delete_key(25)
-        # self.animate_delete_key(34)
-        # self.animate_delete_key(10)
+        self.animate_delete_key(25)
+        self.animate_delete_key(34)
+        self.animate_delete_key(10)
 
 
 if __name__ == "__main__":
-    scenes_lst = [CheckBSTInsert]
-    # scenes_lst = [CheckBSTDelete]
+    # scenes_lst = [CheckBSTInsert]
+    scenes_lst = [CheckBSTDelete]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])

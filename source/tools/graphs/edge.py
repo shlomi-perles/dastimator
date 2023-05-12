@@ -33,7 +33,7 @@ class Edge(VGroup):
     def __str__(self):
         return f"Edge({self.start.key}, {self.end.key}{(',' + self.weight) if self.weight is not None else ''})"
 
-    def put_start_and_end_on(self, start, end):
+    def put_start_and_end_on(self, start, end): #TODO: update start and end?
         self.fix_z_index()
         self.edge_line.put_start_and_end_on(start, end)
         self.update_weight(self)
@@ -41,6 +41,16 @@ class Edge(VGroup):
     def update_weight(self, edge):
         if self.weight_mob is not None:
             self.weight_mob.move_to(edge.edge_line.get_center())
+
+    def set_weight(self, val: str | LabeledDot, **kwargs) -> Animation:
+        self.fix_z_index()
+        if self.weight_mob is not None:
+            self.weight = val  if not isinstance(val, VMobject) else val[1].tex_string
+            new_weight = LabeledDot(
+                label=MathTex(val), **WEIGHT_CONFIG).scale_to_fit_width(self.weight_mob.width) if isinstance(val,
+                                                                                                             str) else val
+            new_weight.move_to(self.weight_mob)
+            return Transform(self.weight_mob, new_weight, **kwargs, group=self)
 
     def draw_edge(self, relative_line_run_time=0.3, run_time=1.5, lag_ratio=0.7, **kwargs) -> AnimationGroup:
         self.fix_z_index()
@@ -59,11 +69,17 @@ class Edge(VGroup):
         if self.weight_mob is not None:
             self.weight_mob.set_z_index(self.WEIGHT_Z_INDEX)
 
-    def animate_move_along_path(self, flash_color=VISITED_COLOR, width_factor=1, **kwargs):
+    def animate_move_along_path(self, flash_color=VISITED_COLOR, width_factor=1, time_width: float = 0.1,
+                                opposite_direction=False, preserve_state=False, **kwargs) -> AnimationGroup:
         self.fix_z_index()
+        copy_line = self.edge_line.copy()
+        if opposite_direction:
+            copy_line.rotate(PI)
+        animations = [
+            ShowPassingFlash(copy_line.set_z_index(self.edge_line.z_index).set_color(flash_color).set_stroke_width(
+                width_factor * self.stroke_width), time_width=time_width)]
+        if preserve_state:
+            animations.append(self.edge_line.animate.set_color(flash_color).set_stroke_width(
+                width_factor * self.stroke_width))
 
-        return AnimationGroup(
-            ShowPassingFlash(
-                self.edge_line.copy().set_z_index(self.edge_line.z_index).set_color(flash_color).set_stroke_width(
-                    width_factor * self.stroke_width),
-                **kwargs), group=self)
+        return AnimationGroup(*animations, **kwargs, group=self)

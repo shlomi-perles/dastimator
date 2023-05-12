@@ -53,12 +53,21 @@ class BST(VGroup):
         keys = [keys] if isinstance(keys, int) else keys
         nodes = []
         for key in keys:
-            node = self._insert_key(key, self.root)
-            if set_root:
-                self.root = node
-                set_root = False
+            if self.root is None:
+                self.root = self.node_type(key) if isinstance(key, int) else key
+                self.nodes += self.root
+                self.add(self.root)
+            else:
+                self._insert_key(key, self.root)
             nodes.append(self.nodes[-1])
+        if set_root:
+            self.root = self.find_root(nodes[-1])
         return nodes
+
+    def find_root(self, node: Node) -> Node:
+        while node.parent is not None:
+            node = node.parent
+        return node
 
     def search(self, key: int | Node) -> tuple[Node | None, list[Any]]:
         """Returns a list of nodes containing the path from root to target node"""
@@ -73,7 +82,7 @@ class BST(VGroup):
             elif key > node:
                 return search_helper(node.right, key)
             elif node.right is not None and node.right.key == key:
-                return search_helper(node.left, key)
+                return search_helper(node.right, key)
             else:
                 return node
 
@@ -167,7 +176,7 @@ class BST(VGroup):
 
     # ----------------- Layout ----------------- #
 
-    def set_layout(self):
+    def set_layout(self, relative_to_root: bool = False):
         """
         Positions the nodes of the given binary search tree in a way that
         minimizes overlap and maximizes horizontal distance.
@@ -187,10 +196,13 @@ class BST(VGroup):
 
         if self.extra_space_at_top:
             self.tree_top -= vert_increment
+        x_shift = self.root.get_x() - (self.tree_left + +horiz_increment * (
+                relative_cols_positions[self.root] - minimum_position + 1)) if relative_to_root else 0
 
         def locate_nodes(current_node: Node, depth: int, layout: dict[Node, np.ndarray]):
             """Converts the relative horizontal coordinates to circle objects in the canvas"""
-            x_coord = self.tree_left + (relative_cols_positions[current_node] - minimum_position + 1) * horiz_increment
+            x_coord = self.tree_left + (
+                    relative_cols_positions[current_node] - minimum_position + 1) * horiz_increment + x_shift
             y_coord = self.tree_top - (depth + 1) * vert_increment
             layout[current_node] = RIGHT * x_coord + UP * y_coord
 
@@ -224,8 +236,8 @@ class BST(VGroup):
         for node in self.nodes:
             node.move_to(self.layout[node])
 
-    def update_tree_layout(self):
-        self.set_layout()
+    def update_tree_layout(self, relative_to_root: bool = False):
+        self.set_layout(relative_to_root)
         self.update_nodes()
 
     def update_edges(self, graph):
