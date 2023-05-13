@@ -33,7 +33,7 @@ class BST(VGroup):
             self.create_tree()
         self.add_updater(self.update_edges)
 
-    def _insert_key(self, key: int | Node, node: Node = None, parent: Node = None) -> Node:
+    def _insert_key(self, key: int | Node, node: Node = None, parent: Node = None, **kwargs) -> Node:
         if node is None:
             ret_key = key if isinstance(key, Node) else self.node_type(key)
             if parent != None:
@@ -43,12 +43,12 @@ class BST(VGroup):
             return ret_key
 
         if key < node:
-            node.left = self._insert_key(key, node.left, parent=node)
+            node.left = self._insert_key(key, node.left, node, **kwargs)
         else:
-            node.right = self._insert_key(key, node.right, parent=node)
+            node.right = self._insert_key(key, node.right, node, **kwargs)
         return node
 
-    def insert_keys(self, keys: list | int, set_root=False):
+    def insert_keys(self, keys: list | int, set_root=False, **kwargs):
         """Inserts a list of keys into the BST recursively"""
         keys = [keys] if isinstance(keys, int) else keys
         nodes = []
@@ -58,7 +58,7 @@ class BST(VGroup):
                 self.nodes += self.root
                 self.add(self.root)
             else:
-                self._insert_key(key, self.root)
+                self._insert_key(key, self.root, **kwargs)
             nodes.append(self.nodes[-1])
         if set_root:
             self.root = self.find_root(nodes[-1])
@@ -86,7 +86,7 @@ class BST(VGroup):
             else:
                 return node
 
-        return search_helper(self.root, key), path[:-1]
+        return search_helper(self.root, key), path
 
     def delete_key(self, key: Node | float | int) -> tuple[Node | None, Node | None, Edge | None, Edge | None] | None:
         # TODO: update heights and remove edges and node from self and self.edges
@@ -176,7 +176,7 @@ class BST(VGroup):
 
     # ----------------- Layout ----------------- #
 
-    def set_layout(self, relative_to_root: bool = False):
+    def set_layout(self, relative_to_root: bool = False, relative_x: float = 0, relative_y: float = 0):
         """
         Positions the nodes of the given binary search tree in a way that
         minimizes overlap and maximizes horizontal distance.
@@ -196,14 +196,19 @@ class BST(VGroup):
 
         if self.extra_space_at_top:
             self.tree_top -= vert_increment
-        x_shift = self.root.get_x() - (self.tree_left + +horiz_increment * (
-                relative_cols_positions[self.root] - minimum_position + 1)) if relative_to_root else 0
+
+        correct_relative_pos = relative_to_root or relative_x != 0 or relative_y != 0
+        relative_x = self.root.get_x() if relative_x == 0 else relative_x
+        relative_y = self.root.get_y() if relative_y == 0 else relative_y
+        shift_x = (relative_x - (self.tree_left + horiz_increment * (
+                relative_cols_positions[self.root] - minimum_position + 1))) if correct_relative_pos else 0
+        shift_y = (relative_y - (self.tree_top - vert_increment)) if correct_relative_pos else 0
 
         def locate_nodes(current_node: Node, depth: int, layout: dict[Node, np.ndarray]):
             """Converts the relative horizontal coordinates to circle objects in the canvas"""
             x_coord = self.tree_left + (
-                    relative_cols_positions[current_node] - minimum_position + 1) * horiz_increment + x_shift
-            y_coord = self.tree_top - (depth + 1) * vert_increment
+                    relative_cols_positions[current_node] - minimum_position + 1) * horiz_increment + shift_x
+            y_coord = self.tree_top - (depth + 1) * vert_increment + shift_y
             layout[current_node] = RIGHT * x_coord + UP * y_coord
 
         self.layout = {}
@@ -236,8 +241,8 @@ class BST(VGroup):
         for node in self.nodes:
             node.move_to(self.layout[node])
 
-    def update_tree_layout(self, relative_to_root: bool = False):
-        self.set_layout(relative_to_root)
+    def update_tree_layout(self, relative_to_root: bool = False, relative_x: float = 0, relative_y: float = 0):
+        self.set_layout(relative_to_root, relative_x, relative_y)
         self.update_nodes()
 
     def update_edges(self, graph):

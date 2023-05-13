@@ -17,8 +17,10 @@ class AVLNode(Node):
 
 
 class SubTree(AVLNode):
-    def __init__(self, **kwargs):
+    def __init__(self, node_track: Node, **kwargs):
+        self.node_track = node_track
         super().__init__(**kwargs)
+        self.remove(self.label)
         self.triangle = VGroup()
         self.triangle += Triangle(fill_color=DARK_GREY, stroke_color=VERTEX_STROKE_COLOR,
                                   stroke_width=VERTEX_STROKE_WIDTH, fill_opacity=1)
@@ -28,12 +30,21 @@ class SubTree(AVLNode):
         c_node.shift(RIGHT * 0.6 + DOWN)
         edge_a = Edge(a_node, b_node, stroke_color=LIGHTER_GREY, stroke_width=EDGE_STROKE_WIDTH * 0.7)
         edge_b = Edge(a_node, c_node, stroke_color=LIGHTER_GREY, stroke_width=EDGE_STROKE_WIDTH * 0.7)
-        self.sub_tree = VGroup(a_node, b_node, c_node, edge_a, edge_b).set_z(1).move_to(self.triangle)
+        self.sub_tree = VGroup(a_node, b_node, c_node, edge_a, edge_b).move_to(self.triangle)
 
-        self.dots = MathTex(r"\vdots").set_z(1).next_to(self.sub_tree, DOWN, buff=0.1)
+        self.dots = MathTex(r"\vdots").next_to(self.sub_tree, DOWN, buff=0.1)
 
         self.triangle.scale_to_fit_width(self.sub_tree.get_width() * 2)
         self.add(self.triangle, self.sub_tree, self.dots)
+
+        self.scale_to_fit_width(self.node_track.width * 2)
+        self.track_node(self.node_track)
+        self.add_updater(self.track_node)
+
+    def track_node(self, avlNode: AVLNode):
+        self.set_z(5)
+        self.node_track.set_opacity(0)
+        avlNode.next_to(self.node_track.get_center(), DOWN, buff=0)
 
 
 class AVLTree(BST):
@@ -54,36 +65,46 @@ class AVLTree(BST):
         pivot = node.right
         pivot.parent = node.parent
         if pivot.parent is not None:
-            pivot.parent.left = pivot
+            if pivot.parent.right == node:
+                pivot.parent.right = pivot
+            else:
+                pivot.parent.left = pivot
         node.parent = pivot
         node.right = pivot.left
         pivot.left = node
         self.update_height(node)
         self.update_height(pivot)
         self.root = self.find_root(node)
-        self.edges[(node, node.right)] = self.edges.pop((pivot, node.right))
+        if node.right is not None:
+            self.edges[(node, node.right)] = self.edges.pop((pivot, node.right))
         self.edges[(pivot, node)] = self.edges.pop((node, pivot))
 
         if pivot.parent is not None:
             self.edges[(pivot.parent, pivot)] = self.edges.pop((pivot.parent, node))
 
+    # TODO: update start and end edges?
+
     def right_rotate(self, node: AVLNode):
         pivot = node.left
         pivot.parent = node.parent
         if pivot.parent is not None:
-            pivot.parent.right = pivot
+            if pivot.parent.right == node:
+                pivot.parent.right = pivot
+            else:
+                pivot.parent.left = pivot
         node.parent = pivot
         node.left = pivot.right
         pivot.right = node
         self.update_height(node)
         self.update_height(pivot)
         self.root = self.find_root(node)
-        self.edges[(node, node.left)] = self.edges.pop((pivot, node.left))
+        if node.left is not None:
+            self.edges[(node, node.left)] = self.edges.pop((pivot, node.left))
         self.edges[(pivot, node)] = self.edges.pop((node, pivot))
 
         if pivot.parent is not None:
             self.edges[(pivot.parent, pivot)] = self.edges.pop((pivot.parent, node))
-        # TODO: updata start annd end edges?
+        # TODO: update start and end edges?
 
     def balance(self, node: AVLNode):
         if node is None:
@@ -105,11 +126,14 @@ class AVLTree(BST):
                 self.balance(node)
             node = node.parent
 
-    def _insert_key(self, key: int | Node, node: Node = None, parent: Node = None, balance_up=False) -> Node:
+    def _insert_key(self, key: int | Node, node: Node = None, parent: Node = None, balance_up=False,
+                    update_height=True) -> Node:
         key_node = key if isinstance(key, self.node_type) else self.node_type(key)
-        insert_node = super()._insert_key(key_node, node, parent)
+        insert_node = super()._insert_key(key_node, node, parent, balance_up=balance_up, update_height=update_height)
         if balance_up:
             self.balance_up(key_node)
+        if update_height:
+            self.update_height(insert_node)
         return insert_node
 
     def insert_keys(self, keys: list | int, **kwargs):

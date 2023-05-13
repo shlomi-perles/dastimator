@@ -33,19 +33,20 @@ class Edge(VGroup):
     def __str__(self):
         return f"Edge({self.start.key}, {self.end.key}{(',' + self.weight) if self.weight is not None else ''})"
 
-    def put_start_and_end_on(self, start, end): #TODO: update start and end?
+    def put_start_and_end_on(self, start, end):  # TODO: update start and end?
         self.fix_z_index()
         self.edge_line.put_start_and_end_on(start, end)
         self.update_weight(self)
 
     def update_weight(self, edge):
+        self.fix_z_index()
         if self.weight_mob is not None:
             self.weight_mob.move_to(edge.edge_line.get_center())
 
     def set_weight(self, val: str | LabeledDot, **kwargs) -> Animation:
         self.fix_z_index()
         if self.weight_mob is not None:
-            self.weight = val  if not isinstance(val, VMobject) else val[1].tex_string
+            self.weight = val if not isinstance(val, VMobject) else val[1].tex_string
             new_weight = LabeledDot(
                 label=MathTex(val), **WEIGHT_CONFIG).scale_to_fit_width(self.weight_mob.width) if isinstance(val,
                                                                                                              str) else val

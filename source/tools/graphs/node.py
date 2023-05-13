@@ -27,13 +27,25 @@ class Node(LabeledDot):
         self.right = None
         self.parent = None
 
-    def set_color(self, fill_color=None, stroke_color=None, label_color=None):
+    def set_color(self, fill_color=None, stroke_color=None, label_color=None, color_theme=None):
         fill_color = fill_color if fill_color is not None else self.fill_color
         stroke_color = stroke_color if stroke_color is not None else self.stroke_color
         label_color = label_color if label_color is not None else self.label.get_fill_color()
         self.set_fill(fill_color)
         self.set_stroke(stroke_color)
         self.label.set_color(label_color)
+        if color_theme is not None:
+            self.fill_color = THEME_DICT[color_theme]["fill_color"]
+            self.stroke_color = THEME_DICT[color_theme]["stroke_color"]
+        return self
+
+    def set_label(self, label):
+        if isinstance(label, str):
+            label = MathTex(label, fill_color=LABEL_COLOR)
+        label.scale_to_fit_width(self.label.get_width()).move_to(self.label.get_center())
+        self.remove(self.label)
+        self.label = label
+        self.add(self.label)
         return self
 
     def __str__(self):
