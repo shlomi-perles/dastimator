@@ -231,7 +231,7 @@ class BST(VGroup):
     def create_edge(self, node, child, **kwargs):
         edge_params = dict(start=node, end=child, buff=0, z_index=-10)
         if self.weighted:
-            edge_params["weight"] = create_bst_weight("<" if node.left is child else r"\geq", node)
+            edge_params["weight"] = create_bst_weight("<" if node.left is child else r"\leq", node)
         self.edges[(node, child)] = Edge(**edge_params)
         self.add(self.edges[(node, child)])
         return self.edges[(node, child)]

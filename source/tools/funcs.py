@@ -6,6 +6,7 @@ from manim_fonts import *
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from .consts import LINES_OFF_OPACITY, DISTANCE_LABEL_COLOR, DISTANCE_LABEL_SCALE, DISTANCE_LABEL_BUFFER
 from .scenes import SectionsScene
+import re
 
 QFLAGS_TO_QUALITY = {v["flag"]: k for k, v in QUALITIES.items() if v["flag"] is not None}
 DEFAULT_GIF_SCENES = list(range(1, 3))
@@ -38,8 +39,8 @@ def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, di
         with tempconfig(
                 {"quality": quality, "preview": preview, "media_dir": media_path, "save_sections": save_sections,
                  "disable_caching": disable_caching}):
-            if isinstance(scene, SectionsScene):
-                scene.PRESENTATION_MODE = presentation_mode
+            # if isinstance(scene, SectionsScene): #TODO: Fix this
+            scene.PRESENTATION_MODE = presentation_mode
             scene().render()
         if create_gif:
             create_scene_gif(media_path, scene.__name__, DEFAULT_GIF_SCENES if gif_scenes is None else gif_scenes)
@@ -117,6 +118,18 @@ def create_code(code_str: str):
     rendered_code.scale_to_fit_width(config.frame_width * 0.5).to_corner(LEFT + UP)
     rendered_code.background_mobject[0].set_fill(opacity=0)
     return rendered_code
+
+
+def get_func_text(string: str, blue_args: list = None, **kwargs):
+    blue_args = [] if blue_args is None else blue_args
+    # Find the word before the first bracket
+    func_name = string.split("(")[0]
+
+    # Extract all the numbers from the string
+    numbers = [int(num) for num in re.findall(r'\d+', string)]
+
+    return Text(string, font="JetBrains Mono", t2c={func_name: YELLOW, **({str(num): BLUE_D for num in numbers}),
+                                                    **({arg: BLUE_D for arg in blue_args})}, **kwargs)
 
 
 # --------------------------------- Graphs --------------------------------- #

@@ -1,3 +1,9 @@
+"""
+TODO: 1. Important! rotate the tree and then update the child edge. Not the other way around.
+TODO: 2. Change the color of the inner child (beta).
+TODO: 3. Maybe add delete example and worst case example (Example from TA7).
+"""
+
 from __future__ import annotations
 
 from tools.funcs import *
@@ -8,7 +14,7 @@ ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
-PRESENTATION_MODE = False
+PRESENTATION_MODE = True
 DISABLE_CACHING = True
 config.background_color = BACKGROUND_COLOR
 HD_TO_COLOR = {0: "blue", 1: "yellow", 2: "red", 3: "red"}
@@ -67,7 +73,7 @@ class AVLScene(BSTScene):
                     self.avl.edges[(node.parent, node)].animate(run_time=1 * run_time_factor).put_start_and_end_on(
                         node.parent.get_center(), node.left.get_center()))
 
-            self.play(self.avl.edges[(node, node.left)].set_weight(create_bst_weight(r"\geq", node),
+            self.play(self.avl.edges[(node, node.left)].set_weight(create_bst_weight(r"\leq", node),
                                                                    run_time=1 * run_time_factor))
 
             self.avl.add_updater(self.avl.update_edges)
@@ -92,7 +98,7 @@ class AVLScene(BSTScene):
                         run_time=1 * run_time_factor).put_start_and_end_on(node.get_center(),
                                                                            node.right.left.get_center()))
                 self.next_section(f"update edge weight")
-                self.play(self.avl.edges[(node.right, node.right.left)].set_weight(create_bst_weight(r"\geq", node),
+                self.play(self.avl.edges[(node.right, node.right.left)].set_weight(create_bst_weight(r"\leq", node),
                                                                                    run_time=1 * run_time_factor))
             if node.parent is not None:
                 self.next_section(f"update parent edge")
@@ -310,7 +316,7 @@ class AVLLectureIntro(AVLScene):
 
     def explain_hd(self):
         self.next_section("explain hd")
-        hd_equation = Tex("hd(v) = h(v.right) - h(v.left)").to_edge(LEFT + DOWN)
+        hd_equation = Tex("hd(v) = h(v.left) - h(v.right)").to_edge(LEFT + DOWN)
         self.play(Write(hd_equation))
         self.next_section("explain hd")
 
@@ -358,7 +364,7 @@ class AVLLectureIntroInsert(AVLScene):
     def construct(self):
         self.next_section("AVL Insert example")
         self.play(Write(self.avl), Write(self.hd_map))
-        insert_tex = Text("Insert(AVL, 53)", t2c={"Insert": YELLOW, ",": ORANGE, "53": BLUE_D}).to_edge(LEFT + DOWN)
+        insert_tex = get_func_text("Insert(AVL, 53)").to_edge(LEFT + DOWN)
         self.play(Write(insert_tex))
         self.animate_key_insert(53, show_path=True, update_height=False)
         self.next_section("update heights")
@@ -409,8 +415,8 @@ class AVLLectureRotations(AVLScene):
         left_avl.to_edge(LEFT, buff=1.2)
 
         left_arrow = CurvedArrow(explain_avl.get_left(), left_avl.get_right())
-        left_arrow_text = Text("Left-Rotate(AVL,x)", t2c={"Left-Rotate": YELLOW, ",": ORANGE, "x": BLUE_D}).next_to(
-            left_arrow, UP).scale_to_fit_width(left_arrow.width)
+        left_arrow_text = get_func_text("Left-Rotate(AVL,x)", ["x"]).next_to(left_arrow, UP).scale_to_fit_width(
+            left_arrow.width)
         left_info_group = VGroup(left_arrow, left_arrow_text)
         left_info_group_cop = left_info_group.copy()
         self.play(Write(left_arrow_text))
@@ -428,8 +434,8 @@ class AVLLectureRotations(AVLScene):
         right_avl.move_to(explain_avl)
         right_arrow = CurvedArrow(left_avl.get_right(), right_avl.get_left()).match_width(left_arrow).match_x(
             left_arrow)
-        right_arrow_text = Text("Right-Rotate(AVL,y)", t2c={"Right-Rotate": YELLOW, ",": ORANGE, "y": BLUE_D}).next_to(
-            right_arrow, DOWN).scale_to_fit_width(right_arrow.width)
+        right_arrow_text = get_func_text("Right-Rotate(AVL,y)", ["y"]).next_to(right_arrow, DOWN).scale_to_fit_width(
+            right_arrow.width)
         right_info_group = VGroup(right_arrow, right_arrow_text)
         self.play(Unwrite(left_info_group), Unwrite(explain_avl), Write(right_arrow_text))
         self.play(Write(right_arrow))
@@ -480,7 +486,7 @@ class AVLLectureBalance(AVLScene):
 
         self.play(Write(self.avl), Write(rr_rotations_title), Write(self.hd_map))
         self.next_section("left rotate")
-        right_rotate_text = Text("Right-Rotate(AVL,v)", t2c={"Right-Rotate": YELLOW, ",": ORANGE, "v": BLUE_D}).next_to(
+        right_rotate_text = get_func_text("Left-Rotate(AVL,v)", ["v"]).next_to(
             rr_rotations_title, DOWN).scale_to_fit_width(rr_rotations_title.width * 0.5).to_edge(RIGHT)
         self.play(Write(right_rotate_text))
         self.left_rotate(self.avl.root)
@@ -519,7 +525,7 @@ class AVLLectureBalance(AVLScene):
 
         self.play(Write(self.avl))
         self.next_section("right rotate")
-        right_rotate_text = Text("Right-Rotate(AVL,u)", t2c={"Right-Rotate": YELLOW, ",": ORANGE, "u": BLUE_D}).next_to(
+        right_rotate_text = get_func_text("Right-Rotate(AVL,u)", ["u"]).next_to(
             rl_rotations_title, DOWN).scale_to_fit_width(rl_rotations_title.width * 0.5).to_edge(RIGHT)
         self.play(Write(right_rotate_text))
         self.right_rotate(self.avl.root.right)
@@ -528,14 +534,13 @@ class AVLLectureBalance(AVLScene):
                                  IndicateNode(w_node, color_theme=HD_TO_COLOR[1], preserve_indicate_color=True),
                                  lag_ratio=0.5))
         self.next_section("left rotate")
-        left_rotate_text = Text("Left-Rotate(AVL,v)",
-                                t2c={"Left-Rotate": YELLOW, ",": ORANGE, "v": BLUE_D}).match_height(
-            right_rotate_text).next_to(right_rotate_text, DOWN)
+        left_rotate_text = get_func_text("Left-Rotate(AVL,v)", ["v"]).match_height(right_rotate_text).next_to(
+            right_rotate_text, DOWN)
         self.play(Write(left_rotate_text))
         self.left_rotate(self.avl.root)
         self.next_section("update heights")
         self.play(AnimationGroup(IndicateNode(v_node, color_theme=HD_TO_COLOR[0], preserve_indicate_color=True),
-                                 IndicateNode(w_node, color_theme=HD_TO_COLOR[1], preserve_indicate_color=True),
+                                 IndicateNode(w_node, color_theme=HD_TO_COLOR[0], preserve_indicate_color=True),
                                  lag_ratio=0.5))
         self.next_section("done")
         self.play(Unwrite(self.avl), Unwrite(right_rotate_text), Unwrite(left_rotate_text), Unwrite(rl_rotations_title),
@@ -554,16 +559,15 @@ class AVLLectureInsert(AVLScene):
     def construct(self):
         self.next_section("AVL Insert example")
         self.play(Write(self.avl), Write(self.hd_map))
-        insert_tex = Text("Insert(AVL, 53)", t2c={"Insert": YELLOW, ",": ORANGE, "53": BLUE_D}).to_edge(LEFT + DOWN)
+        insert_tex = get_func_text("Insert(AVL, 53)").to_edge(LEFT + DOWN)
         self.play(Write(insert_tex))
         self.animate_key_insert(53, show_path=True, update_height=False)
         self.next_section("update heights")
         self.update_height(self.avl.nodes[-1], lag_ratio=0.5, run_time=3)
         self.next_section("balance up")
-        l_rotation_text = Text("Left-Rotate(AVL, 52)", t2c={"Left-Rotate": YELLOW, ",": ORANGE, "52": BLUE_D}).to_edge(
-            UP + RIGHT).scale_to_fit_width(config.frame_width * 0.3)
-        r_rotation_text = Text("Right-Rotate(AVL, 53)",
-                               t2c={"Right-Rotate": YELLOW, ",": ORANGE, "53": BLUE_D}).match_height(
+        l_rotation_text = get_func_text("Left-Rotate(AVL, 52)").to_edge(UP + RIGHT).scale_to_fit_width(
+            config.frame_width * 0.3)
+        r_rotation_text = get_func_text("Right-Rotate(AVL, 53)").match_height(
             l_rotation_text).next_to(l_rotation_text, DOWN)
         self.balance_up(self.avl.nodes[-1], run_time_factor=1, l_rotate_title=l_rotation_text,
                         r_rotate_title=r_rotation_text)
@@ -571,14 +575,14 @@ class AVLLectureInsert(AVLScene):
         self.next_section("AVL Insert example")
         self.remove_path(self.avl.search(55)[0])
         self.play(Unwrite(l_rotation_text), Unwrite(r_rotation_text))
-        insert_tex_2 = Text("Insert(AVL, 53)", t2c={"Insert": YELLOW, ",": ORANGE, "53": BLUE_D}).to_edge(LEFT + DOWN)
+        insert_tex_2 = get_func_text("Insert(AVL, 57)").to_edge(LEFT + DOWN)
         self.play(TransformMatchingShapes(insert_tex, insert_tex_2))
         self.animate_key_insert(57, show_path=True, update_height=False)
         self.next_section("update heights")
         self.update_height(self.avl.nodes[-1], lag_ratio=0.5, run_time=3)
         self.next_section("balance up")
-        l_rotation_text = Text("Left-Rotate(AVL, 50)", t2c={"Left-Rotate": YELLOW, ",": ORANGE, "50": BLUE_D}).to_edge(
-            UP + RIGHT).scale_to_fit_width(config.frame_width * 0.3)
+        l_rotation_text = get_func_text("Left-Rotate(AVL, 50)").to_edge(UP + RIGHT).scale_to_fit_width(
+            config.frame_width * 0.3)
         self.balance_up(self.avl.nodes[-1], run_time_factor=1, l_rotate_title=l_rotation_text)
         self.next_section("done")
         self.play(Unwrite(insert_tex_2), Unwrite(self.avl), Unwrite(self.hd_map), Unwrite(l_rotation_text))
@@ -589,13 +593,35 @@ class AVLLectureInsert(AVLScene):
         while node.parent is not None:
             animations.append(
                 self.avl.edges[node.parent, node].animate_move_along_path(flash_color=WHITE, opposite_direction=True,
-                                                                          time_width=PATH_TIME_WIDTH))
+                                                                          time_width=PATH_TIME_WIDTH * 2,
+                                                                          preserve_state=True))
             node = node.parent
         self.play(AnimationGroup(*animations, lag_ratio=0.5))
 
 
+class ComplexitySummary(SectionsScene):
+    def construct(self):
+        complex_table = Table(
+            [["O(h)", "O(logn)"],
+             ["O(h)", "O(logn)"],
+             ["O(h)", "O(logn)"]],
+            row_labels=[get_func_text("Find(x)", ["x"]), get_func_text("Delete(x)", ["x"]),
+                        get_func_text("Insert(x)", ["x"])],
+            col_labels=[Text("BST"), Text("AVL")],
+            include_outer_lines=True,
+            arrange_in_grid_config={"cell_alignment": RIGHT})
+        complex_table.move_to(ORIGIN).scale_to_fit_width(config.frame_width * 0.8)
+        self.next_section("complexity summary", pst.NORMAL)
+        self.play(Write(complex_table))
+        self.next_section("done")
+        self.play(Unwrite(complex_table))
+        self.wait(0.3)
+
+
 if __name__ == "__main__":
-    scenes_lst = [AVLLectureIntro, AVLLectureIntroInsert, AVLLectureRotations, AVLLectureBalance, AVLLectureInsert]
+    scenes_lst = [AVLLectureInsert, AVLLectureIntro, AVLLectureIntroInsert, AVLLectureRotations, AVLLectureBalance,
+                  ComplexitySummary]
+    scenes_lst = [ComplexitySummary, AVLLectureIntro]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[1 + i for i in range(6)],
-               create_gif=False)
+               create_gif=False, quality="high_quality")

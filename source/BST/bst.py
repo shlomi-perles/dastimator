@@ -1,3 +1,9 @@
+"""
+TODO: For next time: 1. Maybe for successor scale up all nodes bigger than successor
+ and then scale down all nodes smaller than successor.
+TODO: 2. When delete node with 1 child, move all his subtree to the parent and then change the edge.Not the other way around.
+TODO: 3. Break down the main scene into smaller scenes.
+"""
 from __future__ import annotations
 
 from tools.funcs import *
@@ -8,7 +14,7 @@ ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
-PRESENTATION_MODE = True
+PRESENTATION_MODE = False
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 # ----------------------------------    consts   ---------------------------------- #
@@ -127,6 +133,7 @@ class BSTScene(SectionsScene):
         remove_key_anim = []
         remove_key_anim.append(Unwrite(key, run_time=1 * run_time_factor))
         if min_key is not None:
+            self.next_section("minimum replace", skip_section=fast_delete)
             remove_key_anim.append(min_key.animate(run_time=1 * run_time_factor).move_to(key.get_center()))
         self.play(AnimationGroup(*remove_key_anim, lag_ratio=0.8))
         if remove_edge is not None:
@@ -221,8 +228,9 @@ class BSTLecture(BSTScene):
 
         self.next_section("BST Definition")
         bst_def_title = Text("BST Invariant:").to_edge(LEFT)
-        bst_def = Tex("For every node $v$, $v.left.key < v.key \leq v.right.key$ (if exists)"
-                      ).next_to(bst_def_title, DOWN, buff=0.7).shift(RIGHT * 0.4).align_to(bst_def_title, LEFT)
+        bst_def = Tex("For every node $v$, left_subtree($v$) < $v$ $\leq$ right_subtree($v$)"). \
+            scale_to_fit_width(config.frame_width * 0.9).next_to(bst_def_title, DOWN, buff=0.7).shift(
+            RIGHT * 0.4).align_to(bst_def_title, LEFT)
         bst_def_group = VGroup(bst_def_title, bst_def)
         self.play(bst_title.animate.to_edge(UP).scale_to_fit_width(config.frame_width * 0.6))
         self.play(Write(bst_def_group))
@@ -239,7 +247,7 @@ class BSTLecture(BSTScene):
         self.next_section("BST find", pst.NORMAL)
         self.play(Unwrite(bst_title))
         find_key = 20
-        find_txt = Text(f"find({find_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
+        find_txt = get_func_text(f"Find({find_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
         self.play(Write(find_txt))
         self.animate_find(find_key)
         find_complexity_tex = Tex("Time Complexity: O(h)").next_to(find_txt, DOWN).scale(0.8).align_to(find_txt, LEFT)
@@ -252,7 +260,7 @@ class BSTLecture(BSTScene):
         self.next_section("BST insert", pst.NORMAL)
         self.play(Unwrite(find_complexity_tex), Unwrite(b2), Unwrite(b2text), Unwrite(find_txt))
         insert_key = 26
-        insert_txt = Text(f"insert({insert_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
+        insert_txt = get_func_text(f"Insert({insert_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
         self.play(Write(insert_txt))
         self.animate_key_insert(insert_key)
         insert_complexity_tex = Tex("Time Complexity: O(h)").next_to(insert_txt, DOWN).scale(0.8).align_to(find_txt,
@@ -262,7 +270,8 @@ class BSTLecture(BSTScene):
         self.next_section("BST successor", pst.NORMAL)
         self.play(Unwrite(insert_complexity_tex), Unwrite(insert_txt))
         successor_key = 23
-        successor_txt = Text(f"successor({successor_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
+        successor_txt = get_func_text(f"Successor({successor_key})").to_edge(self.funcs_txt_loc,
+                                                                             buff=self.funcs_txt_buff)
         self.play(Write(successor_txt))
         self.animate_successor(successor_key)
         successor_complexity_tex = Tex("Time Complexity: O(h)").next_to(successor_txt, DOWN).scale(0.8).align_to(
@@ -272,29 +281,34 @@ class BSTLecture(BSTScene):
         self.next_section("BST delete", pst.NORMAL)
         self.play(Unwrite(successor_complexity_tex), Unwrite(successor_txt))
         delete_key = 20
-        delete_txt = Text(f"delete({delete_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
+        delete_txt = get_func_text(f"Delete({delete_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
         self.play(Write(delete_txt))
+        self.next_section("BST delete")
         self.animate_delete_key(delete_key)
 
         self.next_section("BST delete")
         self.play(Unwrite(delete_txt))
         delete_key = 10
-        delete_txt = Text(f"delete({delete_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
+        delete_txt = get_func_text(f"Delete({delete_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
         self.play(Write(delete_txt))
+        self.next_section("BST delete")
         self.animate_delete_key(delete_key)
 
         self.next_section("BST delete")
         self.play(Unwrite(delete_txt))
         delete_key = 23
-        delete_txt = Text(f"delete({delete_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
+        delete_txt = get_func_text(f"Delete({delete_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
         self.play(Write(delete_txt))
+        self.next_section("BST delete")
         self.animate_delete_key(delete_key)
 
         self.next_section("BST delete")
         self.play(Unwrite(delete_txt))
         delete_key = 25
-        delete_txt = Text(f"delete({delete_key})").to_edge(self.funcs_txt_loc, buff=self.funcs_txt_buff)
+        delete_txt = get_func_text(f"Delete({delete_key})").to_edge(self.funcs_txt_loc,
+                                                                    buff=self.funcs_txt_buff)
         self.play(Write(delete_txt))
+        self.next_section("BST delete")
         self.animate_delete_key(delete_key)
 
         self.next_section("BST delete complexity")
@@ -308,8 +322,44 @@ class BSTLecture(BSTScene):
         self.wait()
 
 
+class ComplexitySummaryBST(BSTScene):
+    def __init__(self, **kwargs):
+        keys = [1]
+        super().__init__(keys=keys, **kwargs)
+
+    def construct(self):
+        self.next_section("BST Complexity", pst.NORMAL)
+        worst_case_title = Text("BST Worst Case").scale_to_fit_width(config.frame_width * 0.9)
+        self.play(Write(worst_case_title))
+        self.next_section("Worst BST")
+        self.play(Unwrite(worst_case_title), Write(self.bst))
+        for i in range(2, 12):
+            self.animate_key_insert(i, fast_insert=True)
+
+        b2 = Brace(self.bst, direction=LEFT)
+        b2text = b2.get_tex("h=n", buff=0.1)
+        self.play(GrowFromCenter(b2), Write(b2text))
+        self.next_section("BST complexity table")
+        self.play(Unwrite(b2), Unwrite(b2text), Unwrite(self.bst))
+        complex_table = Table(
+            [["O(h)"],
+             ["O(h)"],
+             ["O(h)"]],
+            row_labels=[get_func_text("Find(x)", ["x"]), get_func_text("Delete(x)", ["x"]),
+                        get_func_text("Insert(x)", ["x"])],
+            col_labels=[Text("BST")],
+            include_outer_lines=True,
+            arrange_in_grid_config={"cell_alignment": RIGHT})
+        complex_table.move_to(ORIGIN).scale_to_fit_height(config.frame_height * 0.7)
+        self.play(Write(complex_table))
+        self.next_section("done")
+        self.play(Unwrite(complex_table))
+        self.wait(0.3)
+
+
 if __name__ == "__main__":
     # scenes_lst = [CheckBSTInsert]
-    scenes_lst = [BSTLecture]
+    scenes_lst = [ComplexitySummaryBST]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])
+    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
+               create_gif=False)

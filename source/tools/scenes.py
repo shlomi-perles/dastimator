@@ -10,7 +10,7 @@ class SectionsScene(Scene):
         if skip_section:
             return
         if self.PRESENTATION_MODE:
-            self.wait(0.03)
+            self.wait(0.1)
             super().next_section(name, type, skip_animations)
         else:
             self.wait()
