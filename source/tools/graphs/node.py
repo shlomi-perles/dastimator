@@ -10,6 +10,7 @@ THEME_DICT = {"green": GREEN_THEME, "yellow": YELLOW_THEME, "red": RED_THEME, "b
 
 
 class Node(LabeledDot):
+    LABEL_Z_INDEX = 2
     """Simple class that represents a BST node"""
 
     def __init__(self, key=None, label=None, relative_height=None, **kwargs):
@@ -37,6 +38,7 @@ class Node(LabeledDot):
         if color_theme is not None:
             self.fill_color = THEME_DICT[color_theme]["fill_color"]
             self.stroke_color = THEME_DICT[color_theme]["stroke_color"]
+            self.label.set_color(WHITE)
         return self
 
     def set_label(self, label):
@@ -46,6 +48,7 @@ class Node(LabeledDot):
         self.remove(self.label)
         self.label = label
         self.add(self.label)
+        self.label.set_z_index(self.z_index + 1)
         return self
 
     def __str__(self):
