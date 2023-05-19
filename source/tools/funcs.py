@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 from manim import *
-from manim import AnimationGroup
 from manim_fonts import *
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from .consts import LINES_OFF_OPACITY, DISTANCE_LABEL_COLOR, DISTANCE_LABEL_SCALE, DISTANCE_LABEL_BUFFER
 from .scenes import SectionsScene
 import re
+import json
 
 QFLAGS_TO_QUALITY = {v["flag"]: k for k, v in QUALITIES.items() if v["flag"] is not None}
+QUALITY_TO_DIR = [f"{QUALITIES[k]['pixel_height']}p{QUALITIES[k]['frame_rate']}" for k in QUALITIES.keys()]
 DEFAULT_GIF_SCENES = list(range(1, 3))
-SECTIONS_MEDIA_PATH = r"videos/2160p60/sections"
+SECTIONS_MEDIA_PATH = r"videos/{quality_dir}/sections"
 SCENE_CLIP_NAME = "{scene_name}_{section_num:04d}.mp4"
 DEFAULT_GIF_RESIZE = 0.1
 
@@ -35,6 +36,8 @@ def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, di
         quality = QFLAGS_TO_QUALITY[quality] if quality in QFLAGS_TO_QUALITY else quality
     if create_gif is None:
         create_gif = presentation_mode
+    if not Path(media_path).exists():
+        Path(media_path).mkdir(parents=True, exist_ok=True)
     for scene in scenes_lst:
         with tempconfig(
                 {"quality": quality, "preview": preview, "media_dir": media_path, "save_sections": save_sections,
@@ -43,10 +46,13 @@ def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, di
             scene.PRESENTATION_MODE = presentation_mode
             scene().render()
         if create_gif:
-            create_scene_gif(media_path, scene.__name__, DEFAULT_GIF_SCENES if gif_scenes is None else gif_scenes)
+            create_scene_gif(media_path, scene.__name__, DEFAULT_GIF_SCENES if gif_scenes is None else gif_scenes,
+                             QUALITY_TO_DIR[quality])
+    if save_sections:
+        manim_editor_autocreated_scene_fix(media_path / SECTIONS_MEDIA_PATH.format(quality_dir=QUALITY_TO_DIR[quality]))
 
 
-def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int]):
+def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int], quality_dir: str):
     """
     Create a gif from the video file.
     :param out_dir: Name of the directory run_scenes() was called with.
@@ -56,11 +62,28 @@ def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int]
     gif_dir = out_dir / "gifs"
     gif_dir.mkdir(parents=True, exist_ok=True)
 
-    clips = [VideoFileClip(str(out_dir / SECTIONS_MEDIA_PATH / SCENE_CLIP_NAME.format(scene_name=scene_name,
-                                                                                      section_num=i))).resize(
-        DEFAULT_GIF_RESIZE) for i in section_num_lst]
+    clips = [VideoFileClip(str(out_dir / SECTIONS_MEDIA_PATH.format(quality_dir=quality_dir) / SCENE_CLIP_NAME.format(
+        scene_name=scene_name, section_num=i))).resize(DEFAULT_GIF_RESIZE) for i in section_num_lst]
 
     concatenate_videoclips(clips).write_gif(str(gif_dir / f"{scene_name}.gif"), fps=13)
+
+
+def manim_editor_autocreated_scene_fix(json_path: Path | str):
+    json_path = Path(json_path) if isinstance(json_path, str) else json_path
+    # create a list of all jsons in this path
+    json_files = [j_file for j_file in json_path.glob("*.json")]
+    for j_file in json_files:
+        section_json = []
+        with open(j_file, "r+") as f:
+            section_json = json.load(f)
+        for i, section in enumerate(section_json):
+            if section["name"] == "autocreated":
+                if i < len(section_json) - 1:
+                    section["name"] = section_json[i + 1]["name"]
+                    section_json[i + 1]["type"] = "presentation.sub.normal"
+        # write the new json
+        with open(j_file, "w") as f:
+            json.dump(section_json, f, indent=4)
 
 
 # ---------------------------- Code ----------------------------
@@ -128,8 +151,9 @@ def get_func_text(string: str, blue_args: list = None, **kwargs):
     # Extract all the numbers from the string
     numbers = [int(num) for num in re.findall(r'\d+', string)]
 
-    return Text(string, font="JetBrains Mono", t2c={func_name: YELLOW, **({str(num): BLUE_D for num in numbers}),
-                                                    **({arg: BLUE_D for arg in blue_args})}, **kwargs)
+    return Text(string, font="JetBrains Mono",
+                t2c={func_name: YELLOW, ",": ORANGE, **({str(num): BLUE_D for num in numbers}),
+                     **({arg: BLUE_D for arg in blue_args})}, **kwargs)
 
 
 # --------------------------------- Graphs --------------------------------- #

@@ -19,7 +19,8 @@ DISABLE_CACHING = True
 config.background_color = BACKGROUND_COLOR
 HD_TO_COLOR = {0: "blue", 1: "yellow", 2: "red", 3: "red"}
 SUBTRE_HEIGHT_SCALE = {0: 0.95, 1: 1.6, 2: 2.25}
-
+INSERT_WIDTH_TITLE = 0.33
+ROTATE_WIDTH_TITLE = 0.28
 INSERT_EXAMPLE_KEYS = [40, 15, 10, 5, 20, 60, 50, 70, 45, 55, 80, 52]
 LEFT_ROTATE_KEYS = [2, 1, 4, 3, 5]
 RL_ROTATE_KEYS = [2, 1, 6, 4, 3, 5, 7, 1.5]
@@ -279,11 +280,6 @@ class AVLLectureIntro(AVLScene):
         self.play(Unwrite(avl_def_group))
         self.wait(0.1)
 
-    def balance_explain(self):
-        self.next_section("AVL Balance", pst.NORMAL)
-        avl_balance_title = Text("AVL Balance").scale_to_fit_width(config.frame_width * 0.6).to_edge(UP)
-        self.play(Write(avl_balance_title))
-
     def explain_avl_heights(self):
         heights_text = {
             node: Tex(f"$h={int(node.tree_height)}$", color=YELLOW).next_to(node, RIGHT, buff=0.1).scale(0.7)
@@ -364,7 +360,9 @@ class AVLLectureIntroInsert(AVLScene):
     def construct(self):
         self.next_section("AVL Insert example")
         self.play(Write(self.avl), Write(self.hd_map))
-        insert_tex = get_func_text("Insert(AVL, 53)").to_edge(LEFT + DOWN)
+        insert_tex = get_func_text("Insert(AVL,53)").scale_to_fit_width(
+            config.frame_width * INSERT_WIDTH_TITLE).to_edge(
+            LEFT + DOWN)
         self.play(Write(insert_tex))
         self.animate_key_insert(53, show_path=True, update_height=False)
         self.next_section("update heights")
@@ -434,8 +432,8 @@ class AVLLectureRotations(AVLScene):
         right_avl.move_to(explain_avl)
         right_arrow = CurvedArrow(left_avl.get_right(), right_avl.get_left()).match_width(left_arrow).match_x(
             left_arrow)
-        right_arrow_text = get_func_text("Right-Rotate(AVL,y)", ["y"]).next_to(right_arrow, DOWN).scale_to_fit_width(
-            right_arrow.width)
+        right_arrow_text = get_func_text("Right-Rotate(AVL,y)", ["y"]).scale_to_fit_width(
+            right_arrow.width).next_to(right_arrow, DOWN)
         right_info_group = VGroup(right_arrow, right_arrow_text)
         self.play(Unwrite(left_info_group), Unwrite(explain_avl), Write(right_arrow_text))
         self.play(Write(right_arrow))
@@ -451,6 +449,7 @@ class AVLLectureRotations(AVLScene):
         self.play(Unwrite(left_info_group_cop), Unwrite(right_info_group), Unwrite(right_avl), Unwrite(left_avl),
                   Unwrite(rotations_title), Unwrite(self.hd_map))
         self.avl = remember_avl
+        self.wait(0.1)
 
 
 class AVLLectureBalance(AVLScene):
@@ -559,15 +558,16 @@ class AVLLectureInsert(AVLScene):
     def construct(self):
         self.next_section("AVL Insert example")
         self.play(Write(self.avl), Write(self.hd_map))
-        insert_tex = get_func_text("Insert(AVL, 53)").to_edge(LEFT + DOWN)
+        insert_tex = get_func_text("Insert(AVL,53)").scale_to_fit_width(
+            config.frame_width * INSERT_WIDTH_TITLE).to_edge(LEFT + DOWN)
         self.play(Write(insert_tex))
         self.animate_key_insert(53, show_path=True, update_height=False)
         self.next_section("update heights")
         self.update_height(self.avl.nodes[-1], lag_ratio=0.5, run_time=3)
         self.next_section("balance up")
-        l_rotation_text = get_func_text("Left-Rotate(AVL, 52)").to_edge(UP + RIGHT).scale_to_fit_width(
-            config.frame_width * 0.3)
-        r_rotation_text = get_func_text("Right-Rotate(AVL, 53)").match_height(
+        l_rotation_text = get_func_text("Left-Rotate(AVL,52)").scale_to_fit_width(
+            config.frame_width * ROTATE_WIDTH_TITLE).to_edge(UP + RIGHT)
+        r_rotation_text = get_func_text("Right-Rotate(AVL,55)").match_height(
             l_rotation_text).next_to(l_rotation_text, DOWN)
         self.balance_up(self.avl.nodes[-1], run_time_factor=1, l_rotate_title=l_rotation_text,
                         r_rotate_title=r_rotation_text)
@@ -575,14 +575,16 @@ class AVLLectureInsert(AVLScene):
         self.next_section("AVL Insert example")
         self.remove_path(self.avl.search(55)[0])
         self.play(Unwrite(l_rotation_text), Unwrite(r_rotation_text))
-        insert_tex_2 = get_func_text("Insert(AVL, 57)").to_edge(LEFT + DOWN)
+        insert_tex_2 = get_func_text("Insert(AVL,57)").scale_to_fit_width(
+            config.frame_width * INSERT_WIDTH_TITLE).to_edge(
+            LEFT + DOWN)
         self.play(TransformMatchingShapes(insert_tex, insert_tex_2))
         self.animate_key_insert(57, show_path=True, update_height=False)
         self.next_section("update heights")
         self.update_height(self.avl.nodes[-1], lag_ratio=0.5, run_time=3)
         self.next_section("balance up")
-        l_rotation_text = get_func_text("Left-Rotate(AVL, 50)").to_edge(UP + RIGHT).scale_to_fit_width(
-            config.frame_width * 0.3)
+        l_rotation_text = get_func_text("Left-Rotate(AVL,50)").scale_to_fit_width(
+            config.frame_width * ROTATE_WIDTH_TITLE).to_edge(UP + RIGHT)
         self.balance_up(self.avl.nodes[-1], run_time_factor=1, l_rotate_title=l_rotation_text)
         self.next_section("done")
         self.play(Unwrite(insert_tex_2), Unwrite(self.avl), Unwrite(self.hd_map), Unwrite(l_rotation_text))
@@ -619,9 +621,10 @@ class ComplexitySummary(SectionsScene):
 
 
 if __name__ == "__main__":
-    scenes_lst = [AVLLectureInsert, AVLLectureIntro, AVLLectureIntroInsert, AVLLectureRotations, AVLLectureBalance,
-                  ComplexitySummary]
-    scenes_lst = [ComplexitySummary, AVLLectureIntro]
-
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[1 + i for i in range(6)],
-               create_gif=False, quality="high_quality")
+    create_scene_gif("D:\projects\Manim\dastimator\media\AVL", "AVLLectureRotations", [1+i for i in range(11)],
+                     quality_dir="2160p60")
+    # scenes_lst = [AVLLectureIntro, AVLLectureIntroInsert, AVLLectureRotations, AVLLectureBalance, AVLLectureInsert,
+    #               ComplexitySummary]
+    #
+    # run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[1 + i for i in range(6)],
+    #            create_gif=False)

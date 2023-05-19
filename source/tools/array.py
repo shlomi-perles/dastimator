@@ -185,7 +185,7 @@ class ArrayMob(VGroup):
         label = VGroup()
         if self.show_labels:
             label = Text(str(index)).match_height(square).scale(0.2 * self.labels_scale)
-            label.next_to(square, self.labels_pos, buff=-(label.tree_height + self.LABELS_BUFF)).align_to(
+            label.next_to(square, self.labels_pos, buff=-(label.height + self.LABELS_BUFF)).align_to(
                 square, RIGHT).shift(LEFT * self.LABELS_BUFF)
         return square, val_text, label
 

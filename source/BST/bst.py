@@ -14,7 +14,7 @@ ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
-PRESENTATION_MODE = False
+PRESENTATION_MODE = True
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 # ----------------------------------    consts   ---------------------------------- #
@@ -41,9 +41,6 @@ class BSTScene(SectionsScene):
             self.bst = BST(keys, tree_width=config.frame_width * 0.7, tree_left=-config.frame_width * 0.25)
         self.bst.create_tree()
         # self.add(self.bst)
-
-    def construct(self):
-        pass
 
     def animate_find(self, key: int, fast_find: bool = False, show_path=False, **kwargs):
         run_time_factor = 0.2 if fast_find else 1
@@ -228,7 +225,7 @@ class BSTLecture(BSTScene):
 
         self.next_section("BST Definition")
         bst_def_title = Text("BST Invariant:").to_edge(LEFT)
-        bst_def = Tex("For every node $v$, left_subtree($v$) < $v$ $\leq$ right_subtree($v$)"). \
+        bst_def = Tex("For every node $v$: left-subtree($v$).keys $<$ $v$.key $\leq$ right-subtree($v$).keys"). \
             scale_to_fit_width(config.frame_width * 0.9).next_to(bst_def_title, DOWN, buff=0.7).shift(
             RIGHT * 0.4).align_to(bst_def_title, LEFT)
         bst_def_group = VGroup(bst_def_title, bst_def)
@@ -359,7 +356,7 @@ class ComplexitySummaryBST(BSTScene):
 
 if __name__ == "__main__":
     # scenes_lst = [CheckBSTInsert]
-    scenes_lst = [ComplexitySummaryBST]
+    scenes_lst = [BSTLecture, ComplexitySummaryBST]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
                create_gif=False)
