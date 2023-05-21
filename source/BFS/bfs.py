@@ -35,6 +35,8 @@ BFS_PSEUDO_CODE = '''def BFS(G,s):
                 dist[v] = dist[u] + 1
                 π[v] = u'''
 
+SIMPLE_GRAPH_LAYOUT = {1: ORIGIN, 2: DOWN, 3: LEFT, 4: LEFT + DOWN}
+
 
 # --------------------------------- functions --------------------------------- #
 def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]],
@@ -293,15 +295,15 @@ class BFSComplexity(BFSScene):
         self.next_section("BFS Complexity", pst.NORMAL)
         self.add(self.rendered_code, self.graph)
         self.highlight_and_indicate_code([8])
-        complex_v = Tex(r"$O(|V|)$").next_to(self.rendered_code, DOWN, buff=1.5).to_edge(LEFT)
+        complex_v = Tex(r"$O(|V|)$").next_to(self.rendered_code, DOWN, buff=2.3).to_edge(LEFT)
         self.next_section("BFS v")
         self.play(Write(complex_v))
         self.next_section("BFS e")
         self.highlight_and_indicate_code([10])
-        complex_e = Tex(r" + $O(|E|)$").next_to(complex_v, RIGHT, buff=0)
+        complex_e = Tex(r" + $O(|E|)$").next_to(complex_v, RIGHT, buff=0.3)
         self.play(Write(complex_e))
         self.next_section("BFS v + e")
-        total = Tex(r" = $O\left(\left|E\right|+\left|V\right|\right)$").next_to(complex_e, RIGHT, buff=0)
+        total = Tex(r" = $O\left(\left|E\right|+\left|V\right|\right)$").next_to(complex_e, RIGHT, buff=0.3)
         self.play(Write(total))
         self.next_section("done")
         self.play(Unwrite(complex_v), Unwrite(complex_e), Unwrite(total))
@@ -421,12 +423,14 @@ class BFSIntro(SectionsScene):
         bfs_func = get_func_text("BFS(G,1):").scale(0.6).next_to(graph_example, DOWN, buff=0).to_edge(LEFT)
 
         pi = ArrayMob(r"$\pi$:", *["-", "1", "1", "3"], name_scale=1.2, show_labels=True, labels_pos=DOWN,
-                      starting_index=1).to_edge(DOWN)
+                      starting_index=1).to_edge(DOWN).set_x(0).shift(LEFT)
         self.play(Write(graph_example))
         self.next_section("BFS function")
         self.play(Write(bfs_func))
         self.next_section("BFS pi")
-        self.play(Write(pi))
+        self.play(Write(pi), graph_example.animate.add_edges((2, 3),
+                                                             edge_config={"stroke_color": DARK_GREY,
+                                                                          "stroke_width": EDGE_STROKE_WIDTH * 1.3}))
         self.next_section("BFS done")
         self.play(Unwrite(graph_example), Unwrite(bfs_func), Unwrite(pi), Unwrite(example_title))
         self.wait(1)
@@ -444,19 +448,18 @@ class GraphsIntro(SectionsScene):
         self.next_section("Graphs Introduction", pst.NORMAL)
         title = Title("Undirected Graph").scale_to_fit_width(self.title_width).to_edge(UP)
         graph_def = Tex(
-            r'''A \textbf{ undirected graph} $G$ is defined as a pair of two sets: $G=(V,E)$, 
-            where $V$ represents a set of vertices and $E$ representsa set of pairs of vertices, 
-            representing edges between the vertices.''', tex_environment="flushleft").scale_to_fit_width(
-            self.definition_width).next_to(title, DOWN, buff=0.5)
+            r'''A\textbf{ undirected graph} $G$ is defined as a pair of two sets:
+            $G=(V,E)$, where $V$ represents a set of vertices and $E$ is a
+            set of pairs of vertices, representing edges between the vertices.''',
+            tex_environment="flushleft").scale_to_fit_width(self.definition_width).next_to(title, DOWN, buff=0.5)
         example_txt = Tex(
             r'''\textbf{Example}: $G=\left(\{1,2,3,4\},\ \left\{ \{1,2\},\{1,3\},\{3,4\}\right\} \right)$''',
             tex_environment="flushleft").scale_to_fit_width(self.definition_width).next_to(graph_def, DOWN,
                                                                                            buff=self.example_buffer)
         graph_example = create_graph([1, 2, 3, 4], edges=[(1, 2), (1, 3), (3, 4)], directed_graph=False,
-                                     layout={1: ORIGIN, 2: DOWN, 3: LEFT, 4: LEFT + DOWN},
+                                     layout=SIMPLE_GRAPH_LAYOUT,
                                      absolute_scale_vertices=True).scale_to_fit_height(
-            config.frame_height * 0.3).next_to(
-            example_txt, DOWN, buff=0.3).set_x(0)
+            config.frame_height * 0.3).next_to(example_txt, DOWN, buff=0.3).set_x(0)
 
         self.play(Write(title))
         self.play(Write(graph_def))
@@ -472,14 +475,14 @@ class GraphsIntro(SectionsScene):
         graph_def = Tex(
             r'''A \textbf{directed graph} $G$ is defined as a pair of two sets: $G=\left(V,E\right)$,
             where $V$ represents a set of vertices and $E\subseteq V\times V$
-            represents a set of directed edges between vertices.''', tex_environment="flushleft").scale_to_fit_width(
+            is a set of directed edges between vertices.''', tex_environment="flushleft").scale_to_fit_width(
             self.definition_width).next_to(title, DOWN, buff=0.5)
         example_txt = Tex(
             r'''\textbf{Example}: $G=\left(\{1,2,3,4\},\ \left\{ (1,2),(1,4),(4,1),(4,3)\right\} \right)$''',
             tex_environment="flushleft").scale_to_fit_width(self.definition_width).next_to(graph_def, DOWN,
                                                                                            buff=self.example_buffer)
         graph_example = create_graph([1, 2, 3, 4], edges=[(1, 2), (1, 4), (4, 1), (4, 3)], directed_graph=True,
-                                     layout={1: ORIGIN, 2: DOWN, 3: LEFT, 4: LEFT + DOWN},
+                                     layout=SIMPLE_GRAPH_LAYOUT,
                                      absolute_scale_vertices=True).scale_to_fit_height(
             config.frame_height * 0.3).next_to(
             example_txt, DOWN, buff=0.3).set_x(0)
@@ -508,11 +511,9 @@ class EdgesUpperBound(SectionsScene):
         # full graph
         vertices = list(range(1, 6))
         graph_example = create_graph(vertices, edges=[(i, j) for i in vertices for j in vertices if i != j],
-                                     directed_graph=False,
-                                     layout='circular',
+                                     directed_graph=False, layout='circular',
                                      absolute_scale_vertices=True).scale_to_fit_width(
-            self.example_tex_width * 0.5).next_to(
-            title, DOWN, buff=0.2).set_x(0)
+            self.example_tex_width * 0.5).next_to(title, DOWN, buff=0.2).set_x(0)
 
         edeges_upper_bound = Tex(
             r"$\left|E\right|\leq{\left|V\right| \choose 2}=\frac{\left|V\right|\left(\left|V\right|-1\right)}{2}=O\left(\left|V\right|^{2}\right)$")
@@ -533,47 +534,70 @@ class GraphRepresentation(SectionsScene):
         self.definition_width = config.frame_width * 0.8
         self.example_tex_width = config.frame_width * 0.5
         self.example_buffer = 1
+        self.figs_height = config.frame_height * 0.2
         super().__init__(**kwargs)
 
     def construct(self):
         self.next_section("Graph Representation", pst.NORMAL)
         title = Title("Graph Representation").to_edge(UP)
-        graph_examp = SVGMobject(str(ROOT_PATH / "images/graph_represent_exmp.svg")).scale_to_fit_height(
-            config.frame_width * 0.2).to_edge(LEFT)
-        ajacency_list_representation = SVGMobject(
-            str(ROOT_PATH / "images/graph_represent_link.svg")).scale_to_fit_height(
-            config.frame_width * 0.2).next_to(graph_examp, RIGHT, buff=1)
 
-        afj_title = Text("Adjacency List").scale(0.5).next_to(
-            ajacency_list_representation, UP, buff=0.3)
+        graph_examp = create_graph([1, 2, 3, 4], edges=[(1, 2), (1, 4), (1, 3), (4, 1), (4, 3), (3, 1)],
+                                   directed_graph=True, layout=SIMPLE_GRAPH_LAYOUT).scale_to_fit_height(
+            self.figs_height)
+        for vertex in graph_examp.vertices:
+            graph_examp[vertex].scale(0.7)
+
+        ajacency_list_representation = SVGMobject(
+            str(ROOT_PATH / "images/graph_represent_link.svg")).scale_to_fit_height(self.figs_height)
+
         ajacency_matrix_representation = SVGMobject(
-            str(ROOT_PATH / "images/graph_represent_mat.svg")).scale_to_fit_height(
-            config.frame_width * 0.2).next_to(ajacency_list_representation, RIGHT, buff=1)
-        am_title = Text("Adjacency Matrix").scale(0.5).next_to(
-            ajacency_matrix_representation, UP, buff=0.3).match_y(afj_title)
+            str(ROOT_PATH / "images/graph_represent_mat.svg")).scale_to_fit_height(self.figs_height)
+
+        VGroup(graph_examp, ajacency_list_representation, ajacency_matrix_representation).arrange(RIGHT,
+                                                                                                  buff=0.5).scale_to_fit_width(
+            config.frame_width * 0.9).to_edge(LEFT)
+
+        mat_title = Text("Adjacency Matrix").scale(0.5).next_to(ajacency_matrix_representation, UP, buff=0.3)
+        adj_title = Text("Adjacency List").scale(0.5).next_to(ajacency_list_representation, UP, buff=0.3).match_y(
+            mat_title)
+
+        space_complex_title = Text("Space Complexity:").match_width(graph_examp).next_to(graph_examp, DOWN, buff=1)
+        space_complex_adj = Tex(r"$O\left(\left|V\right|+\left|E\right|\right)$").next_to(adj_title,
+                                                                                          DOWN).match_y(
+            space_complex_title)
+        space_complex_mat = Tex(r"$O\left(\left|V\right|^{2}\right)$").next_to(mat_title, DOWN).match_y(
+            space_complex_title)
 
         self.play(Write(title))
         self.play(Write(graph_examp))
         self.next_section("Adjacency List")
-        self.play(Write(ajacency_list_representation), Write(afj_title))
+        self.play(Write(ajacency_list_representation), Write(adj_title))
+        self.next_section("Space Complexity")
+        self.play(Write(space_complex_title))
+        self.next_section("Space Complexity")
+        self.play(Write(space_complex_adj))
         self.next_section("Adjacency Matrix")
-        self.play(Write(ajacency_matrix_representation), Write(am_title))
+        self.play(Write(ajacency_matrix_representation), Write(mat_title))
+        self.next_section("Space Complexity")
+        self.play(Write(space_complex_mat))
         self.next_section("done")
-        self.play(Unwrite(ajacency_list_representation), Unwrite(afj_title), Unwrite(ajacency_matrix_representation),
-                  Unwrite(am_title), Unwrite(graph_examp), Unwrite(title))
+        self.play(Unwrite(ajacency_list_representation), Unwrite(adj_title), Unwrite(ajacency_matrix_representation),
+                  Unwrite(mat_title), Unwrite(graph_examp), Unwrite(title), Unwrite(space_complex_title),
+                  Unwrite(space_complex_adj), Unwrite(space_complex_mat))
         self.wait(1)
 
 
 if __name__ == "__main__":
-    # scenes_lst = [SmallGraphBFS]
-    # scenes_lst = [MovingDiGraph]
     # scenes_lst = [GraphsIntro]
     # scenes_lst = [EdgesUpperBound]
     # scenes_lst = [GraphRepresentation]
     # scenes_lst = [BFSIntro]
     # scenes_lst = [BFSBigGraph]
-    scenes_lst = [BFSComplexity]
+    # scenes_lst = [DirectedGraphBFS]
+    # scenes_lst = [BFSComplexity]
+    scenes_lst = [GraphsIntro, EdgesUpperBound, GraphRepresentation, BFSIntro, BFSBigGraph, DirectedGraphBFS,
+                  BFSComplexity]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
-               create_gif=False, quality="m")
+               create_gif=False)
     # create_scene_gif(OUT_DIR, scenes_lst[0].__name__, section_num_lst=[28 + i for i in range(6)])

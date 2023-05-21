@@ -49,6 +49,7 @@ RECURSIVE_DFS_PSEUDO_CODE = '''def DFS(G,s):
     time += 1
     pre[s] ← time
     for neighbor v of s & v.visited = False:
+        v.visited ← True
         π[v] ← s
         DFS(G,v)
     time += 1
@@ -377,7 +378,7 @@ class RecursiveDFSScene(SectionsScene):
 
         def dfs(start_vertex):
             if start_vertex != self.start_vertex:
-                self.visit_vertex_animation(graph, parent[start_vertex], start_vertex)
+                self.highlight_and_indicate_code([1])
                 self.next_section(f"DFS on vertex {start_vertex}", skip_section=fast_run)
                 self.play(queue_mob.push(start_vertex, LEFT))
             else:
@@ -396,21 +397,24 @@ class RecursiveDFSScene(SectionsScene):
                 if dist[neighbor] != np.Inf:
                     continue
                 dist[neighbor] = dist[start_vertex] + 1
+                self.next_section(f"DFS on vertex {neighbor}", skip_section=fast_run)
+                self.highlight_and_indicate_code([4, 5])
+                self.visit_vertex_animation(graph, parent[start_vertex], start_vertex)
 
                 # animate π[v] ← s
                 parent[neighbor] = start_vertex
                 self.next_section(f"Add parent {start_vertex} to vertex {neighbor}", skip_section=fast_run)
-                self.highlight_and_indicate_code([4, 5])
+                self.highlight_and_indicate_code([6])
                 self.next_section("Update parent", skip_section=fast_run)
                 self.play(pi.at(neighbor - 1, start_vertex))
 
                 # animate DFS(G,v)
                 self.next_section(f"DFS on vertex {neighbor}", skip_section=fast_run)
-                self.highlight_and_indicate_code([4, 6])
+                self.highlight_and_indicate_code([7])
                 dfs(neighbor)
 
             self.next_section(f"DFS finished on vertex {start_vertex}", skip_section=fast_run)
-            self.highlight_and_indicate_code([7, 8])
+            self.highlight_and_indicate_code([8, 9])
             self.play(ChangeDecimalToValue(time[1], time[1].number + 1),
                       Flash(time[1], flash_radius=time[1].height))
             post_time = time[1].copy()
@@ -443,7 +447,7 @@ class RecursiveDFSScene(SectionsScene):
         start_vars_y = rendered_code.get_bottom()[1] * 1.3
         lag_y = (config.frame_height / 2 + start_vars_y) * 0.35
 
-        queue_mob = ArrayMob("queue:", self.start_vertex, name_scale=scale).set_y(start_vars_y - lag_y, DOWN).to_edge(
+        queue_mob = ArrayMob("stack:", self.start_vertex, name_scale=scale).set_y(start_vars_y - lag_y, DOWN).to_edge(
             LEFT)
         pi = ArrayMob(r"$\pi$:", *[""] * len(self.vertices), name_scale=scale, show_labels=True, labels_pos=DOWN,
                       align_point=queue_mob.array_name.get_right(), starting_index=1).set_y(start_vars_y - 2 * lag_y,
@@ -575,7 +579,7 @@ class DFSBigGraph(FastDFS):
 
 
 if __name__ == "__main__":
-    scenes_lst = [RecursiveDFSMainExamp]
+    scenes_lst = [RecursiveDFSMainExamp, DFSBigGraph]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
-               create_gif=False, quality="h")
+               create_gif=False)
