@@ -1,0 +1,255 @@
+@import "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/3.1.0/css/font-awesome.min.css";
+* {
+  margin: 0;
+  pdding: 0;
+  box-sizing: border-box;
+  background-color: #141414;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: no-wrap;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  //width: 100vh;
+
+  overflow: hidden;
+
+  &:hover {
+    .arrow-right,
+    .arrow-left {
+      opacity: 1;
+      transition: 0.2s;
+    }
+  }
+
+  .body-item-1:hover{
+    color:red;
+    opacity:1;
+  }
+  .item:hover{
+
+  }
+
+  .body-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity:0;
+    visibility: hidden;
+
+    &:hover {
+      width: 40vw;
+      height: 22vw;
+      opacity:1;
+      transition: 0.4s;
+      transition-delay: 0.4s;
+    }
+    &-1{
+      flex-grow:1;
+      text-align:center;
+      opacity: 0.4;
+      &:hover{
+        color:red;
+        opacity:1;
+        transition: 0.2s;
+
+      }
+    }
+    &-2{
+      align-self: flex-start;
+      font-size: 2vw;
+      margin-bottom:0.5vw;
+    }
+    &-3{
+      align-self: flex-start;
+    }
+    &-4{
+      padding-right:3vw;
+    }
+    &-5{
+      width: 40vw;
+      text-align:center;
+    }
+    &-6{
+      align-self: flex-end;
+      position: absolute;
+    }
+  }
+
+  .play {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    i {
+      margin-top:3vw;
+      justify-content: center;
+      width: 6vw;
+      height: 6vw;
+      border-radius: 25vw;
+      background: rgba(0, 0, 0, 0.5);
+      border: 0.1em solid white;
+      padding: 1.4vw;
+      font-size: 2.5vw;
+    }
+  }
+  * {
+    background-color: transparent;
+  }
+}
+
+.details-icon{
+  font-size: 2.5vw;
+}
+
+.item {
+  width: 25vw;
+  height: 15vw;
+  background-size: 100% 100%;
+  margin: 0 2px 0 2px;
+  border-radius: 1px;
+  cursor: pointer;
+  transition: 0.5s;
+  color: white;
+  &:hover {
+    width: 40vw;
+    height: 22vw;
+    transition: 0.5s;
+    opacity: 1;
+    transition-delay: 0.3s;
+    .body-item{
+      visibility: visible;
+    }
+    .body-item-1{
+      width: 40vw;
+    }
+  }
+}
+
+.icon-set {
+  display:flex;
+  flex-direction:column;
+  margin:5vw 0 0 0;
+  i {
+    margin: 0 1vw 0.5vw 1vw;
+    font-size: 0.9vw;
+    border-radius: 50%;
+    padding: 0.7vw;
+    background: rgba(0, 0, 0, 0.5);
+    border: 0.1em solid rgba(255, 255, 255, 0.5);
+    &:hover {
+      font-size: 1.1vw;
+      border-color: #fff;
+      background: rgba(0, 0, 0, 0.7);
+      transition: 0.4s;
+    }
+  }
+}
+
+.arrow-right,
+.arrow-left {
+  color: white;
+  background-color: rgba(20, 20, 20, 0.5);
+  width: 4%;
+  height: 25%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  cursor: pointer;
+  font-size: 7vw;
+  opacity: 0.2;
+  &:hover {
+    font-size: 8vw;
+    transition: 0.1s;
+  }
+}
+
+.arrow-right {
+  right: 0;
+}
+
+.arrow-left {
+  left: 0;
+}
+
+.match {
+  color: #45af5e;
+  font-size: bold;
+}
+
+.description {
+  font-weight: 300;
+  font-size: 1.4vw;
+}
+
+.properties {
+  font-size: 1.35vw;
+  * {
+    margin: 1px;
+  }
+  .age-limit {
+    border: 0.1em solid rgba(255, 255, 255, 0.4);
+    font-weight: 200;
+    font-size: 1.2vw;
+    padding: 0 3px 0 3px;
+  }
+}
+
+
+// Bacground image
+
+.item-1 {
+  background-image: url(http://www.sickchirpse.com/wp-content/uploads/2017/03/Breaking-Bad.jpg);
+  &:hover{
+    background: linear-gradient(
+      rgba(0, 0, 0, 0), 
+      rgba(0, 0, 0, 0.9)
+    ), url(http://www.storyepic.com/wp-content/uploads/2014/04/breaking_bad_by_motionshowcase-d5l3atm.png);
+    background-size: 100% 100%;
+  }
+}
+.item-2 {
+  background-image: url(https://occ-0-2433-1001.1.nflxso.net/art/50b3d/36e2fd581106c1f4a27e1c7accd020dcc0f50b3d.jpg);
+  &:hover{
+    background: linear-gradient(
+      rgba(0, 0, 0, 0), 
+      rgba(0, 0, 0, 0.9)
+    ), url(http://www.formulatv.com/images/fgaleria/56900/56921_rehenes-la-casa-de-papel.jpg);
+    background-size: 100% 100%;
+  }
+}
+.item-3 {
+  background-image: url(http://wp.freedomofcreation.co.uk/howtokillanhour/wp-content/uploads/sites/65/2018/01/back-mirror-season-4.jpg);
+  &:hover{
+    background: linear-gradient(
+      rgba(0, 0, 0, 0), 
+      rgba(0, 0, 0, 0.9)
+    ), url(https://thumbor.forbes.com/thumbor/960x0/smart/https%3A%2F%2Fblogs-images.forbes.com%2Finsertcoin%2Ffiles%2F2017%2F12%2Fblack-mirror-uss-callister.jpg%3Fwidth%3D960);
+    background-size: 100% 100%;
+  }
+}
+.item-4 {
+  background-image: url(https://i.ytimg.com/vi/i1eJMig5Ik4/maxresdefault.jpg);
+  &:hover{
+    background: linear-gradient(
+      rgba(0, 0, 0, 0), 
+      rgba(0, 0, 0, 0.9)
+    ), url(https://i.kinja-img.com/gawker-media/image/upload/s--GKg2jfhA--/c_scale,fl_progressive,q_80,w_800/vcta1kcxdr5y5xyulxel.png);
+    background-size: 100% 100%;
+  }
+}
+.item-5 {
+  background: linear-gradient(
+    rgba(0, 0, 0, 0), 
+    rgba(0, 0, 0, 0.9)
+  ),  url(http://www.sickchirpse.com/wp-content/uploads/2017/03/Breaking-Bad.jpg);
+  &:hover{
+    background-image:url(http://www.hdwallpapers.in/walls/marvel_deadpool_movie-wide.jpg);
+    background-size: 100% 100%;
+  }
+}

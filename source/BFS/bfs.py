@@ -13,7 +13,7 @@ ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
-PRESENTATION_MODE = False
+PRESENTATION_MODE = True
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
@@ -267,11 +267,8 @@ class DirectedGraphBFS(BFSScene):
 
     def construct(self):
         self.next_section("BFS Example", pst.NORMAL)
-
-        self.visit_vertex_animation(self.graph, 1, 2)
         self.play(Write(self.rendered_code))
         self.play(Write(self.graph))
-
         self.animate_bfs()
 
         self.play(highlight_code_lines(self.rendered_code, indicate=False))
@@ -342,7 +339,7 @@ class FastBFS(SectionsScene):
 
 class BFSBigGraph(FastBFS):
     def __init__(self, **kwargs):
-        vertices, edges, layout = get_big_triangle_graph(4)
+        vertices, edges, layout = get_big_triangle_graph(10)
         super().__init__(vertices, edges, layout, **kwargs)
 
     def construct(self):
@@ -358,9 +355,8 @@ class BFSBigGraph(FastBFS):
 if __name__ == "__main__":
     # scenes_lst = [BigGraphBFS]
     # scenes_lst = [SmallGraphBFS]
-    scenes_lst = [BFSBigGraph]
-    scenes_lst = [DirectedGraphBFS]
     # scenes_lst = [MovingDiGraph]
+    scenes_lst = [BFSBigGraph, DirectedGraphBFS]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])
     # create_scene_gif(OUT_DIR, scenes_lst[0].__name__, section_num_lst=[28 + i for i in range(6)])
