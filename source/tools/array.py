@@ -150,31 +150,44 @@ class ArrayMob(VGroup):
 
         return AnimationGroup(*animations, **kwargs)
 
-    def push(self, value: int, **kwargs) -> Animation:
+    def push(self, value: int, side: np.ndarray = RIGHT, **kwargs) -> Animation:
         """
         Pushes an element to the array.
         :param value: The value of the element to be pushed.
         :param kwargs: Additional arguments to the AnimationGroup.
         :return: The AnimationGroup of the push animation.
         """
-
         square, val_text, label = self.create_arr_entry(value, index=len(self.squares))
 
         if len(self.squares) == 0:
             square.next_to(self.array_name, direction=RIGHT)
-        else:
+        elif (side == RIGHT).all():
             square.move_to(self.squares[-1].get_right(), aligned_edge=LEFT)
+        else:  # equal LEFT
+            square.move_to(self.squares[0])
 
         val_text.move_to(square)
-
         square.add(val_text)
+
+        if (side == LEFT).all():
+            def on_finish(scene: Scene):
+                self.squares.add_to_back(square)
+                self.vals_texts.add_to_back(val_text)
+                self.add_to_back(square)
+                self.add_to_back(val_text)
+
+            relative_pos = square.copy().move_to(self.squares[0].get_left(), aligned_edge=RIGHT).get_center()
+            return AnimationGroup(FadeIn(square, target_position=relative_pos, **kwargs),
+                                  self.squares.animate.move_to(square.get_right(), aligned_edge=LEFT),
+                                  group=self, _on_finish=on_finish, **kwargs)
+
         self.squares.add(square)
         self.vals_texts.add(val_text)
         self.add(square)
         self.add(val_text)
-        return FadeIn(square, shift=LEFT, **kwargs)
+        return FadeIn(square, shift=-side, **kwargs)
 
-    def create_arr_entry(self, value, index) -> tuple[Square, Tex, VGroup]:
+    def create_arr_entry(self, value, index) -> tuple[VGroup, Tex, VGroup]:
         square = Square(**self.create_array_args.pop("square_config", {})).scale_to_fit_height(
             self.height_ref * self.arr_scale * 3)
         val_text = Tex("" if value is None else str(value), **self.create_array_args.pop("value_config", {}))
@@ -187,7 +200,7 @@ class ArrayMob(VGroup):
             label = Text(str(index)).match_height(square).scale(0.2 * self.labels_scale)
             label.next_to(square, self.labels_pos, buff=-(label.height + self.LABELS_BUFF)).align_to(
                 square, RIGHT).shift(LEFT * self.LABELS_BUFF)
-        return square, val_text, label
+        return VGroup(square), val_text, label
 
     def get_square(self, index: int) -> VGroup:
         """Get the square object of an element with a given index."""

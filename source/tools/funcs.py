@@ -9,7 +9,7 @@ import re
 import json
 
 QFLAGS_TO_QUALITY = {v["flag"]: k for k, v in QUALITIES.items() if v["flag"] is not None}
-QUALITY_TO_DIR = [f"{QUALITIES[k]['pixel_height']}p{QUALITIES[k]['frame_rate']}" for k in QUALITIES.keys()]
+QUALITY_TO_DIR = {k: f"{QUALITIES[k]['pixel_height']}p{QUALITIES[k]['frame_rate']}" for k in QUALITIES.keys()}
 DEFAULT_GIF_SCENES = list(range(1, 3))
 SECTIONS_MEDIA_PATH = r"videos/{quality_dir}/sections"
 SCENE_CLIP_NAME = "{scene_name}_{section_num:04d}.mp4"
@@ -93,7 +93,7 @@ def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = LI
     code = code.code
     lines_highlighted_animation = []
     lines_indicate_animation = []
-    lines = list(range(len(code))) if lines is None else lines
+    lines = list(range(len(code) + 1)) if lines is None else lines
     for line_number, line in enumerate(code):
         if line_number == 0: continue
 
@@ -159,8 +159,9 @@ def get_func_text(string: str, blue_args: list = None, **kwargs):
 # --------------------------------- Graphs --------------------------------- #
 
 
-def get_neighbors(graph: DiGraph, vertex):
-    return [neighbor for neighbor in graph.vertices if (vertex, neighbor) in graph.edges]
+def get_neighbors(graph: DiGraph, vertex, priority_lst=None):
+    priority_lst = graph.vertices if priority_lst is None else priority_lst
+    return [neighbor for neighbor in priority_lst if (vertex, neighbor) in graph.edges]
 
 
 def create_dist_label(index, graph, label):
