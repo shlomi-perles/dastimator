@@ -2346,6 +2346,10 @@ footer .footer-top .info-share li a::before {
     color: #f39c12;
 }
 
+#lab_social_icon_footer #social-gh:hover {
+    color: #8c6239;
+}
+
 .particles-js-canvas-el {
     height: 100vmax !important;
     z-index: 0;
