@@ -16,7 +16,7 @@ ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
-PRESENTATION_MODE = False
+PRESENTATION_MODE = True
 DISABLE_CACHING = False
 config.background_color = BACKGROUND_COLOR
 
@@ -347,31 +347,7 @@ class RecursiveDFSScene(SectionsScene):
         self.queue_mob, self.u, self.pi, self.time = self.create_dfs_vars(self.rendered_code)
         self.pre, self.post = self.create_pre_ans_post()
         self.pre_and_post = VGroup(*[i for i in self.pre if i is not None], *[i for i in self.post if i is not None])
-        self.mobjects_garbage_collector = VGroup()
-
-    def construct(self):
-        # self.next_section("BFS to DFS", pst.NORMAL) # TODO: add
-        # self.animate_bfs_dfs_comparison() # TODO: add
-
-        self.next_section("DFS", pst.NORMAL)
-        self.add(self.rendered_code)  # TODO: remove
-        self.add(self.graph)  # TODO: remove
-        self.pi.at(0, "-")
-        self.add(self.queue_mob, self.u, self.pi, self.time)  # TODO: remove
-        self.add()  # TODO: remove
-        # self.play(ChangeDecimalToValue(self.time[1], 1),
-        #           Flash(self.time[1], flash_radius=self.time[1].height))
-        # self.wait()
-        # self.play(Write(self.rendered_code))
-        # self.play(Write(self.graph))
-
-        self.animate_recursive_dfs()
-        self.play(highlight_code_lines(self.rendered_code, indicate=False))
-        self.next_section("DFS finished", pst.SUB_NORMAL)
-        self.play(Unwrite(self.graph), Unwrite(self.mobjects_garbage_collector))
-        self.play(Unwrite(VGroup(self.queue_mob, self.u, self.pi)))
-        self.play(Uncreate(self.rendered_code))
-        self.wait()
+        self.mobjects_garbage_collector = VGroup(self.pre_and_post)
 
     def animate_recursive_dfs(self):
         """
@@ -412,6 +388,7 @@ class RecursiveDFSScene(SectionsScene):
             self.play(ChangeDecimalToValue(time[1], time[1].number + 1),
                       Flash(time[1], flash_radius=time[1].height))
             pre_time = time[1].copy()
+            self.mobjects_garbage_collector.add(pre_time)
             self.play(
                 pre_time.animate.scale_to_fit_height(self.pre[start_vertex].height * times_tex_height_factor).move_to(
                     self.pre[start_vertex]))
@@ -437,6 +414,7 @@ class RecursiveDFSScene(SectionsScene):
             self.play(ChangeDecimalToValue(time[1], time[1].number + 1),
                       Flash(time[1], flash_radius=time[1].height))
             post_time = time[1].copy()
+            self.mobjects_garbage_collector.add(post_time)
             self.play(
                 post_time.animate.scale_to_fit_height(self.post[start_vertex].height * times_tex_height_factor).move_to(
                     self.post[start_vertex]))
@@ -510,6 +488,21 @@ class RecursiveDFSMainExamp(RecursiveDFSScene):
         super().__init__(vertices, edges, start_vertex, layout=vertices_locations, directed_graph=True,
                          priority_lst=priority_lst, **kwargs)
 
+    def construct(self):
+        self.next_section("DFS Example", pst.NORMAL)
+        self.play(Write(self.rendered_code))
+        self.play(Write(self.graph))
+        self.pi.at(0, "-")
+        self.play(Write(self.queue_mob), Write(self.u), Write(self.pi), Write(self.time))
+
+        self.animate_recursive_dfs()
+        self.play(highlight_code_lines(self.rendered_code, indicate=False))
+        self.next_section("DFS finished", pst.SUB_NORMAL)
+        self.play(Unwrite(self.graph), Unwrite(self.mobjects_garbage_collector))
+        self.play(Unwrite(VGroup(self.queue_mob, self.u, self.pi, self.time)))
+        self.play(Uncreate(self.rendered_code))
+        self.wait()
+
 
 class FastDFS(SectionsScene):
     def __init__(self, vertices, edges, layout, directed_graph=False, start_vertex=0, **kwargs):
@@ -567,7 +560,7 @@ class FastDFS(SectionsScene):
 
 class DFSBigGraph(FastDFS):
     def __init__(self, **kwargs):
-        vertices, edges, layout = get_big_triangle_graph(4)
+        vertices, edges, layout = get_big_triangle_graph(10)
         super().__init__(vertices, edges, layout, **kwargs)
 
     def construct(self):
@@ -581,10 +574,6 @@ class DFSBigGraph(FastDFS):
 
 
 if __name__ == "__main__":
-    # scenes_lst = [BigGraphDFS]
-    # scenes_lst = [SmallGraphDFS]
-    # scenes_lst = [MovingDiGraph]
-    # scenes_lst = [DFSBigGraph]
-    scenes_lst = [DFSBigGraph]
+    scenes_lst = [DFSBigGraph, RecursiveDFSMainExamp]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])
