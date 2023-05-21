@@ -469,7 +469,8 @@ class RecursiveDFSScene(SectionsScene):
                                               edge_config={"stroke_color": VISITED_COLOR,
                                                            "stroke_width": VISITED_EDGE_WIDTH,
                                                            "tip_config": {
-                                                               "tip_length": VISITED_TIP_SIZE if self.directed_graph else 0}}))
+                                                               "tip_length": VISITED_TIP_SIZE if self.directed_graph else 0,
+                                                               "tip_width": VISITED_TIP_SIZE if self.directed_graph else 0}}))
         self.play(Create(visited_mark))
 
     def highlight_and_indicate_code(self, lines: list, **kwargs):
@@ -574,6 +575,7 @@ class DFSBigGraph(FastDFS):
 
 
 if __name__ == "__main__":
-    scenes_lst = [DFSBigGraph, RecursiveDFSMainExamp]
+    scenes_lst = [RecursiveDFSMainExamp]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)])
+    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
+               create_gif=False, quality="h")
