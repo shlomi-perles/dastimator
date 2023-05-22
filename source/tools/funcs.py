@@ -13,7 +13,7 @@ QUALITY_TO_DIR = {k: f"{QUALITIES[k]['pixel_height']}p{QUALITIES[k]['frame_rate'
 DEFAULT_GIF_SCENES = list(range(1, 3))
 SECTIONS_MEDIA_PATH = r"videos/{quality_dir}/sections"
 SCENE_CLIP_NAME = "{scene_name}_{section_num:04d}.mp4"
-DEFAULT_GIF_RESIZE = 0.1
+DEFAULT_GIF_RESIZE = 0.2
 
 
 def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, disable_caching: bool = False,

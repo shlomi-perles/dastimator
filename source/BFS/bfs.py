@@ -51,7 +51,7 @@ def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]
     if not directed_graph:
         edges += [(v, u) for u, v in edges]
 
-    edge_config = EDGE_CONFIG
+    edge_config = EDGE_CONFIG.copy()
     if directed_graph:
         edge_configs = {}
         for k, v in edges:
@@ -64,7 +64,7 @@ def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]
         edge_config = edge_configs
 
     graph = graph_type(vertices, edges, layout=layout, layout_scale=1.5, labels=labels,
-                       label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG, edge_config=edge_config)
+                       label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG.copy(), edge_config=edge_config)
     for i, vertex in enumerate(graph.vertices):
         if not labels:
             if not absolute_scale_vertices:

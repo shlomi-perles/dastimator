@@ -46,10 +46,10 @@ DFS_PSEUDO_CODE = '''def DFS(G,s):
             post[π[u]] ← time, time += 1'''
 
 RECURSIVE_DFS_PSEUDO_CODE = '''def DFS(G,s):
+    s.visited ← True
     time += 1
     pre[s] ← time
     for neighbor v of s & v.visited = False:
-        v.visited ← True
         π[v] ← s
         DFS(G,v)
     time += 1
@@ -362,10 +362,10 @@ class RecursiveDFSScene(SectionsScene):
         times_tex_height_factor = 0.6
 
         self.next_section("DFS Present")
-        self.highlight_and_indicate_code([4, 5, 6])
+        self.highlight_and_indicate_code([2, 5, 6, 7])
 
         self.next_section("DFS time present")
-        self.highlight_and_indicate_code([2, 3, 7, 8])
+        self.highlight_and_indicate_code([3, 4, 8, 9])
         self.next_section("Present pre and post")
         self.play(Write(self.pre_and_post))
         self.next_section("Start DFS")
@@ -377,15 +377,17 @@ class RecursiveDFSScene(SectionsScene):
         fast_run = False
 
         def dfs(start_vertex):
+            self.highlight_and_indicate_code([2])
             if start_vertex != self.start_vertex:
-                self.highlight_and_indicate_code([1])
+                self.next_section(f"DFS on vertex {start_vertex}", skip_section=fast_run)
+                self.visit_vertex_animation(graph, parent[start_vertex], start_vertex)
                 self.next_section(f"DFS on vertex {start_vertex}", skip_section=fast_run)
                 self.play(queue_mob.push(start_vertex, LEFT))
             else:
                 self.visit_vertex_animation(graph, None, start_vertex)
 
-            self.next_section("Mark vertex as visited", skip_section=fast_run)
-            self.highlight_and_indicate_code([2, 3])
+            self.next_section("Pre time", skip_section=fast_run)
+            self.highlight_and_indicate_code([3, 4])
             self.play(ChangeDecimalToValue(time[1], time[1].number + 1),
                       Flash(time[1], flash_radius=time[1].height))
             pre_time = time[1].copy()
@@ -397,9 +399,6 @@ class RecursiveDFSScene(SectionsScene):
                 if dist[neighbor] != np.Inf:
                     continue
                 dist[neighbor] = dist[start_vertex] + 1
-                self.next_section(f"DFS on vertex {neighbor}", skip_section=fast_run)
-                self.highlight_and_indicate_code([4, 5])
-                self.visit_vertex_animation(graph, parent[start_vertex], start_vertex)
 
                 # animate π[v] ← s
                 parent[neighbor] = start_vertex
