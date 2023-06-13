@@ -1421,6 +1421,8 @@ class WeightedGraph(DiGraph):
         for edge in self.edges.values():
             edge.weight_mob.scale_to_fit_height(relative_node.height * WEIGHT_SCALE)
             edge.weight_mob[1].scale(WEIGHT_LABEL_SCALE)
+            scale_factor = self.weights_config.get("scale_factor", 1)
+            edge.weight_mob.scale(scale_factor)
 
     def create_weight(self, weight: float):
         weight_config = {**WEIGHT_CONFIG, **self.weights_config}
@@ -1447,3 +1449,18 @@ class WeightedGraph(DiGraph):
             edge_mobject.add(edge_mobject.weight_mob)
             edge_mobject.update_weight(edge_mobject)
         return edge_mobject
+
+    def update_edges(self, graph):
+        for (u, v), edge in graph.edges.items():
+            edge_type = type(edge)
+            tip = edge.pop_tips()
+
+            new_edge = self.create_edge(edge_type, u, v)
+            if isinstance(edge, Edge):
+                new_edge.weight_mob.match_height(edge.weight_mob)
+
+            edge.become(new_edge)
+            if len(tip) > 0:
+                edge.add_tip(tip[0])
+
+            edge.set_color(edge.get_color())

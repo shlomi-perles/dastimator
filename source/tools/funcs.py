@@ -182,10 +182,10 @@ def compile_code_tex_line(line_mob, line_str: str, line_start_idx: int = 0):
         idx += line_start_idx
         replace_word = line_mob[idx:idx + len(string)]
         tex_str = r"$\boldsymbol{" + string.strip("$") + r"}$"
-        tex = Tex(tex_str).match_height(replace_word[1:-1]).move_to(replace_word, aligned_edge=LEFT).scale(
-            CODE_MATH_SCALE)
+        tex = Tex(tex_str).match_height(replace_word[1:-1]).scale(CODE_MATH_SCALE).move_to(replace_word,
+                                                                                           aligned_edge=LEFT)
         replace_word.become(tex)
-        line_mob[idx + len(string):].next_to(replace_word, buff=0)
+        line_mob[idx + len(string):].next_to(replace_word, buff=0.05)
 
 
 def find_math_substrings(string):

@@ -12,12 +12,12 @@ class Edge(VGroup):
     """Simple class that represents a BST edge"""
 
     def __init__(self, start: Node | np.ndarray, end: Node | np.ndarray, weight: str | int | VMobject = None,
-                 edge_type: type[Mobject] = Line, **kwargs):
+                 edge_type: type[VMobject] = Line, **kwargs):
         """kwargs are passed to Line constructor"""
         super().__init__()
         self.edge_type = edge_type
         start_loc = start.get_center() if isinstance(start, Node) else np.copy(start)
-        end_loc = end.get_center() if isinstance(end, Node) else  np.copy(end)
+        end_loc = end.get_center() if isinstance(end, Node) else np.copy(end)
         self.edge_line = edge_type(start_loc, end_loc, **kwargs)
         self.start = start
         self.end = end
@@ -96,4 +96,11 @@ class Edge(VGroup):
 
     def add_tip(self, *args, **kwargs):
         self.edge_line.add_tip(*args, **kwargs)
+        return self
+
+    def get_color(self):
+        return self.edge_line.get_color()
+
+    def set_color(self, *args, **kwargs):
+        self.edge_line.set_color(*args, **kwargs)
         return self

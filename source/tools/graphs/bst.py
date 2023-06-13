@@ -6,10 +6,8 @@ from .edge import *
 BST_WEIGHT_COLOR = WHITE
 BST_WEIGHT_FONT_COLOR = BLACK
 
-
-# BST_WEIGHT_COLOR = BACKGROUND_COLOR
-# BST_WEIGHT_FONT_COLOR = WHITE
-
+WEIGHT_SCALE = 0.5
+WEIGHT_LABEL_SCALE = 0.8
 class BST(VGroup):
     """Class that represents a full binary search tree"""
 
