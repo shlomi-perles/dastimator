@@ -6,9 +6,9 @@ TODO: 3. Break down the main scene into smaller scenes.
 """
 from __future__ import annotations
 
+from tools.scenes import *
 from tools.funcs import *
 from tools.graphs.bst import *
-from tools.scenes import *
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
@@ -16,7 +16,6 @@ OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
 PRESENTATION_MODE = True
 DISABLE_CACHING = False
-config.background_color = BACKGROUND_COLOR
 # ----------------------------------    consts   ---------------------------------- #
 NODE_INDICATE_COLOR = GREEN
 MOVE_PATH_RUNTIME = 4

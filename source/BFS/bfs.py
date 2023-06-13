@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import Hashable
-from copy import copy, deepcopy
+from copy import copy
 
+from tools.scenes import *
 from tools.array import *
 from tools.consts import *
 from tools.funcs import *
-from tools.scenes import *
 from tools.graphs.my_graphs import DiGraph
 
 ROOT_PATH = Path(__file__).resolve().parent
@@ -15,7 +14,6 @@ OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
 PRESENTATION_MODE = True
 DISABLE_CACHING = False
-config.background_color = BACKGROUND_COLOR
 
 # --------------------------------- constants --------------------------------- #
 EDGE_COLOR = GREY
@@ -280,6 +278,8 @@ class DirectedGraphBFS(BFSScene):
 
 
 class BFSComplexity(BFSScene):
+    # TODO: next time unwrite graph from DirectedGraphBFS, add the ajacency_list_representation and bold the vertices
+    #  at O(V) and the eighbors at O(E)
     def __init__(self, **kwargs):
         vertices = list(range(1, 8))
         edges = [(1, 2), (1, 3),
@@ -588,13 +588,6 @@ class GraphRepresentation(SectionsScene):
 
 
 if __name__ == "__main__":
-    # scenes_lst = [GraphsIntro]
-    # scenes_lst = [EdgesUpperBound]
-    # scenes_lst = [GraphRepresentation]
-    # scenes_lst = [BFSIntro]
-    # scenes_lst = [BFSBigGraph]
-    # scenes_lst = [DirectedGraphBFS]
-    # scenes_lst = [BFSComplexity]
     scenes_lst = [GraphsIntro, EdgesUpperBound, GraphRepresentation, BFSIntro, BFSBigGraph, DirectedGraphBFS,
                   BFSComplexity]
 

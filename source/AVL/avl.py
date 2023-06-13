@@ -6,9 +6,8 @@ TODO: 3. Maybe add delete example and worst case example (Example from TA7).
 
 from __future__ import annotations
 
-from tools.funcs import *
-from tools.graphs.avl_tree import *
 from BST.bst import *
+from tools.graphs.avl_tree import *
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
@@ -16,7 +15,7 @@ OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
 PRESENTATION_MODE = True
 DISABLE_CACHING = True
-config.background_color = BACKGROUND_COLOR
+
 HD_TO_COLOR = {0: "blue", 1: "yellow", 2: "red", 3: "red"}
 SUBTRE_HEIGHT_SCALE = {0: 0.95, 1: 1.6, 2: 2.25}
 INSERT_WIDTH_TITLE = 0.33

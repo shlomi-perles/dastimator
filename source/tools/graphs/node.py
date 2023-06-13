@@ -14,7 +14,7 @@ class Node(LabeledDot):
     """Simple class that represents a BST node"""
 
     def __init__(self, key=None, label=None, relative_height=None, **kwargs):
-        if label is not isinstance(label, SVGMobject) and label is not None:
+        if not isinstance(label, SVGMobject) and label is not None:
             label = MathTex(label, fill_color=LABEL_COLOR)
         label_scale = kwargs.pop("label_scale", VERTEX_LABEL_SCALE)
         kwargs = {**VERTEX_CONFIG, **kwargs}

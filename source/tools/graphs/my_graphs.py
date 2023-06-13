@@ -25,6 +25,10 @@ from manim.utils.color import BLACK
 from manim.scene.scene import Scene
 from manim.constants import DEFAULT_ARROW_TIP_LENGTH
 
+from .node import Node, IndicateNode
+from .edge import Edge
+from ..consts import WEIGHT_LABEL_FONT_COLOR, WEIGHT_CONFIG, WEIGHT_SCALE, WEIGHT_LABEL_SCALE
+
 
 class GraphType(Enum):
     UNDIRECTED = nx.Graph
@@ -1397,3 +1401,49 @@ class DiGraph(GenericGraph):
 
     def __repr__(self: DiGraph) -> str:
         return f"Directed graph on {len(self.vertices)} vertices and {len(self.edges)} edges"
+
+
+class WeightedGraph(DiGraph):
+    def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]],
+                 weights: dict[tuple[Hashable, Hashable], float], *args, **kwargs) -> None:
+        if "vertex_type" not in kwargs:
+            kwargs["vertex_type"] = Node
+        kwargs["edge_type"] = Edge
+        # build vertex_config
+        self.weights_config = kwargs.get("weights_config", {})
+        kwargs["edge_config"] = {edge: {**kwargs.get("edge_config", {}), **{"weight": weight}} for
+                                 edge, weight in weights.items()}
+
+        super().__init__(vertices, edges, *args, **kwargs)
+
+        relative_node = next(iter(self.vertices.values()))
+
+        for edge in self.edges.values():
+            edge.weight_mob.scale_to_fit_height(relative_node.height * WEIGHT_SCALE)
+            edge.weight_mob[1].scale(WEIGHT_LABEL_SCALE)
+
+    def create_weight(self, weight: float):
+        weight_config = {**WEIGHT_CONFIG, **self.weights_config}
+        label_fill_color = weight_config.pop("label_fill_color", WEIGHT_LABEL_FONT_COLOR)
+        return LabeledDot(
+            label=MathTex(weight, fill_color=label_fill_color), **weight_config)
+
+    def create_edge(self, edge_type, u, v):
+        """Create an edge mobject between two vertices."""
+        edge_start = self[u] if isinstance(self[u], Node) else self[u].get_center()
+        edge_end = self[v] if isinstance(self[v], Node) else self[v].get_center()
+        if self.graph_type == GraphType.UNDIRECTED:
+            edge_mobject = edge_type(edge_start, edge_end, z_index=-1, **self._edge_config[(u, v)])
+        else:
+            edge_len = np.linalg.norm(self[u].get_center() - self[v].get_center()
+                                      ) - (self[v].width + self[u].width) / 2
+            edge_mobject = edge_type(edge_start, edge_end, z_index=-1, **self._edge_config[(u, v)])
+            edge_mobject.put_start_and_end_on(ORIGIN, [edge_len, 0, 0])
+            edge_mobject.next_to(self[u], RIGHT, buff=0)
+            u_v_angle = np.arctan2(self[v].get_center()[1] - self[u].get_center()[1],
+                                   self[v].get_center()[0] - self[u].get_center()[0])
+            edge_mobject.remove(edge_mobject.weight_mob)
+            edge_mobject.rotate(u_v_angle, about_point=self[u].get_center())
+            edge_mobject.add(edge_mobject.weight_mob)
+            edge_mobject.update_weight(edge_mobject)
+        return edge_mobject

@@ -1,5 +1,8 @@
 from manim import *
 from manim_editor import PresentationSectionType as pst
+from tools.consts import BACKGROUND_COLOR
+
+config.background_color = BACKGROUND_COLOR
 
 
 class SectionsScene(Scene):

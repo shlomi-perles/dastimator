@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from typing import Hashable
+from copy import copy
 
 from manim_editor import PresentationSectionType as pst
 
-from tools.graphs.my_graphs import DiGraph
+from tools.scenes import *
 from BFS.bfs import BFS_PSEUDO_CODE, create_graph, get_big_triangle_graph
 from tools.array import *
 from tools.consts import *
 from tools.funcs import *
 from tools.graphs.my_graphs import DiGraph
-from copy import copy, deepcopy
 
 ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
@@ -18,7 +17,6 @@ OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
 PRESENTATION_MODE = True
 DISABLE_CACHING = False
-config.background_color = BACKGROUND_COLOR
 
 # --------------------------------- constants --------------------------------- #
 EDGE_COLOR = GREY
@@ -76,14 +74,9 @@ class DFSScene(SectionsScene):
         self.priority_list = priority_list
 
     def construct(self):
-        # self.next_section("BFS to DFS", pst.NORMAL) # TODO: add
-        # self.animate_bfs_dfs_comparison() # TODO: add
-
         self.next_section("DFS", pst.NORMAL)
         self.add(self.rendered_code)  # TODO: remove
         self.add(self.graph)  # TODO: remove
-        # self.play(Write(self.rendered_code))
-        # self.play(Write(self.graph))
 
         self.animate_dfs()
 

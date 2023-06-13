@@ -11,10 +11,14 @@ class Edge(VGroup):
     WEIGHT_Z_INDEX = 3
     """Simple class that represents a BST edge"""
 
-    def __init__(self, start: Node, end: Node, weight: str | int | VMobject = None, **kwargs):
+    def __init__(self, start: Node | np.ndarray, end: Node | np.ndarray, weight: str | int | VMobject = None,
+                 edge_type: type[Mobject] = Line, **kwargs):
         """kwargs are passed to Line constructor"""
         super().__init__()
-        self.edge_line = Line(start.get_center(), end.get_center(), **kwargs)
+        self.edge_type = edge_type
+        start_loc = start.get_center() if isinstance(start, Node) else np.copy(start)
+        end_loc = end.get_center() if isinstance(end, Node) else  np.copy(end)
+        self.edge_line = edge_type(start_loc, end_loc, **kwargs)
         self.start = start
         self.end = end
         self.weight_mob = None
@@ -62,10 +66,12 @@ class Edge(VGroup):
     def fix_z_index(self):
         if self.start is None or self.end is None:
             return
-        self.start.set_z_index(self.NODE_Z_INDEX)
-        self.start.label.set_z_index(self.LABEL_Z_INDEX)
-        self.end.set_z_index(self.NODE_Z_INDEX)
-        self.end.label.set_z_index(self.LABEL_Z_INDEX)
+        if isinstance(self.start, Node):
+            self.start.set_z_index(self.NODE_Z_INDEX)
+            self.start.label.set_z_index(self.LABEL_Z_INDEX)
+        if isinstance(self.end, Node):
+            self.end.set_z_index(self.NODE_Z_INDEX)
+            self.end.label.set_z_index(self.LABEL_Z_INDEX)
         self.edge_line.set_z_index(self.EDGE_Z_INDEX)
         if self.weight_mob is not None:
             self.weight_mob.set_z_index(self.WEIGHT_Z_INDEX)
@@ -84,3 +90,10 @@ class Edge(VGroup):
                 width_factor * self.stroke_width))
 
         return AnimationGroup(*animations, **kwargs, group=self)
+
+    def pop_tips(self):
+        return self.edge_line.pop_tips()
+
+    def add_tip(self, *args, **kwargs):
+        self.edge_line.add_tip(*args, **kwargs)
+        return self
