@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from copy import copy
 
-from manim_editor import PresentationSectionType as pst
-
+from tools.graphs.utils import get_neighbors, create_dist_label, create_graph
 from tools.scenes import *
-from BFS.bfs import BFS_PSEUDO_CODE, create_graph, get_big_triangle_graph
+from BFS.bfs import BFS_PSEUDO_CODE, get_big_triangle_graph
 from tools.array import *
 from tools.consts import *
 from tools.funcs import *

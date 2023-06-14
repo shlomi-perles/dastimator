@@ -35,7 +35,7 @@ class Edge(VGroup):
         self.fix_z_index()
 
     def __str__(self):
-        return f"Edge({self.start.key}, {self.end.key}{(',' + self.weight) if self.weight is not None else ''})"
+        return f"Edge({self.start.key}, {self.end.key}{(' ,' + str(self.weight)) if self.weight is not None else ''})"
 
     def put_start_and_end_on(self, start, end):  # TODO: update start and end?
         self.fix_z_index()
@@ -76,8 +76,9 @@ class Edge(VGroup):
         if self.weight_mob is not None:
             self.weight_mob.set_z_index(self.WEIGHT_Z_INDEX)
 
-    def animate_move_along_path(self, flash_color=VISITED_COLOR, width_factor=1, time_width: float = 0.1,
-                                opposite_direction=False, preserve_state=False, **kwargs) -> AnimationGroup:
+    def animate_move_along_path(self, flash_color=VISITED_COLOR, width_factor=EDGE_PATH_WIDTH_FACTOR,
+                                time_width: float = 0.1, opposite_direction=False, preserve_state=False,
+                                **kwargs) -> AnimationGroup:
         self.fix_z_index()
         copy_line = self.edge_line.copy()
         if opposite_direction:

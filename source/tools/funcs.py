@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import json
 import re
-from copy import deepcopy
-from typing import Hashable
 
+import numpy
 from manim import *
+from manim import Polygon, Rectangle, SurroundingRectangle, VGroup
+from manim.mobject.geometry.boolean_ops import _BooleanOps
 from manim_fonts import *
 from moviepy.editor import VideoFileClip, concatenate_videoclips
+from scipy.spatial import ConvexHull
 
-from .consts import LINES_OFF_OPACITY, DISTANCE_LABEL_COLOR, DISTANCE_LABEL_SCALE, DISTANCE_LABEL_BUFFER, EDGE_CONFIG, \
-    DEFAULT_ARROW_TIP_WIDTH, TIP_SIZE, VERTEX_CONFIG, LABEL_COLOR, VERTEX_LABEL_SCALE
-from .graphs.my_graphs import WeightedGraph, DiGraph
+from .consts import LINES_OFF_OPACITY
+from .code_styles import DarculaStyle, pygments_monkeypatch_style
 
 QFLAGS_TO_QUALITY = {v["flag"]: k for k, v in QUALITIES.items() if v["flag"] is not None}
 QUALITY_TO_DIR = {k: f"{QUALITIES[k]['pixel_height']}p{QUALITIES[k]['frame_rate']}" for k in QUALITIES.keys()}
@@ -140,10 +141,11 @@ def transform_code_lines(code: Code, target_code: Code, lines_transform_dict: di
 
 
 def create_code(code_str: str, tex=True, colored_func_name=True, **kwargs):
+    pygments_monkeypatch_style("darcula", DarculaStyle)
     with RegisterFont("JetBrains Mono") as fonts:
         Code.set_default(font="JetBrains Mono")
     rendered_code = Code(code=code_str, tab_width=3, background="window", language="Python",
-                         style="fruity", **kwargs).to_corner(LEFT + UP)
+                         style="darcula", **kwargs).to_corner(LEFT + UP)
 
     if colored_func_name:
         start_idx = len("def ")
@@ -207,74 +209,78 @@ def get_func_text(string: str, blue_args: list = None, **kwargs):
                      **({arg: BLUE_D for arg in blue_args})}, **kwargs)
 
 
-# --------------------------------- Graphs --------------------------------- #
+# ---------------------------- geometry ----------------------------
+from scipy.spatial import KDTree
+import networkx as nx
 
 
-def get_neighbors(graph: DiGraph, vertex, priority_lst=None):
-    priority_lst = graph.vertices if priority_lst is None else priority_lst
-    return [neighbor for neighbor in priority_lst if (vertex, neighbor) in graph.edges]
+def boolean_op_to_polygons(boolean_op: _BooleanOps, convex_hull=True, **kwargs) -> Polygon:
+    points = np.array([np.copy(bezier(point)(1)) for point in boolean_op.get_cubic_bezier_tuples()])
+    # points = np.copy(boolean_op.points)
+    # return Polygon(*points, **kwargs)
+    points = [points[i] for i in ConvexHull(points[:, :2]).vertices] if convex_hull else [i for i in points]
+    # return Polygon(*np.array(points), **kwargs)
+    filter_points = [points[0]]
+    for i in range(1, len(points)):
+        if not np.any(np.all(np.isclose(filter_points, points[i], atol=1.e-1), axis=1)):
+            filter_points = np.vstack((filter_points, points[i]))
+    return Polygon(*np.array(filter_points), **kwargs)
+    tmp_points = np.copy(filter_points)
+    G = nx.Graph()  # A graph to hold the nearest neighbours
+    points = list(map(tuple, filter_points[:, :2]))
+    tree = KDTree(points, leafsize=2)  # Create a distance tree
+    found_points = set()
+    start_point = next_point = points[0]
+    G.add_nodes_from(points)
+    while len(found_points) < len(points):
+        for dist, ind in zip(*tree.query(next_point, k=len(points))):
+            point = tuple(points[ind])
+            if point not in found_points:
+                G.add_edge(next_point, point)
+                found_points.add(point)
+                next_point = point
+                break
+
+    # for p in points[1:]:
+    #     p = p
+    #     dist, ind = tree.query(p, k=3)
+    #     G.add_node(p)
+    #     n1, l1 = points[ind[1]], dist[1]  # The next nearest point
+    #     n2, l2 = points[ind[2]], dist[2]  # The following nearest point
+    #     G.add_edge(p, n1)
+    #     G.add_edge(p, n2)
+    # last_point = points[0]
+    # dist, ind = tree.query(last_point, k=2)
+    # G.add_node(last_point)
+    # targe_point = points[ind[1]]
+    # G.add_edge(last_point, targe_point)
+    # # add 0 to z axis
+    target_point = next_point
+    filter_points = [np.append(p, 0) for p in nx.shortest_path(G, source=start_point, target=target_point)]
+    return Polygon(*np.array(filter_points), **kwargs)
 
 
-def create_dist_label(index, graph, label):
-    label = MathTex(rf"\mathbf{{{label}}}", color=DISTANCE_LABEL_COLOR)
-    if label.width < label.height:
-        label.scale_to_fit_height(graph[index].radius * DISTANCE_LABEL_SCALE)
-    else:
-        label.scale_to_fit_width(graph[index].radius * DISTANCE_LABEL_SCALE)
-    return label.move_to(graph[index]).next_to(graph[index][1], RIGHT, buff=DISTANCE_LABEL_BUFFER)
+def get_convex_hull_polygon(points: np.ndarray, round_radius=0.2, **kwargs) -> Polygon:
+    hull = ConvexHull(points[:, :2])
+    return Polygon(*[np.append(points[i], 0) for i in hull.vertices], **kwargs).round_corners(radius=round_radius)
 
 
-def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]],
-                 layout: str | dict[Hashable, np.ndarray] = "spring", layout_scale: float = 1.5,
-                 directed_graph: bool = False, graph_type=DiGraph, absolute_scale_vertices=False,
-                 labels: bool = True,
-                 weights: dict[tuple[Hashable, Hashable], float] = None) -> WeightedGraph | DiGraph:
-    """
-    Create graph and add labels to vertices,
-    Note: vertices are 1-indexed
-    """
-    edges = deepcopy(edges)
-    if not directed_graph:
-        edges += [(v, u) for u, v in edges]
+def get_tangent_points(polygon_a: Polygon, polygon_b: Polygon) -> list[tuple[int, int]]:
+    tangent_points = []
+    poly_a_vertices = polygon_a.get_vertices()
+    poly_b_vertices = polygon_b.get_vertices()
+    for i in range(len(poly_a_vertices)):
+        for j in range(len(poly_b_vertices)):
+            if np.allclose(poly_a_vertices[i], poly_b_vertices[j]):
+                tangent_points.append(poly_a_vertices[i])
+    return tangent_points
 
-    edge_config = EDGE_CONFIG.copy()
-    if directed_graph:
-        edge_configs = {}
-        for k, v in edges:
-            if (v, k) in edges:
-                edge_configs[(k, v)] = EDGE_CONFIG.copy()
-            else:
-                edge_configs[(k, v)] = EDGE_CONFIG.copy()
-                edge_configs[(k, v)]["tip_config"]["tip_length"] = TIP_SIZE
-                edge_configs[(k, v)]["tip_config"]["tip_width"] = DEFAULT_ARROW_TIP_WIDTH
-        edge_config = edge_configs
-    args = dict(vertices=vertices, edges=edges, layout=layout, layout_scale=layout_scale, labels=labels,
-                label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG.copy(), edge_config=edge_config,
-                root_vertex=1)
 
-    if weights is not None:
-        graph_type = WeightedGraph
-        if not directed_graph:
-            weights = {**{(v, u): w for (u, v), w in weights.items()}, **weights}
-        args["weights"] = weights
-
-    graph = graph_type(**args)
-    for i, vertex in enumerate(graph.vertices):
-        if not labels:
-            if not absolute_scale_vertices:
-                graph[vertex].scale_to_fit_height(graph[0].height)
-            continue
-        label = graph[vertex][1]
-        graph[vertex].remove(label)
-        label.next_to(graph[vertex], RIGHT, buff=0)
-        label.move_to(graph[vertex])
-        if not absolute_scale_vertices:
-            label.scale(VERTEX_LABEL_SCALE)
-        else:
-            graph[vertex].scale_to_fit_height(graph[list(graph.vertices.keys())[0]].height)
-            label.scale_to_fit_height(graph[vertex].height * 0.5)
-        graph[vertex].add(label)
-
-    relative_scale = config.frame_width * 0.4 if graph.width > graph.height else config.frame_height * 0.7
-    graph.scale_to_fit_width(relative_scale).move_to(ORIGIN).to_edge(RIGHT, buff=0.2)
-    return graph
+def get_surrounding_rectangle(mobject_a, mobject_b, **kwargs) -> Rectangle:
+    rect_height = np.linalg.norm(mobject_a.get_center() - mobject_b.get_center())
+    mobject_b_cp = mobject_b.copy().match_x(mobject_a)
+    rect = SurroundingRectangle(VGroup(mobject_a, mobject_b_cp), **kwargs).scale_to_fit_height(rect_height)
+    u_v_angle = np.arctan2(mobject_a.get_center()[1] - mobject_b.get_center()[1],
+                           mobject_a.get_center()[0] - mobject_b.get_center()[0])
+    rect.rotate(u_v_angle, about_point=mobject_a.get_center())
+    return rect

@@ -15,6 +15,8 @@ VERTEX_CONFIG: dict = {"fill_color": VERTEX_COLOR, "stroke_color": VERTEX_STROKE
 
 EDGE_COLOR: str = WHITE
 EDGE_STROKE_WIDTH: float = DEFAULT_STROKE_WIDTH * 2
+EDGE_PATH_WIDTH_FACTOR: float = 1
+EDGE_TREE_PATH_WIDTH_FACTOR: float = 4
 TIP_SIZE: float = DEFAULT_ARROW_TIP_LENGTH * 0.4
 DEFAULT_ARROW_TIP_WIDTH: float = TIP_SIZE
 TIP_CONFIG: dict = {"tip_config": {"tip_length": 0, "tip_width": 0}}

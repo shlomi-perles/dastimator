@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import copy
 
+from tools.graphs.utils import get_neighbors, create_dist_label, create_graph
 from tools.scenes import *
 from tools.array import *
 from tools.consts import *
