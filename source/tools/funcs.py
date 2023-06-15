@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 import re
 
-import numpy
 from manim import *
 from manim import Polygon, Rectangle, SurroundingRectangle, VGroup
 from manim.mobject.geometry.boolean_ops import _BooleanOps
 from manim_fonts import *
 from moviepy.editor import VideoFileClip, concatenate_videoclips
-from scipy.spatial import ConvexHull
+from scipy.spatial import ConvexHull, KDTree
+import networkx as nx
 
 from .consts import LINES_OFF_OPACITY
 from .code_styles import DarculaStyle, pygments_monkeypatch_style
@@ -101,15 +101,16 @@ def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = LI
     lines_highlighted_animation = []
     lines_indicate_animation = []
     lines = list(range(len(code) + 1)) if lines is None else lines
+    # VMobjectFromSVGPath().background_stroke_opacity
     for line_number, line in enumerate(code):
         if line_number == 0: continue
 
         if line_number + 1 in lines:
             if indicate:
                 lines_indicate_animation.append(Indicate(line))
-            lines_highlighted_animation.append(line.animate.set_opacity(1))
+            lines_highlighted_animation.append(line.animate.set_fill(opacity=1))
         else:
-            lines_highlighted_animation.append(line.animate.set_opacity(off_opacity))
+            lines_highlighted_animation.append(line.animate.set_fill(opacity=off_opacity))
     if indicate:
         return AnimationGroup(*lines_highlighted_animation, **kwargs), AnimationGroup(*lines_indicate_animation,
                                                                                       **kwargs)
@@ -185,9 +186,12 @@ def compile_code_tex_line(line_mob, line_str: str, line_start_idx: int = 0):
         replace_word = line_mob[idx:idx + len(string)]
         tex_str = r"$\boldsymbol{" + string.strip("$") + r"}$"
         tex = Tex(tex_str).match_height(replace_word[1:-1]).scale(CODE_MATH_SCALE).move_to(replace_word,
-                                                                                           aligned_edge=LEFT)
-        replace_word.become(tex)
-        line_mob[idx + len(string):].next_to(replace_word, buff=0.05)
+                                                                                           aligned_edge=LEFT).set_stroke(
+            width=0, opacity=0)
+        replace_word[-1].become(tex)
+        replace_word[:-1].become(VGroup().scale(0).move_to(tex.get_right()))
+        replace_word.set_stroke(width=0, opacity=0)
+        line_mob[idx + len(string):].next_to(replace_word[-1], buff=0.05)
 
 
 def find_math_substrings(string):
@@ -210,9 +214,6 @@ def get_func_text(string: str, blue_args: list = None, **kwargs):
 
 
 # ---------------------------- geometry ----------------------------
-from scipy.spatial import KDTree
-import networkx as nx
-
 
 def boolean_op_to_polygons(boolean_op: _BooleanOps, convex_hull=True, **kwargs) -> Polygon:
     points = np.array([np.copy(bezier(point)(1)) for point in boolean_op.get_cubic_bezier_tuples()])
@@ -240,21 +241,6 @@ def boolean_op_to_polygons(boolean_op: _BooleanOps, convex_hull=True, **kwargs) 
                 found_points.add(point)
                 next_point = point
                 break
-
-    # for p in points[1:]:
-    #     p = p
-    #     dist, ind = tree.query(p, k=3)
-    #     G.add_node(p)
-    #     n1, l1 = points[ind[1]], dist[1]  # The next nearest point
-    #     n2, l2 = points[ind[2]], dist[2]  # The following nearest point
-    #     G.add_edge(p, n1)
-    #     G.add_edge(p, n2)
-    # last_point = points[0]
-    # dist, ind = tree.query(last_point, k=2)
-    # G.add_node(last_point)
-    # targe_point = points[ind[1]]
-    # G.add_edge(last_point, targe_point)
-    # # add 0 to z axis
     target_point = next_point
     filter_points = [np.append(p, 0) for p in nx.shortest_path(G, source=start_point, target=target_point)]
     return Polygon(*np.array(filter_points), **kwargs)
