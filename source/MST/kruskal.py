@@ -55,8 +55,9 @@ def get_edges_lst(graph: WeightedGraph, edge_len: float = 1, node_radius: float 
 class KruskalUnion(SectionsScene):
     def __init__(self, graph, **kwargs):
         self.graph = graph.scale(0.94).to_edge(RIGHT, buff=0.7)
+        self.graph.remove_updater(self.graph.update_edges)
         self.code = create_code(KRUSKAL_UNION_PSEUDO_CODE, line_no_buff=0.6).scale_to_fit_width(
-            config.frame_width * 0.4).to_corner(LEFT + UP)
+            config.frame_width * 0.47).to_corner(LEFT + UP)
         self.edges_lst = get_edges_lst(self.graph).match_width(self.code).to_corner(LEFT + DOWN)
         # self.code = Rectangle()
         self.board_width = (config.frame_width - graph.width) * 0.80
@@ -80,7 +81,9 @@ class KruskalUnion(SectionsScene):
         self.play(self.sort_edges())
         mst_list = []
         self.next_section("Kruskal run")
-        for edge in self.edges_lst:
+        edges = [edge for edge in self.edges_lst]
+        for edge in edges:
+            self.edges_lst.remove(edge)
             u_node, v_node = edge[0].start, edge[0].end
             u, v = u_node.key, v_node.key
             self.play(edge.animate.next_to(self.code, DOWN, buff=0).set_y(
@@ -95,21 +98,27 @@ class KruskalUnion(SectionsScene):
 
             if cut_u != cut_v:
                 self.play(self.graph.edges[(u, v)].animate_move_along_path(width_factor=EDGE_TREE_PATH_WIDTH_FACTOR,
-                                                                           time_width=PATH_TIME_WIDTH * 2),
+                                                                           time_width=PATH_TIME_WIDTH * 2,
+                                                                           preserve_state=True, run_time=3),
                           self.graph.edges[(v, u)].animate_move_along_path(width_factor=EDGE_TREE_PATH_WIDTH_FACTOR,
                                                                            time_width=PATH_TIME_WIDTH * 2,
+                                                                           preserve_state=True, run_time=3,
                                                                            opposite_direction=True))
                 new_cut_vertices = cuts_to_vertices[cut_u] | cuts_to_vertices[cut_v]
                 cut = self.get_cut(list(new_cut_vertices))
                 self.play(ReplacementTransform(VGroup(cut_u, cut_v), cut))
                 cuts_to_vertices[cut] = new_cut_vertices
-                vertices_to_cuts[u] = vertices_to_cuts[v] = cut
+                for vertex in new_cut_vertices:
+                    vertices_to_cuts[vertex] = cut
                 mst_list.append(edge)
             self.play(FadeOut(edge),
-                      IndicateNode(vertices[u], color="blue", preserve_indicate_color=True, scale_factor=1),
-                      IndicateNode(vertices[v], color="blue", preserve_indicate_color=True, scale_factor=1))
-            return
+                      IndicateNode(vertices[u], color_theme="blue", preserve_indicate_color=True, scale_factor=1),
+                      IndicateNode(vertices[v], color_theme="blue", preserve_indicate_color=True, scale_factor=1))
+            # if u == 5 or v == 5:
+            #     return
         # self.play(self.sort_edges())
+    def find_circle_in_union(self, u, v, **kwargs):
+        pass
 
     def get_cut(self, vertices: list[Hashable], **kwargs):
         return get_vertices_cut(self.graph, vertices, **{**kwargs, **DEFAULT_CUT_PARAMS}).set_z_index(-1)
