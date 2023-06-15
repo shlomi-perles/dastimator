@@ -79,6 +79,7 @@ class Edge(VGroup):
     def animate_move_along_path(self, flash_color=VISITED_COLOR, width_factor=EDGE_PATH_WIDTH_FACTOR,
                                 time_width: float = 0.1, opposite_direction=False, preserve_state=False,
                                 **kwargs) -> AnimationGroup:
+        # Note: not working if edges updater in graph is not removed
         self.fix_z_index()
         copy_line = self.edge_line.copy()
         if opposite_direction:
