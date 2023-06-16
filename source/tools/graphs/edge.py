@@ -52,10 +52,17 @@ class Edge(VGroup):
         if self.weight_mob is not None:
             self.weight_mob.move_to(edge.edge_line.get_center())
 
-    def set_weight(self, val: str | LabeledDot, **kwargs) -> Animation:
+    def set_weight(self, val: int | str | LabeledDot, **kwargs) -> Animation:
         self.fix_z_index()
         if self.weight_mob is not None:
             self.weight = val if not isinstance(val, VMobject) else val[1].tex_string
+            if isinstance(val, float) and val == np.Inf:
+                self.weight = val
+                val = "\infty"
+            elif isinstance(val, (float, int)):
+                self.weight = val
+                val = str(val)
+
             new_weight = LabeledDot(
                 label=MathTex(val), **WEIGHT_CONFIG).scale_to_fit_width(self.weight_mob.width) if isinstance(val,
                                                                                                              str) else val
