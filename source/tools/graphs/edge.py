@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import numpy as np
+
 from ..consts import *
 from .node import Node
 
@@ -26,8 +28,11 @@ class Edge(VGroup):
         self.add(self.edge_line)
         if weight is not None:
             self.weight = weight if not isinstance(weight, VMobject) else weight[1].tex_string
+            weight_str = weight
+            if isinstance(weight, float) and weight == np.Inf:
+                weight_str = "\infty"
             self.weight_mob = weight if isinstance(weight, VMobject) else LabeledDot(
-                label=MathTex(weight, fill_color=WEIGHT_LABEL_FONT_COLOR), **WEIGHT_CONFIG)
+                label=MathTex(weight_str, fill_color=WEIGHT_LABEL_FONT_COLOR), **WEIGHT_CONFIG)
 
             self.update_weight(self)
             self.add(self.weight_mob)
