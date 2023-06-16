@@ -117,6 +117,20 @@ def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = LI
     return AnimationGroup(*lines_highlighted_animation, **kwargs)
 
 
+def code_explain(code: Code, lines: list, explain: str, off_opacity: float = LINES_OFF_OPACITY,
+                 buff: float = SMALL_BUFF, explain_color: str = YELLOW, scale: float = 1,
+                 **kwargs) -> tuple[VGroup, AnimationGroup]:
+    code_obj = code.code
+    lines_group = VGroup(*[code_obj[line - 1] for line in lines])
+    brace_explain = Brace(lines_group, RIGHT, buff=buff, color=explain_color)
+    exp_tx = Text(explain, color=explain_color).next_to(brace_explain, RIGHT, buff=buff)
+    exp_tx.scale(scale)
+    highlight_anim = highlight_code_lines(code, lines=lines, off_opacity=off_opacity, indicate=False)
+    all_mobj = VGroup(brace_explain, exp_tx)
+    return all_mobj, AnimationGroup(highlight_anim, GrowFromCenter(brace_explain), Write(exp_tx),
+                                    **{"lag_ratio": 1, **kwargs})
+
+
 def transform_code_lines(code: Code, target_code: Code, lines_transform_dict: dict, **kwargs) -> AnimationGroup:
     code = code.code
     target_code = target_code.code
