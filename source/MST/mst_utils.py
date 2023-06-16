@@ -24,7 +24,7 @@ MAIN_GRAPH_EXAMPLE_EDGES = [(i, i + 1) if i < MAIN_GRAPH_VERTEX_NUM else (MAIN_G
 MAIN_GRAPH_EXAMPLE_WEIGHTS = {(2, 3): 5, (3, 4): 16, (4, 5): 26, (5, 6): 4, (6, 7): 18, (1, 3): 3,
                               (1, 4): 30, (1, 5): 14, (1, 6): 12, (1, 7): 2, (2, 7): 8, (3, 7): 10}
 
-DEFAULT_CUT_PARAMS = dict(fill_color=GREEN, stroke_color=GREEN, fill_opacity=0.2, stroke_width=3)
+DEFAULT_CUT_PARAMS = dict(fill_color=GREEN_D, stroke_color=GREEN, fill_opacity=0.14, stroke_width=3)
 
 
 def star_layout(n, center_vertex: Hashable, layout_scale: float = 2.4,
