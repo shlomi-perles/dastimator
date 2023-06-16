@@ -44,9 +44,9 @@ def get_edges_lst(graph: WeightedGraph, edge_len: float = 1, node_radius: float 
         add_edges.add((u, v))
         start_node = Node(u).scale_to_fit_width(node_radius * 2)
         end_node = Node(v).scale_to_fit_width(node_radius * 2).shift(edge_len * RIGHT)
-        edge = Edge(start_node, end_node, weight=edge.weight, color=EDGE_COLOR, stroke_width=7)
-        edge.weight_mob.scale_to_fit_width(node_radius * 3 / 2).set_stroke_width(0)
-        edges_lst += VGroup(edge, start_node, end_node)
+        edge_mob = Edge(start_node, end_node, weight=edge.weight, color=EDGE_COLOR, stroke_width=7)
+        edge_mob.weight_mob.scale_to_fit_width(node_radius * 3 / 2).set_stroke_width(0)
+        edges_lst += VGroup(edge_mob, start_node, end_node)
 
     return edges_lst.arrange_in_grid(buff=(0.5, 0.3), rows=3).scale_to_fit_width(
         (config.frame_width - graph.width) * 0.80)
