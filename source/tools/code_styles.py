@@ -16,10 +16,10 @@ class DarculaStyle(Style):
         Comment.Single: ' #808080',
         Comment.Special: 'bold  #808080',
         Comment: ' #808080',
-        Error: '#CC0000',
+        # Error: '#CC0000',
         Generic.Deleted: '#CC4040',
         Generic.Emph: ' #A9B7C6',
-        Generic.Error: '#aa0000',
+        # Generic.Error: '#aa0000',
         Generic.Heading: '#999999',
         Generic.Inserted: '#40CC40',
         Generic.Output: '#888888',
@@ -53,11 +53,11 @@ class DarculaStyle(Style):
         Name.Variable.Global: '#A9B7C6 bold',
         Name.Variable.Instance: '#A9B7C6',
         Name.Variable: '#A9B7C6',
-        Operator: '#808080 bold',
-        Operator.Word: '#CC7832 bold',
-        Text: '#A9B7C6',
-        Text.Whitespace: '#656565',
-        Punctuation: '#A9B7C6'
+        # Operator: '#808080 bold',
+        # Operator.Word: '#CC7832 bold',
+        # Text: '#A9B7C6',
+        # Text.Whitespace: '#656565',
+        # Punctuation: '#A9B7C6'
     }
 
 
