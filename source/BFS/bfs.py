@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from copy import copy
+from copy import copy, deepcopy
+from typing import Hashable
 
 from tools.graphs.utils import get_neighbors, create_dist_label, create_graph
 from tools.scenes import *
