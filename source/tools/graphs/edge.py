@@ -64,8 +64,8 @@ class Edge(VGroup):
                 val = str(val)
 
             new_weight = LabeledDot(
-                label=MathTex(val), **WEIGHT_CONFIG).scale_to_fit_width(self.weight_mob.width) if isinstance(val,
-                                                                                                             str) else val
+                label=MathTex(val, fill_color=WEIGHT_LABEL_FONT_COLOR), **WEIGHT_CONFIG).scale_to_fit_width(
+                self.weight_mob.width) if isinstance(val, str) else val
             new_weight.move_to(self.weight_mob)
             return Transform(self.weight_mob, new_weight, **kwargs, group=self)
 
