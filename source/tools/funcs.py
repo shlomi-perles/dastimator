@@ -46,17 +46,17 @@ def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, di
     if not Path(media_path).exists():
         Path(media_path).mkdir(parents=True, exist_ok=True)
     for scene in scenes_lst:
-        with tempconfig(
-                {"quality": quality, "preview": preview, "media_dir": media_path, "save_sections": save_sections,
-                 "disable_caching": disable_caching}):
-            # if isinstance(scene, SectionsScene): #TODO: Fix this
-            scene.PRESENTATION_MODE = presentation_mode
-            scene().render()
+        # with tempconfig(
+        #         {"quality": quality, "preview": preview, "media_dir": media_path, "save_sections": save_sections,
+        #          "disable_caching": disable_caching}):
+        #     # if isinstance(scene, SectionsScene): #TODO: Fix this
+        #     scene.PRESENTATION_MODE = presentation_mode
+        #     scene().render()
         if create_gif:
             create_scene_gif(media_path, scene.__name__, DEFAULT_GIF_SCENES if gif_scenes is None else gif_scenes,
                              QUALITY_TO_DIR[quality])
-    if save_sections:
-        manim_editor_autocreated_scene_fix(media_path / SECTIONS_MEDIA_PATH.format(quality_dir=QUALITY_TO_DIR[quality]))
+    # if save_sections:
+    #     manim_editor_autocreated_scene_fix(media_path / SECTIONS_MEDIA_PATH.format(quality_dir=QUALITY_TO_DIR[quality]))
 
 
 def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int], quality_dir: str):
@@ -225,6 +225,29 @@ def get_func_text(string: str, blue_args: list = None, **kwargs):
     return Text(string, font="JetBrains Mono",
                 t2c={func_name: YELLOW, ",": ORANGE, **({str(num): BLUE_D for num in numbers}),
                      **({arg: BLUE_D for arg in blue_args})}, **kwargs)
+
+
+# ---------------------------- text --------------------------------
+def search_shape_in_text(text: VMobject, shape: VMobject):
+    T = TransformMatchingShapes
+    results = []
+    l = len(shape.submobjects[0])
+    shape_aux = VMobject()
+    shape_aux.points = np.concatenate([p.points for p in shape.submobjects[0]])
+    for i in range(len(text.submobjects[0])):
+        subtext = VMobject()
+        subtext.points = np.concatenate([p.points for p in text.submobjects[0][i:i + l]])
+        if T.get_mobject_key(subtext) == T.get_mobject_key(shape_aux):
+            results.append(slice(i, i + l))
+    return results
+
+
+def color_tex(equation: Tex | MathTex, t2c: dict, tex_class: type[Tex | MathTex] = Tex):
+    for string, color in t2c.items():
+        tex = tex_class(string)
+        results = search_shape_in_text(equation, tex)
+        for result in results:
+            equation[0][result].set_color(color)
 
 
 # ---------------------------- geometry ----------------------------
