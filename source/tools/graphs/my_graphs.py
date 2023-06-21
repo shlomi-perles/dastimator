@@ -1405,24 +1405,26 @@ class DiGraph(GenericGraph):
 
 class WeightedGraph(DiGraph):
     def __init__(self, vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]],
-                 weights: dict[tuple[Hashable, Hashable], float], *args, **kwargs) -> None:
+                 weights: dict[tuple[Hashable, Hashable], float] = None, *args, **kwargs) -> None:
         if "vertex_type" not in kwargs:
             kwargs["vertex_type"] = Node
         kwargs["edge_type"] = Edge
         # build vertex_config
         self.weights_config = kwargs.get("weights_config", {})
-        kwargs["edge_config"] = {edge: {**kwargs.get("edge_config", {}), **{"weight": weight}} for
-                                 edge, weight in weights.items()}
+        if weights is not None:
+            kwargs["edge_config"] = {edge: {**kwargs.get("edge_config", {}), **{"weight": weight}} for
+                                     edge, weight in weights.items()}
 
         super().__init__(vertices, edges, *args, **kwargs)
 
         relative_node = next(iter(self.vertices.values()))
 
         for edge in self.edges.values():
-            edge.weight_mob.scale_to_fit_height(relative_node.height * WEIGHT_SCALE)
-            edge.weight_mob[1].scale(WEIGHT_LABEL_SCALE)
-            scale_factor = self.weights_config.get("scale_factor", 1)
-            edge.weight_mob.scale(scale_factor)
+            if isinstance(edge, Edge) and edge.weight_mob is not None:
+                edge.weight_mob.scale_to_fit_height(relative_node.height * WEIGHT_SCALE)
+                edge.weight_mob[1].scale(WEIGHT_LABEL_SCALE)
+                scale_factor = self.weights_config.get("scale_factor", 1)
+                edge.weight_mob.scale(scale_factor)
 
     def create_weight(self, weight: float):
         weight_config = {**WEIGHT_CONFIG, **self.weights_config}
@@ -1444,10 +1446,12 @@ class WeightedGraph(DiGraph):
             edge_mobject.next_to(self[u], RIGHT, buff=0)
             u_v_angle = np.arctan2(self[v].get_center()[1] - self[u].get_center()[1],
                                    self[v].get_center()[0] - self[u].get_center()[0])
-            edge_mobject.remove(edge_mobject.weight_mob)
+            if isinstance(edge_mobject, Edge) and edge_mobject.weight_mob is not None:
+                edge_mobject.remove(edge_mobject.weight_mob)
             edge_mobject.rotate(u_v_angle, about_point=self[u].get_center())
-            edge_mobject.add(edge_mobject.weight_mob)
-            edge_mobject.update_weight(edge_mobject)
+            if isinstance(edge_mobject, Edge) and edge_mobject.weight_mob is not None:
+                edge_mobject.add(edge_mobject.weight_mob)
+                edge_mobject.update_weight(edge_mobject)
         return edge_mobject
 
     def update_edges(self, graph):
@@ -1456,7 +1460,7 @@ class WeightedGraph(DiGraph):
             tip = edge.pop_tips()
 
             new_edge = self.create_edge(edge_type, u, v)
-            if isinstance(edge, Edge):
+            if isinstance(edge, Edge) and new_edge.weight_mob is not None:
                 new_edge.weight_mob.match_height(edge.weight_mob)
 
             edge.become(new_edge)

@@ -13,7 +13,7 @@ from scipy.spatial import Voronoi
 from tools.consts import DISTANCE_LABEL_COLOR, DISTANCE_LABEL_SCALE, DISTANCE_LABEL_BUFFER, EDGE_CONFIG, TIP_SIZE, \
     DEFAULT_ARROW_TIP_WIDTH, LABEL_COLOR, VERTEX_CONFIG, VERTEX_LABEL_SCALE
 from tools.funcs import get_convex_hull_polygon, get_tangent_points, boolean_op_to_polygons
-from tools.graphs.my_graphs import DiGraph, WeightedGraph
+from tools.graphs.my_graphs import DiGraph, WeightedGraph, Edge
 
 
 def get_neighbors(graph: DiGraph, vertex, priority_lst=None):
@@ -32,8 +32,8 @@ def create_dist_label(index, graph, label):
 
 def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]],
                  layout: str | dict[Hashable, np.ndarray] = "spring", layout_scale: float = 1.5,
-                 directed_graph: bool = False, graph_type=DiGraph, absolute_scale_vertices=False,
-                 labels: bool = True,
+                 directed_graph: bool = False, graph_type=DiGraph, edge_type=Edge,
+                 absolute_scale_vertices=False, labels: bool = True,
                  weights: dict[tuple[Hashable, Hashable], float] = None) -> WeightedGraph | DiGraph:
     """
     Create graph and add labels to vertices,
@@ -56,7 +56,7 @@ def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]
         edge_config = edge_configs
     args = dict(vertices=vertices, edges=edges, layout=layout, layout_scale=layout_scale, labels=labels,
                 label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG.copy(), edge_config=edge_config,
-                root_vertex=1)
+                edge_type=edge_type, root_vertex=1)
 
     if weights is not None:
         graph_type = WeightedGraph

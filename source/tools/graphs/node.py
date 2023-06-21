@@ -44,6 +44,7 @@ class Node(LabeledDot):
     def set_label(self, label):
         if isinstance(label, str):
             label = MathTex(label, fill_color=LABEL_COLOR)
+        # TODO: fix label scale when self.label = None
         label.scale_to_fit_width(self.label.get_width()).move_to(self.label.get_center())
         self.remove(self.label)
         self.label = label

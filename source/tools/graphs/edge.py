@@ -24,6 +24,7 @@ class Edge(VGroup):
         self.start = start
         self.end = end
         self.weight_mob = None
+        self.weight = None
 
         self.add(self.edge_line)
         if weight is not None:
