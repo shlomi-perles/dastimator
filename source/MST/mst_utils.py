@@ -25,6 +25,9 @@ MAIN_GRAPH_EXAMPLE_WEIGHTS = {(2, 3): 5, (3, 4): 16, (4, 5): 26, (5, 6): 4, (6, 
                               (1, 4): 30, (1, 5): 14, (1, 6): 12, (1, 7): 2, (2, 7): 8, (3, 7): 10}
 
 DEFAULT_CUT_PARAMS = dict(fill_color=GREEN_D, stroke_color=GREEN, fill_opacity=0.14, stroke_width=3)
+PATH_TIME_WIDTH = 0.6
+MST_PATH_PARAMS = dict(width_factor=EDGE_TREE_PATH_WIDTH_FACTOR, time_width=PATH_TIME_WIDTH * 2,
+                       preserve_state=True, run_time=1.7)
 
 
 def star_layout(n, center_vertex: Hashable, layout_scale: float = 2.4,
