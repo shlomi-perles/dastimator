@@ -49,7 +49,7 @@ class ArrayMob(VGroup):
 
     def __init__(self, name: str, *array, name_config=None, arr_scale: float = 1, name_scale: float = 1,
                  show_labels: bool = False, labels_pos: Iterable = UP, labels_scale: float = 1, starting_index: int = 0,
-                 align_point: Iterable = ORIGIN, **kwargs):
+                 align_point: Iterable = np.copy(ORIGIN), **kwargs):
         super().__init__(name=name, **kwargs.pop("vgroup_config", {}))
 
         name_config = {} if name_config is None else name_config
