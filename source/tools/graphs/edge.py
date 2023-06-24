@@ -51,7 +51,15 @@ class Edge(VGroup):
     def update_weight(self, edge):
         self.fix_z_index()
         if self.weight_mob is not None:
-            self.weight_mob.move_to(edge.edge_line.get_center())
+            if self.edge_type != ArcBetweenPoints:
+                weight_loc = edge.edge_line.get_center()
+            else:
+                relative_arc = edge.edge_line.copy()
+                relative_arc.pop_tips()
+                relative_arc.put_start_and_end_on(edge.start.get_center(), edge.end.get_center())
+                weight_loc = partial_bezier_points(relative_arc.points, 0.499, 0.501)[2]
+
+            self.weight_mob.move_to(weight_loc)
 
     def set_weight(self, val: int | str | LabeledDot, **kwargs) -> Animation:
         self.fix_z_index()

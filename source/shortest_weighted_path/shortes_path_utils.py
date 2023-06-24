@@ -55,6 +55,8 @@ def get_main_graph_example() -> DiGraph | WeightedGraph:
                          layout=change_layout(MAIN_GRAPH_VERTEX_NUM)).shift(1e-6 * LEFT)
     for v, node in graph.vertices.items():
         node.label.scale(0.8).next_to(node.get_top(), DOWN, buff=0.1)
+    graph[2].match_y(graph[3])
+    graph[5].match_y(graph[4])
     return graph
 
 

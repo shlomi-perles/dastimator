@@ -14,7 +14,7 @@ from manim import LEFT, RIGHT, UP, DOWN, ORIGIN, UL, UR, DL, DR
 from manim.animation.composition import AnimationGroup
 from manim.animation.creation import Create, Uncreate, Write
 from manim.animation.growing import GrowFromPoint, GrowFromEdge
-from manim.mobject.geometry.arc import Dot, LabeledDot
+from manim.mobject.geometry.arc import Dot, LabeledDot, ArcBetweenPoints
 from manim.mobject.geometry.line import Line, ArrowTriangleFilledTip
 from manim.mobject.mobject import Mobject, override_animate
 from manim.mobject.opengl.opengl_compatibility import ConvertToOpenGL
@@ -1411,9 +1411,14 @@ class WeightedGraph(DiGraph):
         kwargs["edge_type"] = Edge
         # build vertex_config
         self.weights_config = kwargs.get("weights_config", {})
+        edge_config = kwargs.get("edge_config", {}).copy()
         if weights is not None:
-            kwargs["edge_config"] = {edge: {**kwargs.get("edge_config", {}), **{"weight": weight}} for
-                                     edge, weight in weights.items()}
+            if not isinstance(next(iter(edge_config), None), tuple):
+                kwargs["edge_config"] = {edge: {**edge_config, **{"weight": weight}} for edge, weight in
+                                         weights.items()}
+            else:
+                kwargs["edge_config"] = {edge: {**edge_config[edge], **{"weight": weight}} for edge, weight in
+                                         weights.items()}
 
         super().__init__(vertices, edges, *args, **kwargs)
 
@@ -1438,6 +1443,21 @@ class WeightedGraph(DiGraph):
         edge_end = self[v] if isinstance(self[v], Node) else self[v].get_center()
         if self.graph_type == GraphType.UNDIRECTED:
             edge_mobject = edge_type(edge_start, edge_end, z_index=-1, **self._edge_config[(u, v)])
+        elif edge_type == Edge and self._edge_config[(u, v)].get("edge_type", None) == ArcBetweenPoints:
+            edge_len = np.linalg.norm(self[u].get_center() - self[v].get_center()
+                                      ) - (self[v].width + self[u].width) / 2
+            edge_mobject = edge_type(edge_start, edge_end, z_index=-1, **self._edge_config[(u, v)])
+            reference_line = Line(ORIGIN, [edge_len, 0, 0])
+            reference_line.next_to(self[u], RIGHT, buff=0)
+            u_v_angle = np.arctan2(self[v].get_center()[1] - self[u].get_center()[1],
+                                   self[v].get_center()[0] - self[u].get_center()[0])
+            if isinstance(edge_mobject, Edge) and edge_mobject.weight_mob is not None:
+                edge_mobject.remove(edge_mobject.weight_mob)
+            reference_line.rotate(u_v_angle, about_point=self[u].get_center())
+            edge_mobject.put_start_and_end_on(reference_line.get_start(), reference_line.get_end())
+            if isinstance(edge_mobject, Edge) and edge_mobject.weight_mob is not None:
+                edge_mobject.add(edge_mobject.weight_mob)
+                edge_mobject.update_weight(edge_mobject)
         else:
             edge_len = np.linalg.norm(self[u].get_center() - self[v].get_center()
                                       ) - (self[v].width + self[u].width) / 2
@@ -1452,6 +1472,7 @@ class WeightedGraph(DiGraph):
             if isinstance(edge_mobject, Edge) and edge_mobject.weight_mob is not None:
                 edge_mobject.add(edge_mobject.weight_mob)
                 edge_mobject.update_weight(edge_mobject)
+
         return edge_mobject
 
     def update_edges(self, graph):

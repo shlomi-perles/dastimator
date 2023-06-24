@@ -3,11 +3,10 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Hashable
 
-import numpy
 import numpy as np
-from manim import MathTex, RIGHT, config, ORIGIN, VGroup, Line, PI, UP, Union, Intersection, Exclusion, Square
+from manim import MathTex, RIGHT, config, ORIGIN, VGroup, Line, Union, Intersection, ArcBetweenPoints
 
-from manim.mobject.geometry.polygram import Polygon, Cutout
+from manim.mobject.geometry.polygram import Polygon
 from scipy.spatial import Voronoi
 
 from tools.consts import DISTANCE_LABEL_COLOR, DISTANCE_LABEL_SCALE, DISTANCE_LABEL_BUFFER, EDGE_CONFIG, TIP_SIZE, \
@@ -33,7 +32,7 @@ def create_dist_label(index, graph, label):
 def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]],
                  layout: str | dict[Hashable, np.ndarray] = "spring", layout_scale: float = 1.5,
                  directed_graph: bool = False, graph_type=DiGraph, edge_type=Edge,
-                 absolute_scale_vertices=False, labels: bool = True,
+                 absolute_scale_vertices=False, labels: bool| dict[Hashable, str] = True,
                  weights: dict[tuple[Hashable, Hashable], float] = None) -> WeightedGraph | DiGraph:
     """
     Create graph and add labels to vertices,
@@ -51,9 +50,21 @@ def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]
                 edge_configs[(k, v)] = EDGE_CONFIG.copy()
             else:
                 edge_configs[(k, v)] = EDGE_CONFIG.copy()
-                edge_configs[(k, v)]["tip_config"]["tip_length"] = TIP_SIZE
-                edge_configs[(k, v)]["tip_config"]["tip_width"] = DEFAULT_ARROW_TIP_WIDTH
+                tip_conf = edge_configs[(k, v)].get("tip_config", {})
+
+                tip_size = tip_conf.get("tip_length", None)
+                tip_size = TIP_SIZE if tip_size is None or tip_size <= 0 else tip_size
+                edge_configs[(k, v)]["tip_config"]["tip_length"] = tip_size
+
+                tip_width = tip_conf.get("tip_width", None)
+                tip_width = DEFAULT_ARROW_TIP_WIDTH if tip_width is None or tip_width <= 0 else tip_width
+                edge_configs[(k, v)]["tip_config"]["tip_width"] = tip_width
+
+            if edge_configs[(k, v)].get("edge_type", None) == ArcBetweenPoints and (v, k) not in edges:
+                edge_configs[(k, v)]["angle"] = 0
+
         edge_config = edge_configs
+
     args = dict(vertices=vertices, edges=edges, layout=layout, layout_scale=layout_scale, labels=labels,
                 label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG.copy(), edge_config=edge_config,
                 edge_type=edge_type, root_vertex=1)

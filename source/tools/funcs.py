@@ -46,17 +46,17 @@ def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, di
     if not Path(media_path).exists():
         Path(media_path).mkdir(parents=True, exist_ok=True)
     for scene in scenes_lst:
-        # with tempconfig(
-        #         {"quality": quality, "preview": preview, "media_dir": media_path, "save_sections": save_sections,
-        #          "disable_caching": disable_caching}):
-        #     # if isinstance(scene, SectionsScene): #TODO: Fix this
-        #     scene.PRESENTATION_MODE = presentation_mode
-        #     scene().render()
+        with tempconfig(
+                {"quality": quality, "preview": preview, "media_dir": media_path, "save_sections": save_sections,
+                 "disable_caching": disable_caching}):
+            # if isinstance(scene, SectionsScene): #TODO: Fix this
+            scene.PRESENTATION_MODE = presentation_mode
+            scene().render()
         if create_gif:
             create_scene_gif(media_path, scene.__name__, DEFAULT_GIF_SCENES if gif_scenes is None else gif_scenes,
                              QUALITY_TO_DIR[quality])
-    # if save_sections:
-    #     manim_editor_autocreated_scene_fix(media_path / SECTIONS_MEDIA_PATH.format(quality_dir=QUALITY_TO_DIR[quality]))
+    if save_sections:
+        manim_editor_autocreated_scene_fix(media_path / SECTIONS_MEDIA_PATH.format(quality_dir=QUALITY_TO_DIR[quality]))
 
 
 def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int], quality_dir: str):
