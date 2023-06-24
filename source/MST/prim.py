@@ -170,8 +170,8 @@ class Prim(SectionsScene):
 
     def highlight_and_indicate_code(self, lines: list, **kwargs):  # TODO: implement code scene
         highlight, indicate = highlight_code_lines(self.code, lines, **kwargs)
-        self.play(highlight)
-        self.play(indicate)
+        self.play(highlight, run_time=0.2)
+        self.play(indicate, run_time=0.6)
 
     def add_mst_edge(self, u, v):
         anim1, anim2 = self.graph.edges[(u, v)].animate_move_along_path(**MST_PATH_PARAMS), self.graph.edges[
