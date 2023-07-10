@@ -76,8 +76,8 @@ class ArrayMob(VGroup):
         self.create_array()
 
         square, val_text, label = self.create_arr_entry(0, 0)
-        square.add(val_text)
         square.add(label)
+        square.add(val_text)
         self.relative_entry = square.set_opacity(0).next_to(self.array_name, direction=RIGHT)
         self.add(self.relative_entry)
         self.center()
@@ -92,8 +92,8 @@ class ArrayMob(VGroup):
         for index, val in enumerate(self.array):
             square, val_text, label = self.create_arr_entry(val, index)
 
-            square.add(val_text)
             square.add(label)
+            square.add(val_text)
             self.squares.add(square)
             if self.show_labels:
                 self.labels.add(label)
@@ -178,8 +178,8 @@ class ArrayMob(VGroup):
 
         val_text.move_to(square)
         square.remove(label)
-        square.add(val_text)
         square.add(label)
+        square.add(val_text)
 
         if (side == LEFT).all():
             def on_finish(scene: Scene):
@@ -255,9 +255,9 @@ class ArrayMob(VGroup):
         val_text.move_to(self.squares[index])
 
         if old_element.tex_string == "":
-            self.squares[index].remove(old_element)
+            # self.squares[index].remove(old_element)
             self.remove(old_element)
-            # self.squares[index].add(val_text) # TODO: handle bug
+            self.squares[index][-1] = val_text  # TODO: handle bug
             self.vals_texts[index] = val_text
             self.add(val_text)
             return Write(val_text)
