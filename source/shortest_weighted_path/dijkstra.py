@@ -417,7 +417,6 @@ class DijkstraComplexity(Dijkstra):
 
 if __name__ == "__main__":
     scenes_lst = [Intro, ShortestPath, DijkstraIntro, Relax, DijkstraExample, DijkstraComplexity]
-    scenes_lst = [DijkstraExample]
 
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[18 + i for i in range(5)],
                create_gif=False)
