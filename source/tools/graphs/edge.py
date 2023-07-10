@@ -14,7 +14,7 @@ class Edge(VGroup):
     """Simple class that represents a BST edge"""
 
     def __init__(self, start: Node | np.ndarray, end: Node | np.ndarray, weight: str | int | VMobject = None,
-                 edge_type: type[VMobject] = Line, **kwargs):
+                 weight_relative_position: float = 0.5, edge_type: type[VMobject] = Line, **kwargs):
         """kwargs are passed to Line constructor"""
         super().__init__()
         self.edge_type = edge_type
@@ -25,6 +25,7 @@ class Edge(VGroup):
         self.end = end
         self.weight_mob = None
         self.weight = None
+        self.weight_relative_position = weight_relative_position
 
         self.add(self.edge_line)
         if weight is not None:
@@ -57,7 +58,8 @@ class Edge(VGroup):
                 relative_arc = edge.edge_line.copy()
                 relative_arc.pop_tips()
                 relative_arc.put_start_and_end_on(edge.start.get_center(), edge.end.get_center())
-                weight_loc = partial_bezier_points(relative_arc.points, 0.499, 0.501)[2]
+                weight_loc = partial_bezier_points(relative_arc.points, self.weight_relative_position - 0.00001,
+                                                   self.weight_relative_position + 0.00001)[2]
 
             self.weight_mob.move_to(weight_loc)
 

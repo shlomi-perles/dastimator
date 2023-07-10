@@ -20,7 +20,7 @@ def get_neighbors(graph: DiGraph, vertex, priority_lst=None):
     return [neighbor for neighbor in priority_lst if (vertex, neighbor) in graph.edges]
 
 
-def create_dist_label(index, graph, label):
+def create_dist_label(index: int, graph: DiGraph | WeightedGraph, label: str | int | float) -> MathTex:
     label = MathTex(rf"\mathbf{{{label}}}", color=DISTANCE_LABEL_COLOR)
     if label.width < label.height:
         label.scale_to_fit_height(graph[index].radius * DISTANCE_LABEL_SCALE)
@@ -32,7 +32,7 @@ def create_dist_label(index, graph, label):
 def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]],
                  layout: str | dict[Hashable, np.ndarray] = "spring", layout_scale: float = 1.5,
                  directed_graph: bool = False, graph_type=DiGraph, edge_type=Edge,
-                 absolute_scale_vertices=False, labels: bool| dict[Hashable, str] = True,
+                 absolute_scale_vertices=False, labels: bool | dict[Hashable, str] = True,
                  weights: dict[tuple[Hashable, Hashable], float] = None) -> WeightedGraph | DiGraph:
     """
     Create graph and add labels to vertices,
