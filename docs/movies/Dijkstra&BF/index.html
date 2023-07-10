@@ -1,0 +1,1092 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <script type="text/javascript" src="../../js/ganalytics.js"></script>
+    <title>Dijkstra&amp;BF</title>
+    <meta name="title" content="Dastflix">
+    <meta name="description"
+          content="Data structures animations | The Hebrew University of Jerusalem.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://shlomi-perles.github.io/dastimator/">
+    <meta property="og:title" content="Dastflix">
+    <meta property="og:description"
+          content="Data structures animations | The Hebrew University of Jerusalem.">
+    <meta property="og:image" itemprop="image"
+          content="../../images/logos/dastflix_shadow.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://shlomi-perles.github.io/dastimator/">
+    <meta property="twitter:title" content="Dastflix">
+    <meta property="twitter:description"
+          content="Data structures animations | The Hebrew University of Jerusalem.">
+    <meta property="twitter:image" content="../../images/logos/dastflix_shadow.png">
+
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="shortcut icon" type="image/png" href="../../images/logos/dastflix_d_shadow_square.png"/>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="../../css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="../webpack/base.css">
+    <!--        <link rel="stylesheet" href="../../index.css"/>-->
+    <link rel="stylesheet" href="../webpack/navbar.css"/>
+    <!--    <link rel="stylesheet" href="webpack/cssfix.css">-->
+
+    <!-- i will provide this in description  -->
+
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+<link itemprop="thumbnailUrl" href="https://shlomi-perles.github.io/kotler_lab_lecture/./thumb_0050.jpg">
+<span itemprop="thumbnail" itemscope itemtype="http://schema.org/ImageObject">
+<link itemprop="url" href="https://shlomi-perles.github.io/kotler_lab_lecture/./thumb_0050.jpg">
+</span>
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
+    <div class="container-fluid">
+        <a class="navbar-brand" target="_blank" href="https://github.com/ManimEditorProject/manim_editor"></a>
+    </div>
+</nav>
+<header id="main-header">
+    <div class="main-header">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-12">
+                    <nav class="navbar navbar-expand-lg navbar-light p-0">
+                        <a href="#" class="navbar-toggler c-toggler" data-toggle="collapse"
+                           data-target="#navbarSupportedContent"
+                           aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                            <div class="navbar-toggler-icon" data-toggle="collapse">
+                                <span class="navbar-menu-icon navbar-menu-icon--top"></span>
+                                <span class="navbar-menu-icon navbar-menu-icon--middle"></span>
+                                <span class="navbar-menu-icon navbar-menu-icon--bottom"></span>
+                            </div>
+                        </a>
+                        <a href="../../index.html" class="navbar-brand">
+                            <img src="../../images/logos/dastflix_shadow.png" class="img-fluid logo" alt=""/>
+                        </a>
+                        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                            <div class="menu-main-menu-container">
+                                <ul id="top-menu" class="navbar-nav ml-auto">
+                                    <li class="menu-item"><a href="../../index.html">Home</a></li>
+                                    <li class="menu-item"><a href="#">TV Shows</a></li>
+                                    <li class="menu-item"><a href="#">Movies</a></li>
+                                    <li class="menu-item"><a href="#">News & Popular</a></li>
+                                    <li class="menu-item"><a href="#">My List</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="mobile-more-menu">
+                            <a href="javascript:void(0);" class="more-toggle" id="dropdownMenuButton"
+                               data-toggle="more-toggle"
+                               aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </a>
+                            <div class="more-menu" aria-labelledby="dropdownMenuButton">
+                                <div class="navbar-right position-relative">
+                                    <ul class="d-flex align-items-center justify-content-end list-inline m-0">
+                                        <li>
+                                            <a href="#" class="search-toggle">
+                                                <i class="fa fa-search"></i>
+                                            </a>
+                                            <div class="search-box iq-search-bar">
+                                                <form action="#" class="searchbox">
+                                                    <div class="form-group position-relative">
+                                                        <input type="text" class="text search-input font-size-12"
+                                                               placeholder="type here to search..."/>
+                                                        <i class="search-link fa fa-search"></i>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </li>
+                                        <li class="nav-item nav-icon">
+                                            <!--                                            <a href="#" class="search-toggle position-relative">-->
+                                            <!--                                                <i class="fa fa-bell"></i>-->
+                                            <!--                                                <span class="bg-danger dots"></span>-->
+                                            <!--                                            </a>-->
+                                            <!--                                            <div class="iq-sub-dropdown">-->
+                                            <!--                                                <div class="iq-card shadow-none m-0">-->
+                                            <!--                                                    <div class="iq-card-body">-->
+                                            <!--                                                        <a href="#" class="iq-sub-card">-->
+                                            <!--                                                            <div class="media align-items-center">-->
+                                            <!--                                                                <img src="images/notify/thumb-1.jpg" alt=""-->
+                                            <!--                                                                     class="img-fluid mr-3"/>-->
+                                            <!--                                                                <div class="media-body">-->
+                                            <!--                                                                    <h6 class="mb-0">Captain Marvel</h6>-->
+                                            <!--                                                                    <small class="font-size-12">just now</small>-->
+                                            <!--                                                                </div>-->
+                                            <!--                                                            </div>-->
+                                            <!--                                                        </a>-->
+                                            <!--                                                        <a href="#" class="iq-sub-card">-->
+                                            <!--                                                            <div class="media align-items-center">-->
+                                            <!--                                                                <img src="images/notify/thumb-2.jpg" alt=""-->
+                                            <!--                                                                     class="img-fluid mr-3"/>-->
+                                            <!--                                                                <div class="media-body">-->
+                                            <!--                                                                    <h6 class="mb-0">-->
+                                            <!--                                                                        Dora and The Lost City of Gold-->
+                                            <!--                                                                    </h6>-->
+                                            <!--                                                                    <small class="font-size-12">25 mins ago</small>-->
+                                            <!--                                                                </div>-->
+                                            <!--                                                            </div>-->
+                                            <!--                                                        </a>-->
+                                            <!--                                                        <a href="#" class="iq-sub-card">-->
+                                            <!--                                                            <div class="media align-items-center">-->
+                                            <!--                                                                <img src="images/notify/thumb-3.jpg" alt=""-->
+                                            <!--                                                                     class="img-fluid mr-3"/>-->
+                                            <!--                                                                <div class="media-body">-->
+                                            <!--                                                                    <h6 class="mb-0">Mulan</h6>-->
+                                            <!--                                                                    <small class="font-size-12">1h 30 mins ago</small>-->
+                                            <!--                                                                </div>-->
+                                            <!--                                                            </div>-->
+                                            <!--                                                        </a>-->
+                                            <!--                                                    </div>-->
+                                            <!--                                                </div>-->
+                                            <!--                                            </div>-->
+                                        </li>
+                                        <li>
+                                            <a href="#"
+                                               class="iq-user-dropdown search-toggle d-flex align-items-center">
+                                                <img src="../../images/user/user.png"
+                                                     class="img-fluid user-m rounded-circle"
+                                                     alt=""/>
+                                            </a>
+                                            <div class="iq-sub-dropdown iq-user-dropdown">
+                                                <div class="iq-card shadow-none m-0">
+                                                    <div class="iq-card-body p-0 pl-3 pr-3">
+                                                        <a href="#" class="iq-sub-card setting-dropdown">
+                                                            <div class="media align-items-center">
+                                                                <div class="right-icon">
+                                                                    <i class="fa fa-user text-primary"></i>
+                                                                </div>
+                                                                <div class="media-body ml-3">
+                                                                    <h6 class="mb-0">HUJI User</h6>
+                                                                </div>
+                                                            </div>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="navbar-right menu-right">
+                            <ul class="d-flex align-items-center list-inline m-0">
+                                <li class="nav-item nav-icon">
+                                    <a href="#" class="search-toggle device-search">
+                                        <i class="fa fa-search"></i>
+                                    </a>
+                                    <div class="search-box iq-search-bar d-search">
+                                        <form action="#" class="searchbox">
+                                            <div class="form-group position-relative">
+                                                <input type="text" class="text search-input font-size-12"
+                                                       placeholder="type here to search..."/>
+                                                <i class="search-link fa fa-search"></i>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </li>
+                                <li class="nav-item nav-icon">
+                                    <!--                                    <a href="#" class="search-toggle" data-toggle="search-toggle">-->
+                                    <!--                                        <i class="fa fa-bell"></i>-->
+                                    <!--                                        <span class="bg-danger dots"></span>-->
+                                    <!--                                    </a>-->
+                                    <!--                                    <div class="iq-sub-dropdown">-->
+                                    <!--                                        <div class="iq-card shadow-none m-0">-->
+                                    <!--                                            <div class="iq-card-body">-->
+                                    <!--                                                <a href="#" class="iq-sub-card">-->
+                                    <!--                                                    <div class="media align-items-center">-->
+                                    <!--                                                        <img src="images/notify/thumb-1.jpg" alt=""-->
+                                    <!--                                                             class="img-fluid mr-3"/>-->
+                                    <!--                                                        <div class="media-body">-->
+                                    <!--                                                            <h6 class="mb-0">Captain Marvel</h6>-->
+                                    <!--                                                            <small class="font-size-12">just now</small>-->
+                                    <!--                                                        </div>-->
+                                    <!--                                                    </div>-->
+                                    <!--                                                </a>-->
+                                    <!--                                                <a href="#" class="iq-sub-card">-->
+                                    <!--                                                    <div class="media align-items-center">-->
+                                    <!--                                                        <img src="images/notify/thumb-2.jpg" alt=""-->
+                                    <!--                                                             class="img-fluid mr-3"/>-->
+                                    <!--                                                        <div class="media-body">-->
+                                    <!--                                                            <h6 class="mb-0">-->
+                                    <!--                                                                Dora and The Lost City of Gold-->
+                                    <!--                                                            </h6>-->
+                                    <!--                                                            <small class="font-size-12">25 mins ago</small>-->
+                                    <!--                                                        </div>-->
+                                    <!--                                                    </div>-->
+                                    <!--                                                </a>-->
+                                    <!--                                                <a href="#" class="iq-sub-card">-->
+                                    <!--                                                    <div class="media align-items-center">-->
+                                    <!--                                                        <img src="images/notify/thumb-3.jpg" alt=""-->
+                                    <!--                                                             class="img-fluid mr-3"/>-->
+                                    <!--                                                        <div class="media-body">-->
+                                    <!--                                                            <h6 class="mb-0">Mulan</h6>-->
+                                    <!--                                                            <small class="font-size-12">1h 30 mins ago</small>-->
+                                    <!--                                                        </div>-->
+                                    <!--                                                    </div>-->
+                                    <!--                                                </a>-->
+                                    <!--                                            </div>-->
+                                    <!--                                        </div>-->
+                                    <!--                                    </div>-->
+                                </li>
+                                <li class="nav-item nav-icon">
+                                    <a href="#" class="iq-user-dropdown search-toggle d-flex align-items-center p-0">
+                                        <img src="../../images/user/user.png" class="img-fluid user-m rounded-circle"
+                                             alt=""/>
+                                    </a>
+                                    <div class="iq-sub-dropdown iq-user-dropdown">
+                                        <div class="iq-card shadow-none m-0">
+                                            <div class="iq-card-body p-0 pl-3 pr-3">
+                                                <a href="#" class="iq-sub-card setting-dropdown">
+                                                    <div class="media align-items-center">
+                                                        <div class="right-icon">
+                                                            <i class="fa fa-user text-primary"></i>
+                                                        </div>
+                                                        <div class="media-body ml-3">
+                                                            <h6 class="mb-0">HUJI User</h6>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                    <div class="nav-overlay"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div id="flashes">
+
+    </div>
+
+</div>
+
+<div id="main_cont" class="container-fluid">
+
+
+    <!-- settings modal -->
+    <div class="modal fade" id="settings-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Player Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+
+                    <!-- go back time -->
+                    <div class="row g-3 align-items-start">
+                        <div class="col">
+                            <label for="go-back-time" class="col-form-label">Go Back Time</label>
+                            <div class="form-text">Seconds after which LeftArrow doesn't go back but restarts current
+                                section (-1 always goes back)
+                            </div>
+                        </div>
+                        <div class="col">
+                            <input type="number" id="go-back-time" class="form-control">
+                        </div>
+                    </div>
+                    <!-- cache batch size -->
+                    <div class="row g-3 align-items-start mt-2">
+                        <div class="col">
+                            <label for="cache-batch-size" class="col-form-label">Cache Batch Size</label>
+                        </div>
+                        <div class="col">
+                            <input type="number" id="cache-batch-size" class="form-control">
+                        </div>
+                    </div>
+                    <!-- past sections to buffer -->
+                    <div class="row g-3 align-items-start mt-2">
+                        <div class="col">
+                            <label for="past-sections-to-buffer" class="col-form-label">Past Sections to Buffer</label>
+                        </div>
+                        <div class="col">
+                            <input type="number" id="past-sections-to-buffer" class="form-control">
+                        </div>
+                    </div>
+                    <!-- future sections to buffer -->
+                    <div class="row g-3 align-items-start mt-1">
+                        <div class="col">
+                            <label for="future-sections-to-buffer" class="col-form-label">Future Sections to
+                                Buffer</label>
+                        </div>
+                        <div class="col">
+                            <input type="number" id="future-sections-to-buffer" class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- loader -->
+                    <div class="row g-3 align-items-center mt-2">
+                        <div class="col">
+                            Loader
+                        </div>
+                        <div class="col">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="loader-selection"
+                                       id="buffer-loader-selected" checked>
+                                <label class="form-check-label" for="buffer-loader-selected">
+                                    Buffer Loader
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="loader-selection"
+                                       id="fallback-loader-selected">
+                                <label class="form-check-label" for="fallback-loader-selected">
+                                    Fallback Loader
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="reset-settings" type="button" class="btn btn-danger">Reset and Reload</button>
+                    <button id="update-settings" type="button" class="btn btn-primary">Apply and Reload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-0">
+        <div class="col ms-3">
+            <div class="row g-0">
+                <div class="col-md-12">
+                    <!-- video player -->
+                    <div id="videos-div" data-project_file="project.json">
+                        <video id="video0" class="main-video" muted>
+                            your browser doesn't support html5 videos.
+                        </video>
+                        <video id="video1" class="main-video" muted>
+                            your browser doesn't support html5 videos.
+                        </video>
+                    </div>
+                    <div class="btn-toolbar mt-4" role="toolbar" style="margin-right: 2vw; margin-left: 2vw">
+                        <div class="btn-group me-2 mt-3 flex-wrap" role="group">
+                            <button id="previous-section" type="button" class="btn btn-secondary player_button"><i
+                                    class="bi-caret-left"></i></button>
+                            <button id="restart-section" type="button" class="btn btn-secondary player_button"><i
+                                    class="bi-arrow-counterclockwise"></i></button>
+                            <button id="pause" type="button" class="btn btn-secondary player_button"><i
+                                    class="bi-pause"></i>
+                            </button>
+                            <button id="next-section" type="button" class="btn btn-secondary player_button"><i
+                                    class="bi-caret-right"></i></button>
+                            <button id="fullscreen" type="button" class="btn btn-secondary player_button"><i
+                                    class="bi-arrows-fullscreen"></i></button>
+                        </div>
+                        <div class="btn-group me-3 mt-3" role="group">
+                            <button id="cache" type="button" class="btn btn-secondary"><i
+                                    class="bi-download me-1"></i>cache videos
+                            </button>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                    data-bs-target="#settings-modal"><i class="bi-gear me-1"></i>player
+                                settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+        <div class="col-1">
+            <!-- timeline -->
+            <div class="timeline row flex-row g-2">
+
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0000.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0001.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0002.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0003.mp4"></div>
+
+                <div id="timeline-element-0" class="card timeline-element">
+                    <div class="card-text">
+                        <div class="row card-text">
+                            <!-- type -->
+                            <div class="col">
+
+                                +3
+
+
+                                Intro
+                            </div>
+                            <!-- timestamp -->
+                            <div class="col-auto">
+                                <div id="timeline-time-stamp-0">0 s</div>
+                            </div>
+                            <!-- indicator -->
+                            <div class="col-auto">
+                                <div id="timeline-indicator-0">
+                                    <!-- one of -->
+                                    <!-- <i class="bi-circle" role="img"></i> -->
+                                    <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                    <!-- <i class="bi-check-circle" role="img"></i> -->
+                                    <i class=" bi-circle" role="img"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- thumbnail (use last in slide) -->
+                    <img src="media/thumb_0002.jpg" class="card-img-top" alt="couldn't load thumbnail">
+                </div>
+
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0004.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0005.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0006.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0007.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0008.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0009.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0010.mp4"></div>
+
+                <div id="timeline-element-4" class="card timeline-element">
+                    <div class="card-text">
+                        <div class="row card-text">
+                            <!-- type -->
+                            <div class="col">
+
+                                +6
+
+
+                                Shortest Path
+                            </div>
+                            <!-- timestamp -->
+                            <div class="col-auto">
+                                <div id="timeline-time-stamp-4">0 s</div>
+                            </div>
+                            <!-- indicator -->
+                            <div class="col-auto">
+                                <div id="timeline-indicator-4">
+                                    <!-- one of -->
+                                    <!-- <i class="bi-circle" role="img"></i> -->
+                                    <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                    <!-- <i class="bi-check-circle" role="img"></i> -->
+                                    <i class=" bi-circle" role="img"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- thumbnail (use last in slide) -->
+                    <img src="media/thumb_0009.jpg" class="card-img-top" alt="couldn't load thumbnail">
+                </div>
+
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0011.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0012.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0013.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0014.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0015.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0016.mp4"></div>
+
+                <div id="timeline-element-11" class="card timeline-element">
+                    <div class="card-text">
+                        <div class="row card-text">
+                            <!-- type -->
+                            <div class="col">
+
+                                +5
+
+
+                                Dijkstra Intro
+                            </div>
+                            <!-- timestamp -->
+                            <div class="col-auto">
+                                <div id="timeline-time-stamp-11">0 s</div>
+                            </div>
+                            <!-- indicator -->
+                            <div class="col-auto">
+                                <div id="timeline-indicator-11">
+                                    <!-- one of -->
+                                    <!-- <i class="bi-circle" role="img"></i> -->
+                                    <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                    <!-- <i class="bi-check-circle" role="img"></i> -->
+                                    <i class=" bi-circle" role="img"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- thumbnail (use last in slide) -->
+                    <img src="media/thumb_0015.jpg" class="card-img-top" alt="couldn't load thumbnail">
+                </div>
+
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0017.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0018.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0019.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0020.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0021.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0022.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0023.mp4"></div>
+
+                <div id="timeline-element-17" class="card timeline-element">
+                    <div class="card-text">
+                        <div class="row card-text">
+                            <!-- type -->
+                            <div class="col">
+
+                                +6
+
+
+                                Relax
+                            </div>
+                            <!-- timestamp -->
+                            <div class="col-auto">
+                                <div id="timeline-time-stamp-17">0 s</div>
+                            </div>
+                            <!-- indicator -->
+                            <div class="col-auto">
+                                <div id="timeline-indicator-17">
+                                    <!-- one of -->
+                                    <!-- <i class="bi-circle" role="img"></i> -->
+                                    <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                    <!-- <i class="bi-check-circle" role="img"></i> -->
+                                    <i class=" bi-circle" role="img"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- thumbnail (use last in slide) -->
+                    <img src="media/thumb_0020.jpg" class="card-img-top" alt="couldn't load thumbnail">
+                </div>
+
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0024.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0025.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0026.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0027.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0028.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0029.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0030.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0031.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0032.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0033.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0034.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0035.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0036.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0037.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0038.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0039.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0040.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0041.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0042.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0043.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0044.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0045.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0046.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0047.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0048.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0049.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0050.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0051.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0052.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0053.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0054.mp4"></div>
+
+                <div id="timeline-element-24" class="card timeline-element">
+                    <div class="card-text">
+                        <div class="row card-text">
+                            <!-- type -->
+                            <div class="col">
+
+                                +30
+
+
+                                Dijkstra Example
+                            </div>
+                            <!-- timestamp -->
+                            <div class="col-auto">
+                                <div id="timeline-time-stamp-24">0 s</div>
+                            </div>
+                            <!-- indicator -->
+                            <div class="col-auto">
+                                <div id="timeline-indicator-24">
+                                    <!-- one of -->
+                                    <!-- <i class="bi-circle" role="img"></i> -->
+                                    <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                    <!-- <i class="bi-check-circle" role="img"></i> -->
+                                    <i class=" bi-circle" role="img"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- thumbnail (use last in slide) -->
+                    <img src="media/thumb_0036.jpg" class="card-img-top" alt="couldn't load thumbnail">
+                </div>
+
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0055.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0056.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0057.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0058.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0059.mp4"></div>
+
+                <div id="timeline-element-55" class="card timeline-element">
+                    <div class="card-text">
+                        <div class="row card-text">
+                            <!-- type -->
+                            <div class="col">
+
+                                +4
+
+
+                                Dijkstra Complexity
+                            </div>
+                            <!-- timestamp -->
+                            <div class="col-auto">
+                                <div id="timeline-time-stamp-55">0 s</div>
+                            </div>
+                            <!-- indicator -->
+                            <div class="col-auto">
+                                <div id="timeline-indicator-55">
+                                    <!-- one of -->
+                                    <!-- <i class="bi-circle" role="img"></i> -->
+                                    <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                    <!-- <i class="bi-check-circle" role="img"></i> -->
+                                    <i class=" bi-circle" role="img"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- thumbnail (use last in slide) -->
+                    <img src="media/thumb_0058.jpg" class="card-img-top" alt="couldn't load thumbnail">
+                </div>
+
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0060.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0061.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0062.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0063.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0064.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0065.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0066.mp4"></div>
+
+                <div id="timeline-element-60" class="card timeline-element">
+                    <div class="card-text">
+                        <div class="row card-text">
+                            <!-- type -->
+                            <div class="col">
+
+                                +6
+
+
+                                Belman-Ford Intro
+                            </div>
+                            <!-- timestamp -->
+                            <div class="col-auto">
+                                <div id="timeline-time-stamp-60">0 s</div>
+                            </div>
+                            <!-- indicator -->
+                            <div class="col-auto">
+                                <div id="timeline-indicator-60">
+                                    <!-- one of -->
+                                    <!-- <i class="bi-circle" role="img"></i> -->
+                                    <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                    <!-- <i class="bi-check-circle" role="img"></i> -->
+                                    <i class=" bi-circle" role="img"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- thumbnail (use last in slide) -->
+                    <img src="media/thumb_0065.jpg" class="card-img-top" alt="couldn't load thumbnail">
+                </div>
+
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0067.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0068.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0069.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0070.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0071.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0072.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0073.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0074.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0075.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0076.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0077.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0078.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0079.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0080.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0081.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0082.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0083.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0084.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0085.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0086.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0087.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0088.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0089.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0090.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0091.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0092.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0093.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0094.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0095.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0096.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0097.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0098.mp4"></div>
+
+                <div id="timeline-element-67" class="card timeline-element">
+                    <div class="card-text">
+                        <div class="row card-text">
+                            <!-- type -->
+                            <div class="col">
+
+                                +31
+
+
+                                Bellman-Ford Example
+                            </div>
+                            <!-- timestamp -->
+                            <div class="col-auto">
+                                <div id="timeline-time-stamp-67">0 s</div>
+                            </div>
+                            <!-- indicator -->
+                            <div class="col-auto">
+                                <div id="timeline-indicator-67">
+                                    <!-- one of -->
+                                    <!-- <i class="bi-circle" role="img"></i> -->
+                                    <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                    <!-- <i class="bi-check-circle" role="img"></i> -->
+                                    <i class=" bi-circle" role="img"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- thumbnail (use last in slide) -->
+                    <img src="media/thumb_0088.jpg" class="card-img-top" alt="couldn't load thumbnail">
+                </div>
+
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0099.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0100.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0101.mp4"></div>
+
+                <!-- used to parse video url to TypeScript -->
+                <div class="section-urls" data-video="media/video_0102.mp4"></div>
+
+                <div id="timeline-element-99" class="card timeline-element">
+                    <div class="card-text">
+                        <div class="row card-text">
+                            <!-- type -->
+                            <div class="col">
+
+                                +3
+
+
+                                Bellman-Ford Complexity
+                            </div>
+                            <!-- timestamp -->
+                            <div class="col-auto">
+                                <div id="timeline-time-stamp-99">0 s</div>
+                            </div>
+                            <!-- indicator -->
+                            <div class="col-auto">
+                                <div id="timeline-indicator-99">
+                                    <!-- one of -->
+                                    <!-- <i class="bi-circle" role="img"></i> -->
+                                    <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                    <!-- <i class="bi-check-circle" role="img"></i> -->
+                                    <i class=" bi-circle" role="img"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- thumbnail (use last in slide) -->
+                    <img src="media/thumb_0101.jpg" class="card-img-top" alt="couldn't load thumbnail">
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="row g-0">
+        <div class="container-fluid" style="margin-top: 3vh; padding-left: 10%; padding-right: 10%">
+            <!-- heading -->
+            <h1>Dijkstra & Bellman-Ford</h1>
+            <footer class="page-footer font-small mt-auto">
+                <div class="text-left pb-3 fs-6 text-muted">
+
+                </div>
+            </footer>
+        </div>
+    </div>
+    <div id="tabs-container">
+        <!-- keymap legend -->
+        <table class="table table-sm mt-3">
+            <thead>
+            <tr>
+                <th scope="col">key</th>
+                <th scope="col">function</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr id="normal-legend">
+                <td scope="col">arrowleft</td>
+                <td scope="col">last section / repeat (according to go back time in player settings)</td>
+            </tr>
+            <tr id="normal-legend">
+                <td scope="col">arrowright</td>
+                <td scope="col">next section (respect complete loop sections)</td>
+            </tr>
+            <tr id="normal-legend">
+                <td scope="col">ctrl/cmd+arrowleft</td>
+                <td scope="col">force last section</td>
+            </tr>
+            <tr id="normal-legend">
+                <td scope="col">ctrl/cmd+arrowright</td>
+                <td scope="col">force next section</td>
+            </tr>
+            <tr id="normal-legend">
+                <td scope="col">space</td>
+                <td scope="col">pause / unpause</td>
+            </tr>
+            </tbody>
+        </table>
+        <h3 style="font-size: 1rem">Section Types</h3>
+        <table class="table table-sm mt-3">
+            <thead>
+            <tr>
+                <th scope="col">
+                <td class="bi-play-btn" role="img"> normal</td>
+                </th>
+                <th scope="col">
+                <td class="bi-wind" role="img"> skip</td>
+                </th>
+                <th scope="col">
+                <td class="bi-arrow-clockwise" role="img"> loop</td>
+                </th>
+                <th scope="col">
+                <td class="bi-hourglass-split" role="img"> complete loop</td>
+                </th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<footer class="page-footer font-small mt-auto">
+    <div class="footer-copyright text-center pb-3 fs-6 text-muted">
+
+        Created with the
+        <a href="https://github.com/ManimEditorProject/manim_editor">
+            Manim Editor v0.3.8
+        </a>
+
+    </div>
+</footer>
+
+<script src="../webpack/base.js"></script>
+
+<script src="../webpack/edit_project.js"></script>
+
+<script src="../../js/jquery-3.4.1.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/main.js"></script>
+</body>
+</html>

@@ -11,7 +11,6 @@ sys.path.append(str(ROOT_PATH.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
 PRESENTATION_MODE = True
-PRESENTATION_MODE = False
 DISABLE_CACHING = False
 
 # --------------------------------- constants --------------------------------- #
@@ -348,17 +347,13 @@ class Dijkstra(SectionsScene):
         vertex[0].set_z_index(-10)
         new_label = create_dist_label(v, self.graph, key).move_to(vertex[1]).set_z_index(10).scale_to_fit_height(
             vertex[0].height * 0.3)
-        # self.play(ReplacementTransform(vertex[1], new_label), Flash(new_label), **kwargs)
+
         self.play(ReplacementTransform(vertex[1], new_label), Flash(new_label),
                   ReplacementTransform(self.dist_mob[v],
                                        get_sp_dist_label(self.graph, v, key).move_to(self.dist_mob[v])),
                   Flash(self.graph[v], flash_radius=0.5), **kwargs)
-        # self.play(AnimationGroup(ReplacementTransform(vertex[1], new_label), Flash(new_label), Flash(new_label), lag_ratio=0.5),
-        #           AnimationGroup(ReplacementTransform(vertex[1], new_label), Flash(new_label)
-        #               self.dist_mob[v].animate.become(get_sp_dist_label(self.graph, v, key).move_to(self.dist_mob[v])),
-        #               Flash(self.graph[v], flash_radius=0.5), lag_ratio=0.5), **kwargs)
+
         self.sort_heap(**kwargs)
-        return
 
     def sort_heap(self, **kwargs):
         prev_loc = [vertex for vertex in self.min_heap]
@@ -381,12 +376,9 @@ class DijkstraExample(Dijkstra):
         # self.add(self.graph, self.code)
         self.play(Write(self.code), Write(self.graph))
         self.play(Write(self.heap_label), Write(self.u), Write(self.pi))
-        self.dijksra(1)
-        # edges = get_neighbors_background(self.graph, 5)
-        # self.add(*list(edges.values()))
-        # self.decrease_key(3, 0)
 
-        # self.play(graph.edges[(2, 5)].animate_move_along_path(**SP_PATH_PARAMS))
+        self.dijksra(1)
+
         self.next_section("End")
         self.play(Unwrite(self.min_heap), Unwrite(self.u), Unwrite(self.pi), Unwrite(self.heap_label),
                   Unwrite(self.dist_mob))
@@ -425,8 +417,7 @@ class DijkstraComplexity(Dijkstra):
 
 if __name__ == "__main__":
     scenes_lst = [Intro, ShortestPath, DijkstraIntro, Relax, DijkstraExample, DijkstraComplexity]
-    # scenes_lst = [Relax]
+    scenes_lst = [DijkstraExample]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
-               # quality="high_quality",
+    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[18 + i for i in range(5)],
                create_gif=False)

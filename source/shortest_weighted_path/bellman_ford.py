@@ -245,5 +245,6 @@ class BellmanFordComplexity(BellmanFord):
 
 if __name__ == "__main__":
     scenes_lst = [BellmanFordIntro, BellmanFordExample, BellmanFordComplexity]
+
     run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
                create_gif=False)
