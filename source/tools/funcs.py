@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 
 from manim import *
 from manim import Polygon, Rectangle, SurroundingRectangle, VGroup
@@ -10,7 +11,9 @@ from manim_fonts import *
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from scipy.spatial import ConvexHull, KDTree
 import networkx as nx
+import subprocess
 
+from .scenes import SectionsScene
 from .consts import LINES_OFF_OPACITY
 from .code_styles import DarculaStyle, pygments_monkeypatch_style
 
@@ -19,13 +22,15 @@ QUALITY_TO_DIR = {k: f"{QUALITIES[k]['pixel_height']}p{QUALITIES[k]['frame_rate'
 DEFAULT_GIF_SCENES = list(range(1, 3))
 SECTIONS_MEDIA_PATH = r"videos/{quality_dir}/sections"
 SCENE_CLIP_NAME = "{scene_name}_{section_num:04d}.mp4"
+MANIM_EDITOR_COMMAND = "manedit"
+MOVIE_MEDIA_DIR_NAME = "media"
 DEFAULT_GIF_RESIZE = 0.2
 CODE_MATH_SCALE = 0.9
 
 
 def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, disable_caching: bool = False,
-               preview: bool = True, save_sections: bool = True, quality: str = None, create_gif: bool = None,
-               gif_scenes: list = None, **kwargs):
+               preview: bool = True, save_sections: bool = True, quality: str = None, overwrite_scenes: bool = True,
+               scenes_to_gif_frames: dict[Scene, list] = None, run_manedit: bool = None, movie_name="", **kwargs):
     """Run a list of scenes. This function is used by the manim command line interface.
     Possible quality settings are:
     - fourk_quality [k] 2160X3840
@@ -35,28 +40,43 @@ def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, di
     - low_quality [l] 480X854
     """
     if quality is None:
-        quality = "fourk_quality" if presentation_mode else "low_quality"
+        quality = "production_quality" if presentation_mode else "low_quality"
     else:
         if quality not in QUALITIES and quality not in QFLAGS_TO_QUALITY:
             raise ValueError(f"Invalid quality setting: {quality}")
 
         quality = QFLAGS_TO_QUALITY[quality] if quality in QFLAGS_TO_QUALITY else quality
-    if create_gif is None:
-        create_gif = presentation_mode
+
+    if scenes_to_gif_frames is None:
+        scenes_to_gif_frames = {}
+    if run_manedit is None:
+        run_manedit = presentation_mode
     if not Path(media_path).exists():
         Path(media_path).mkdir(parents=True, exist_ok=True)
+    jsons_path = media_path / SECTIONS_MEDIA_PATH.format(quality_dir=QUALITY_TO_DIR[quality])
+
     for scene in scenes_lst:
+        if not overwrite_scenes and jsons_path.with_name(scene.__name__ + ".mp4").exists():
+            continue
+
         with tempconfig(
                 {"quality": quality, "preview": preview, "media_dir": media_path, "save_sections": save_sections,
                  "disable_caching": disable_caching}):
-            # if isinstance(scene, SectionsScene): #TODO: Fix this
-            scene.PRESENTATION_MODE = presentation_mode
-            scene().render()
-        if create_gif:
-            create_scene_gif(media_path, scene.__name__, DEFAULT_GIF_SCENES if gif_scenes is None else gif_scenes,
-                             QUALITY_TO_DIR[quality])
+            scene_obj = scene()
+            if isinstance(scene_obj, SectionsScene):
+                scene_obj.PRESENTATION_MODE = presentation_mode
+            scene_obj.render()
+        if scene in scenes_to_gif_frames:
+            create_scene_gif(media_path, scene.__name__, scenes_to_gif_frames[scene], QUALITY_TO_DIR[quality])
+
     if save_sections:
-        manim_editor_autocreated_scene_fix(media_path / SECTIONS_MEDIA_PATH.format(quality_dir=QUALITY_TO_DIR[quality]))
+        manim_editor_autocreated_scene_fix(jsons_path)
+
+    if run_manedit:
+        if movie_name == "":
+            raise ValueError("movie_name must be specified when run_manedit is True")
+        run_manim_editor(scenes_lst, jsons_path, movie_name)
+        reorder_manedit_dirs_structure(jsons_path.parent / movie_name)
 
 
 def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int], quality_dir: str):
@@ -73,6 +93,42 @@ def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int]
         scene_name=scene_name, section_num=i))).resize(DEFAULT_GIF_RESIZE) for i in section_num_lst]
 
     concatenate_videoclips(clips).write_gif(str(gif_dir / f"{scene_name}.gif"), fps=13)
+
+
+def run_manim_editor(scenes_lst: list, jsons_path: Path | str, movie_name: str):
+    jsons_path = Path(jsons_path) if isinstance(jsons_path, str) else jsons_path
+    scenes_to_add = [MANIM_EDITOR_COMMAND]
+    for scene in scenes_lst:
+        scenes_to_add.append(f"--quick_present_export {str(jsons_path / scene.__name__)}.json")
+    scenes_to_add.append(f"--project_name {movie_name}")
+    scenes_to_add = " ".join(scenes_to_add)
+    print(scenes_to_add)
+    subprocess.run(scenes_to_add, cwd=jsons_path.parent)
+
+
+def reorder_manedit_dirs_structure(movie_path: Path | str):
+    movie_path = Path(movie_path) if isinstance(movie_path, str) else movie_path
+    # create media dir if not exists
+    media_dir = movie_path / MOVIE_MEDIA_DIR_NAME
+    media_dir.mkdir(parents=True, exist_ok=True)
+
+    # move all files end with .mp4 or .jpg to media dir
+    for file in movie_path.glob("*.mp4"):
+        shutil.move(file, media_dir)
+    for file in movie_path.glob("*.jpg"):
+        shutil.move(file, media_dir)
+
+    # replace all "data-video="video" to "data-video="media/video" in all index.html file
+    index_html = movie_path / "index.html"
+    with open(index_html, "r+") as f:
+        content = f.read()
+        content = content.replace('data-video="video', f'data-video="{MOVIE_MEDIA_DIR_NAME}/video')
+        for match in re.findall(r'<img src="thumb_(\d+).jpg"', content):
+            content = content.replace(f'<img src="thumb_{match}.jpg"',
+                                      f'<img src="{MOVIE_MEDIA_DIR_NAME}/thumb_{str(int(match) - 1).zfill(4)}.jpg"')
+        f.seek(0)
+        f.write(content)
+        f.truncate()
 
 
 def manim_editor_autocreated_scene_fix(json_path: Path | str):
