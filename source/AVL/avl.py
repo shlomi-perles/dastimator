@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from BST.bst import *
 from tools.graphs.avl_tree import *
-from tools.movie_maker import create_scene_gif
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))

@@ -6,10 +6,10 @@ TODO: 3. Break down the main scene into smaller scenes.
 """
 from __future__ import annotations
 
-from tools.movie_maker import render_scenes
-from tools.scenes import *
 from tools.funcs import *
 from tools.graphs.bst import *
+from tools.movie_maker import render_scenes
+from tools.scenes import *
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
