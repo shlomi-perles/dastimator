@@ -622,6 +622,7 @@ class ComplexitySummary(SectionsScene):
 if __name__ == "__main__":
     create_scene_gif("D:\projects\Manim\dastimator\media\AVL", "AVLLectureRotations", [1+i for i in range(11)],
                      quality_dir="2160p60")
+
     # scenes_lst = [AVLLectureIntro, AVLLectureIntroInsert, AVLLectureRotations, AVLLectureBalance, AVLLectureInsert,
     #               ComplexitySummary]
     #
