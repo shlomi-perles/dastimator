@@ -10,9 +10,10 @@ from manim.mobject.geometry.polygram import Polygon
 from scipy.spatial import Voronoi
 
 from tools.consts import DISTANCE_LABEL_COLOR, DISTANCE_LABEL_SCALE, DISTANCE_LABEL_BUFFER, EDGE_CONFIG, TIP_SIZE, \
-    DEFAULT_ARROW_TIP_WIDTH, LABEL_COLOR, VERTEX_CONFIG, VERTEX_LABEL_SCALE
+    DEFAULT_ARROW_TIP_WIDTH, LABEL_COLOR, VERTEX_CONFIG, VERTEX_LABEL_SCALE, VERTEX_WIDTH
 from tools.funcs import get_convex_hull_polygon, get_tangent_points, boolean_op_to_polygons
-from tools.graphs.my_graphs import DiGraph, WeightedGraph, Edge
+from tools.graphs.my_graphs import DiGraph, WeightedGraph, Graph, Edge
+from tools.graphs.node import Node
 
 
 def get_neighbors(graph: DiGraph, vertex, priority_lst=None):
@@ -21,7 +22,7 @@ def get_neighbors(graph: DiGraph, vertex, priority_lst=None):
 
 
 def create_dist_label(index: int, graph: DiGraph | WeightedGraph, label: str | int | float) -> MathTex:
-    label = MathTex(rf"\mathbf{{{label}}}", color=DISTANCE_LABEL_COLOR)
+    label = MathTex(rf"\mathbf{{{label}}}", color=DISTANCE_LABEL_COLOR).set_z_index(10)
     if label.width < label.height:
         label.scale_to_fit_height(graph[index].radius * DISTANCE_LABEL_SCALE)
     else:
@@ -31,9 +32,10 @@ def create_dist_label(index: int, graph: DiGraph | WeightedGraph, label: str | i
 
 def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]],
                  layout: str | dict[Hashable, np.ndarray] = "spring", layout_scale: float = 1.5,
-                 directed_graph: bool = False, graph_type=DiGraph, edge_type=Edge,
-                 absolute_scale_vertices=False, labels: bool | dict[Hashable, str] = True,
-                 weights: dict[tuple[Hashable, Hashable], float] = None) -> WeightedGraph | DiGraph:
+                 directed_graph: bool = False, graph_type=None, edge_type=Edge, vertex_type=Node,
+                 rescale_vertices=True, labels: bool | dict[Hashable, str] = True,
+                 weights: dict[tuple[Hashable, Hashable], float] = None,
+                 dual_arrow: bool = False) -> Graph | WeightedGraph | DiGraph:
     """
     Create graph and add labels to vertices,
     Note: vertices are 1-indexed
@@ -41,15 +43,17 @@ def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]
     edges = deepcopy(edges)
     if not directed_graph:
         edges += [(v, u) for u, v in edges]
+    if graph_type is None:
+        graph_type = DiGraph if directed_graph else WeightedGraph if weights is not None else Graph
 
-    edge_config = EDGE_CONFIG.copy()
+    edge_config = deepcopy(EDGE_CONFIG)
     if directed_graph:
         edge_configs = {}
         for k, v in edges:
-            if (v, k) in edges:
-                edge_configs[(k, v)] = EDGE_CONFIG.copy()
+            if (v, k) in edges and not dual_arrow:
+                edge_configs[(k, v)] = deepcopy(EDGE_CONFIG)
             else:
-                edge_configs[(k, v)] = EDGE_CONFIG.copy()
+                edge_configs[(k, v)] = deepcopy(EDGE_CONFIG)
                 tip_conf = edge_configs[(k, v)].get("tip_config", {})
 
                 tip_size = tip_conf.get("tip_length", None)
@@ -67,7 +71,7 @@ def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]
 
     args = dict(vertices=vertices, edges=edges, layout=layout, layout_scale=layout_scale, labels=labels,
                 label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG.copy(), edge_config=edge_config,
-                edge_type=edge_type, root_vertex=1)
+                edge_type=edge_type, vertex_type=vertex_type, root_vertex=1)
 
     if weights is not None:
         graph_type = WeightedGraph
@@ -76,20 +80,22 @@ def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]
         args["weights"] = weights
 
     graph = graph_type(**args)
+    if rescale_vertices:
+        graph[list(graph.vertices.keys())[0]].scale_to_fit_width(VERTEX_WIDTH)
+
     for i, vertex in enumerate(graph.vertices):
         if not labels:
-            if not absolute_scale_vertices:
-                graph[vertex].scale_to_fit_height(graph[0].height)
             continue
         label = graph[vertex][1]
         graph[vertex].remove(label)
-        label.next_to(graph[vertex], RIGHT, buff=0)
         label.move_to(graph[vertex])
-        if not absolute_scale_vertices:
-            label.scale(VERTEX_LABEL_SCALE)
-        else:
+
+        if rescale_vertices:
             graph[vertex].scale_to_fit_height(graph[list(graph.vertices.keys())[0]].height)
             label.scale_to_fit_height(graph[vertex].height * 0.5)
+        else:
+            label.scale(VERTEX_LABEL_SCALE)
+
         graph[vertex].add(label)
 
     relative_scale = config.frame_width * 0.4 if graph.width > graph.height else config.frame_height * 0.7

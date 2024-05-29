@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from copy import copy
+from typing import Hashable
 
 from tools.graphs.utils import get_neighbors, create_dist_label, create_graph
+from tools.movie_maker import render_scenes
 from tools.scenes import *
 from BFS.bfs import BFS_PSEUDO_CODE, get_big_triangle_graph
 from tools.array import *
@@ -14,7 +16,7 @@ ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
-PRESENTATION_MODE = True
+PRESENTATION_MODE = False
 DISABLE_CACHING = False
 
 # --------------------------------- constants --------------------------------- #
@@ -64,7 +66,8 @@ class DFSScene(SectionsScene):
         self.edges = edges
         self.start_vertex = start_vertex
         self.layout = layout
-        self.graph = self.create_graph()
+        self.graph = create_graph(self.vertices, self.edges, self.layout, directed_graph=True, graph_type=DiGraph,
+                                  labels=True)
         self.rendered_code = create_code(DFS_PSEUDO_CODE)
         self.queue_mob, self.u, self.pi = self.create_bfs_vars(self.rendered_code)
         self.dist_mob = VGroup(
@@ -111,19 +114,13 @@ class DFSScene(SectionsScene):
         self.play(highlight_code_lines(self.rendered_code, lines=[5, 9, 15, 16], indicate=False))
 
     def animate_dfs(self):
-        """
-        Animate BFS algorithm. We assume that the graph is connected.
-        Else, we need to run BFS for each connected component.
-        Each step of the algorithm is animated separately.
-        Note: vertices are 1-indexed.
-        """
         graph, rendered_code, dist_mob = self.graph, self.rendered_code, self.dist_mob
         queue_mob, u, pi = self.queue_mob, self.u, self.pi
 
         queue = [self.start_vertex]
         self.next_section("Initialize queue", pst.SUB_NORMAL)
         self.highlight_and_indicate_code([2])
-        self.play(queue_mob.draw_array())
+        self.play(Write(queue_mob))
 
         dist = [np.Inf] * (len(graph.vertices) + 1)
         self.next_section("Initialize dists", pst.SUB_NORMAL)
@@ -136,8 +133,8 @@ class DFSScene(SectionsScene):
         parent = [None] * (len(graph.vertices) + 1)
         self.next_section("Init first vertex parent", pst.SUB_NORMAL)
         self.highlight_and_indicate_code([4])
-        self.play(pi.draw_array())
-        self.play(pi.at(0, "-"))
+        self.play(Write(pi))
+        self.play(pi.animate.at(1, "-"))
         visit_all = False
         while queue:
             self.highlight_and_indicate_code([7])
@@ -149,7 +146,7 @@ class DFSScene(SectionsScene):
             self.highlight_and_indicate_code([8])
             if cur_vertex == self.start_vertex:
                 self.visit_vertex_animation(graph, None, cur_vertex)
-            pop_item = queue_mob.get_square(len(queue))
+            pop_item = queue_mob.get_entry(len(queue))
             self.play(queue_mob.indicate_at(len(queue)))
             self.play(pop_item.animate.match_y(u), run_time=0.5)
             self.play(pop_item.animate.next_to(self.u, RIGHT), run_time=0.5)
@@ -186,37 +183,9 @@ class DFSScene(SectionsScene):
                 self.next_section(f"Add parent {cur_vertex} to vertex {neighbor}", pst.SUB_NORMAL)
                 self.highlight_and_indicate_code([13])
                 self.next_section("Update parent", pst.SUB_NORMAL)
-                self.play(pi.at(neighbor - 1, cur_vertex))
+                self.play(pi.animate.at(neighbor, cur_vertex))
 
             self.play(pop_animation[0])
-
-    def create_graph(self):
-        """
-        Create graph and add labels to vertices,
-        Note: vertices are 1-indexed
-        """
-        if not self.directed_graph:
-            self.edges += [(v, u) for u, v in self.edges]
-
-        edge_config = EDGE_CONFIG
-        if self.directed_graph:
-            edge_configs = {}
-            for k, v in self.edges:
-                if (v, k) in self.edges:
-                    edge_configs[(k, v)] = EDGE_CONFIG.copy()
-                else:
-                    edge_configs[(k, v)] = EDGE_CONFIG.copy()
-                    edge_configs[(k, v)]["tip_config"]["tip_length"] = TIP_SIZE
-                    edge_configs[(k, v)]["tip_config"]["tip_width"] = DEFAULT_ARROW_TIP_WIDTH
-            edge_config = edge_configs
-
-        graph = DiGraph(self.vertices, self.edges, layout=self.layout, layout_scale=1.5, labels=True,
-                        label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG, edge_config=edge_config)
-        for i, vertex in enumerate(graph.vertices):
-            graph[vertex][1].scale(VERTEX_LABEL_SCALE)
-        relative_scale = config.frame_width * 0.4 if graph.width > graph.height else config.frame_height * 0.7
-        graph.scale_to_fit_width(relative_scale).move_to(ORIGIN).to_edge(RIGHT, buff=0.2)
-        return graph
 
     def create_bfs_vars(self, rendered_code: Code) -> tuple[ArrayMob, Tex, ArrayMob]:
         scale = 1
@@ -225,9 +194,9 @@ class DFSScene(SectionsScene):
         queue_mob = ArrayMob("queue:", self.start_vertex, name_scale=scale).set_y(start_vars_y - lag_y, DOWN).to_edge(
             LEFT)
 
-        u = Tex("u:").scale_to_fit_height(queue_mob.height_ref).next_to(queue_mob, DOWN, buff=queue_mob.get_square(
-            0).height * 0.8).align_to(queue_mob.array_name, RIGHT).set_y(start_vars_y - 2 * lag_y, DOWN)
-        pi = ArrayMob(r"$\pi$:", *[""] * len(self.vertices), name_scale=scale, show_labels=True, labels_pos=DOWN,
+        u = Tex("u:").scale_to_fit_height(queue_mob.height_ref).next_to(queue_mob, DOWN, buff=queue_mob.get_entry(
+            0).height * 0.8).align_to(queue_mob.name_mob, RIGHT).set_y(start_vars_y - 2 * lag_y, DOWN)
+        pi = ArrayMob(r"$\pi$:", *[""] * len(self.vertices), name_scale=scale, show_indices=True, indices_pos=DOWN,
                       align_point=u.get_right() + 0.5 * DOWN * (queue_mob.obj_ref.get_bottom()[1] - u.get_top()[1]),
                       starting_index=1).set_y(start_vars_y - 3 * lag_y, DOWN)
         u.set_y((queue_mob.get_bottom()[1] + pi.get_top()[1]) / 2)
@@ -335,9 +304,9 @@ class RecursiveDFSScene(SectionsScene):
         self.start_vertex = start_vertex
         self.layout = layout
         self.priority_lst = priority_lst
-        self.graph = create_graph(self.vertices, self.edges, self.layout, self.directed_graph)
+        self.graph = create_graph(self.vertices, self.edges, self.layout, directed_graph=self.directed_graph)
         self.rendered_code = create_code(RECURSIVE_DFS_PSEUDO_CODE)
-        self.queue_mob, self.u, self.pi, self.time = self.create_dfs_vars(self.rendered_code)
+        self.queue_mob, self.u, self.pi, self.time = self.create_dfs_vars()
         self.pre, self.post = self.create_pre_ans_post()
         self.pre_and_post = VGroup(*[i for i in self.pre if i is not None], *[i for i in self.post if i is not None])
         self.mobjects_garbage_collector = VGroup(self.pre_and_post)
@@ -397,7 +366,7 @@ class RecursiveDFSScene(SectionsScene):
                 self.next_section(f"Add parent {start_vertex} to vertex {neighbor}", skip_section=fast_run)
                 self.highlight_and_indicate_code([6])
                 self.next_section("Update parent", skip_section=fast_run)
-                self.play(pi.at(neighbor - 1, start_vertex))
+                self.play(pi.animate.at(neighbor, start_vertex))
 
                 # animate DFS(G,v)
                 self.next_section(f"DFS on vertex {neighbor}", skip_section=fast_run)
@@ -433,24 +402,23 @@ class RecursiveDFSScene(SectionsScene):
             VGroup(pre[vertex], post[vertex]).next_to(self.graph.vertices[vertex], positions[vertex], buff=0.1)
         return pre, post
 
-    def create_dfs_vars(self, rendered_code: Code) -> tuple[ArrayMob, VGroup, ArrayMob, VGroup]:
+    def create_dfs_vars(self) -> tuple[ArrayMob, VGroup, ArrayMob, VGroup]:
         scale = 1
-        start_vars_y = rendered_code.get_bottom()[1] * 1.3
-        lag_y = (config.frame_height / 2 + start_vars_y) * 0.35
+        arr_scale = 0.32
 
-        queue_mob = ArrayMob("stack:", self.start_vertex, name_scale=scale).set_y(start_vars_y - lag_y, DOWN).to_edge(
-            LEFT)
-        pi = ArrayMob(r"$\pi$:", *[""] * len(self.vertices), name_scale=scale, show_labels=True, labels_pos=DOWN,
-                      align_point=queue_mob.array_name.get_right(), starting_index=1).set_y(start_vars_y - 2 * lag_y,
-                                                                                            DOWN)
-        # queue_mob.set_y((s.get_bottom()[1] + pi.get_top()[1]) / 2)
-        s = Tex("s").set_y(start_vars_y - lag_y, DOWN).to_edge(LEFT).next_to(queue_mob.get_square(0), UP, buff=0.2)
-        VGroup(s, queue_mob, pi).next_to(rendered_code, DOWN, buff=1).to_edge(LEFT)
-        time = get_func_text("time = ").scale_to_fit_height(queue_mob.array_name.height * 1.3)
+        queue_mob = ArrayMob("stack:", self.start_vertex, name_scale=scale).scale(arr_scale)
+        pi = ArrayMob(r"$\pi$:", *[""] * len(self.vertices), name_scale=scale, show_indices=True, indices_pos=DOWN,
+                      align_point=queue_mob.name_mob.get_right(), starting_index=1).scale(arr_scale)
+        VGroup(queue_mob, pi).arrange(DOWN, buff=1.3).set_y(get_frame_center(top=self.rendered_code)[1])
+        s = Tex("s").next_to(queue_mob.get_entry(0), UP, buff=0.2)
+        pi.shift((queue_mob.get_entry(0).get_left()[0] - pi.get_entry(1).get_left()[0]) * RIGHT)
+        VGroup(queue_mob, pi, s).align_to(self.rendered_code, LEFT)
+
+        time = get_func_text("time = ").scale_to_fit_height(queue_mob.name_mob.height * 1.3)
         time = VGroup(time, DecimalNumber(0, num_decimal_places=0).match_height(time).next_to(
             time, RIGHT, buff=0.4)).next_to(self.graph, UP, buff=1).set_color(WHITE)
 
-        s = VGroup(queue_mob.get_square(0)[0].copy().set_stroke(color=YELLOW).set_z_index(10), s).set_z_index(10)
+        s = VGroup(queue_mob.get_entry(0).frame.copy().set_stroke(color=YELLOW).set_z_index(10), s).set_z_index(10)
         return queue_mob, s, pi, time
 
     def visit_vertex_animation(self, graph: DiGraph, parent, next_vertex):
@@ -488,7 +456,8 @@ class RecursiveDFSMainExamp(RecursiveDFSScene):
         self.next_section("DFS Example", pst.NORMAL)
         self.play(Write(self.rendered_code))
         self.play(Write(self.graph))
-        self.pi.at(0, "-")
+        self.graph.set_z_index(-10)
+        self.pi.at(1, "-")
         self.play(Write(self.queue_mob), Write(self.u), Write(self.pi), Write(self.time))
 
         self.animate_recursive_dfs()
@@ -508,7 +477,8 @@ class FastDFS(SectionsScene):
         self.start_vertex = start_vertex
         self.directed_graph = directed_graph
         self.graph = create_graph(self.vertices, self.edges, self.layout, directed_graph=directed_graph,
-                                  graph_type=DiGraph, absolute_scale_vertices=True, labels=False).scale_to_fit_height(
+                                  graph_type=DiGraph, vertex_type=Dot, rescale_vertices=False,
+                                  labels=False).scale_to_fit_height(
             config.frame_height * 0.9).move_to(ORIGIN)
         self.mobjects_garbage_collector = VGroup()
         super().__init__(**kwargs)
@@ -572,5 +542,5 @@ class DFSBigGraph(FastDFS):
 if __name__ == "__main__":
     scenes_lst = [RecursiveDFSMainExamp, DFSBigGraph]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
-               create_gif=False)
+    render_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
+                  create_gif=False)

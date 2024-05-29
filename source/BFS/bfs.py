@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from copy import copy, deepcopy
+from copy import copy
 from typing import Hashable
 
 from tools.graphs.utils import get_neighbors, create_dist_label, create_graph
+from tools.movie_maker import render_scenes
 from tools.scenes import *
 from tools.array import *
 from tools.consts import *
@@ -23,7 +24,7 @@ EDGE_CONFIG["stroke_color"] = EDGE_COLOR
 
 BFS_PSEUDO_CODE = '''def BFS(G,s): 
     queue ← Build Queue({s})
-    for all vertices u in V do:
+    for each vertex u in V do:
         dist[u] ← ∞
     dist[s] ← 0
     π[s] ← None
@@ -39,51 +40,6 @@ SIMPLE_GRAPH_LAYOUT = {1: ORIGIN, 2: DOWN, 3: LEFT, 4: LEFT + DOWN}
 
 
 # --------------------------------- functions --------------------------------- #
-def create_graph(vertices: list[Hashable], edges: list[tuple[Hashable, Hashable]],
-                 layout: str | dict[Hashable, np.ndarray] = "spring",
-                 directed_graph: bool = False, graph_type=DiGraph, absolute_scale_vertices=False,
-                 labels: bool = True) -> DiGraph:
-    """
-    Create graph and add labels to vertices,
-    Note: vertices are 1-indexed
-    """
-    edges = deepcopy(edges)
-    if not directed_graph:
-        edges += [(v, u) for u, v in edges]
-
-    edge_config = EDGE_CONFIG.copy()
-    if directed_graph:
-        edge_configs = {}
-        for k, v in edges:
-            if (v, k) in edges:
-                edge_configs[(k, v)] = EDGE_CONFIG.copy()
-            else:
-                edge_configs[(k, v)] = EDGE_CONFIG.copy()
-                edge_configs[(k, v)]["tip_config"]["tip_length"] = TIP_SIZE
-                edge_configs[(k, v)]["tip_config"]["tip_width"] = DEFAULT_ARROW_TIP_WIDTH
-        edge_config = edge_configs
-
-    graph = graph_type(vertices, edges, layout=layout, layout_scale=1.5, labels=labels,
-                       label_fill_color=LABEL_COLOR, vertex_config=VERTEX_CONFIG.copy(), edge_config=edge_config)
-    for i, vertex in enumerate(graph.vertices):
-        if not labels:
-            if not absolute_scale_vertices:
-                graph[vertex].scale_to_fit_height(graph[0].height)
-            continue
-        label = graph[vertex][1]
-        graph[vertex].remove(label)
-        label.next_to(graph[vertex], RIGHT, buff=0)
-        label.move_to(graph[vertex])
-        if not absolute_scale_vertices:
-            label.scale(VERTEX_LABEL_SCALE)
-        else:
-            graph[vertex].scale_to_fit_height(graph[list(graph.vertices.keys())[0]].height)
-            label.scale_to_fit_height(graph[vertex].height * 0.5)
-        graph[vertex].add(label)
-    relative_scale = config.frame_width * 0.4 if graph.width > graph.height else config.frame_height * 0.7
-    graph.scale_to_fit_width(relative_scale).move_to(ORIGIN).to_edge(RIGHT, buff=0.2)
-    return graph
-
 
 def get_big_triangle_graph(floors: int = 5) -> tuple[list[int], list[tuple[int, int]], dict[int, np.ndarray]]:
     left_shift = LEFT / np.sqrt(3)
@@ -119,8 +75,8 @@ class BFSScene(SectionsScene):
         self.start_vertex = start_vertex
         self.layout = layout
         self.graph = create_graph(self.vertices, self.edges, self.layout, directed_graph=directed_graph,
-                                  graph_type=DiGraph, absolute_scale_vertices=False,
-                                  labels=True)
+                                  graph_type=DiGraph, labels=True)
+
         self.rendered_code = create_code(BFS_PSEUDO_CODE)
         self.queue_mob, self.u, self.pi = self.create_bfs_vars(self.rendered_code)
         self.dist_mob = VGroup(
@@ -140,7 +96,7 @@ class BFSScene(SectionsScene):
         queue = [self.start_vertex]
         self.next_section("Initialize queue")
         self.highlight_and_indicate_code([2])
-        self.play(queue_mob.draw_array())
+        self.play(Write(queue_mob))
 
         dist = [np.Inf] * (len(graph.vertices) + 1)
         self.next_section("Initialize dist")
@@ -157,9 +113,10 @@ class BFSScene(SectionsScene):
         parent = [None] * (len(graph.vertices) + 1)
         self.next_section("Init first vertex parent")
         self.highlight_and_indicate_code([6])
-        self.play(pi.draw_array())
-        self.play(pi.at(0, "-"))
+        self.play(Write(pi))
+        self.play(pi.animate.at(1, "-"))
         visit_all = False
+
         while queue:
             self.highlight_and_indicate_code([8])
             # animate pop
@@ -170,7 +127,7 @@ class BFSScene(SectionsScene):
             self.highlight_and_indicate_code([9])
             if cur_vertex == self.start_vertex:
                 self.visit_vertex_animation(graph, None, cur_vertex)
-            pop_item = queue_mob.get_square(0)
+            pop_item = queue_mob.get_entry(0)
             self.play(queue_mob.indicate_at(0))
             self.play(pop_item.animate.match_y(u))
             pop_animation = queue_mob.pop(0, shift=RIGHT).animations
@@ -206,29 +163,29 @@ class BFSScene(SectionsScene):
                 self.next_section(f"Add parent {cur_vertex} to vertex {neighbor}")
                 self.highlight_and_indicate_code([13])
                 self.next_section("Update parent")
-                self.play(pi.at(neighbor - 1, cur_vertex))
-
+                self.play(pi.animate.at(neighbor, cur_vertex))
             self.play(pop_animation[0])
 
     def create_bfs_vars(self, rendered_code: Code) -> tuple[ArrayMob, Tex, ArrayMob]:
         scale = 1
+        arr_scale = 0.38
         start_vars_y = rendered_code.get_bottom()[1]
         lag_y = (config.frame_height / 2 + start_vars_y) / 3
-        queue_mob = ArrayMob("queue:", self.start_vertex, name_scale=scale).set_y(start_vars_y - lag_y, DOWN).to_edge(
-            LEFT)
+        queue_mob = ArrayMob("queue:", self.start_vertex, name_scale=scale).scale(arr_scale).set_y(start_vars_y - lag_y,
+                                                                                                   DOWN).to_edge(LEFT)
 
-        u = Tex("u:").scale_to_fit_height(queue_mob.height_ref).next_to(queue_mob, DOWN, buff=queue_mob.get_square(
-            0).height * 0.8).align_to(queue_mob.array_name, RIGHT).set_y(start_vars_y - 2 * lag_y, DOWN)
-        pi = ArrayMob(r"$\pi$:", *[""] * len(self.vertices), name_scale=scale, show_labels=True, labels_pos=DOWN,
-                      align_point=u.get_right() + 0.5 * DOWN * (queue_mob.obj_ref.get_bottom()[1] - u.get_top()[1]),
-                      starting_index=1).set_y(start_vars_y - 3 * lag_y, DOWN)
+        u = Tex("u:").match_height(queue_mob.obj_ref).next_to(queue_mob, DOWN, buff=queue_mob.get_entry(
+            0).height * 0.8).align_to(queue_mob.name_mob, RIGHT).set_y(start_vars_y - 2 * lag_y, DOWN)
+        pi = ArrayMob(r"$\pi$:", *[""] * len(self.vertices), name_scale=scale, show_indices=True, indices_pos=DOWN,
+                      starting_index=1).scale(arr_scale).set_y(start_vars_y - 3 * lag_y, DOWN)
+        pi.shift((queue_mob.entries.get_left()[0] - pi.entries.get_left()[0]) * RIGHT)
         u.set_y((queue_mob.get_bottom()[1] + pi.get_top()[1]) / 2)
         VGroup(queue_mob, u, pi).next_to(rendered_code, DOWN).to_edge(LEFT)
         return queue_mob, u, pi
 
     def visit_vertex_animation(self, graph: DiGraph, parent, next_vertex):
         visited_mark = Circle(radius=graph[next_vertex].radius * 0.9, fill_opacity=0, stroke_width=VISITED_VERTEX_WIDTH,
-                              stroke_color=VISITED_COLOR).move_to(graph[next_vertex]).scale_to_fit_height(
+                              stroke_color=VISITED_COLOR, z_index=10).move_to(graph[next_vertex]).scale_to_fit_height(
             graph[next_vertex].height)
         self.mobjects_garbage_collector += visited_mark
         if parent is not None:
@@ -270,6 +227,7 @@ class DirectedGraphBFS(BFSScene):
         self.next_section("BFS Example", pst.NORMAL)
         self.play(Write(self.rendered_code))
         self.play(Write(self.graph))
+        self.graph.set_z_index(-5)
         self.animate_bfs()
 
         self.play(highlight_code_lines(self.rendered_code, indicate=False))
@@ -312,10 +270,6 @@ class BFSComplexity(BFSScene):
         self.play(Unwrite(self.rendered_code), Unwrite(self.graph))
         self.wait()
 
-        # self.play(Unwrite(self.mobjects_garbage_collector))
-        # self.play(Unwrite(VGroup(self.queue_mob, self.u, self.pi)))
-        # self.wait()
-
 
 class FastBFS(SectionsScene):
     def __init__(self, vertices, edges, layout, directed_graph=False, start_vertex=0, **kwargs):
@@ -326,9 +280,9 @@ class FastBFS(SectionsScene):
         self.start_vertex = start_vertex
         self.layout = layout
         self.graph = create_graph(self.vertices, self.edges, self.layout, directed_graph=directed_graph,
-                                  graph_type=DiGraph, absolute_scale_vertices=True,
-                                  labels=False).scale_to_fit_height(
-            config.frame_height * 0.9).move_to(ORIGIN)
+                                  graph_type=DiGraph, vertex_type=Dot, rescale_vertices=False,
+                                  labels=False).scale_to_fit_height(config.frame_height * 0.9).move_to(ORIGIN)
+        self.graph.remove_updater(self.graph.update_edges)
         self.mobjects_garbage_collector = VGroup()
 
     def animate_fast_bfs(self, run_time=0.5):
@@ -383,6 +337,7 @@ class BFSBigGraph(FastBFS):
     def construct(self):
         self.next_section("BFS Big Example", pst.NORMAL)
         self.play(Write(self.graph))
+        self.graph.set_z_index(-10)
         self.next_section("Show BFS")
         self.animate_fast_bfs(0.3)
         self.next_section("BFS done")
@@ -419,20 +374,20 @@ class BFSIntro(SectionsScene):
         self.play(Write(example_title))
 
         graph_example = create_graph([1, 2, 3, 4], edges=[(1, 2), (2, 3), (3, 1), (3, 4)],
-                                     layout={1: ORIGIN, 2: DOWN + LEFT, 3: DOWN + RIGHT, 4: 2 * (DOWN + RIGHT)},
-                                     absolute_scale_vertices=True).scale_to_fit_height(
+                                     layout={1: ORIGIN, 2: DOWN + LEFT, 3: DOWN + RIGHT, 4: 2 * (DOWN + RIGHT)}
+                                     ).scale_to_fit_height(
             config.frame_height * 0.4).move_to(ORIGIN)
         bfs_func = get_func_text("BFS(G,1):").scale(0.6).next_to(graph_example, DOWN, buff=0).to_edge(LEFT)
 
-        pi = ArrayMob(r"$\pi$:", *["-", "1", "1", "3"], name_scale=1.2, show_labels=True, labels_pos=DOWN,
-                      starting_index=1).to_edge(DOWN).set_x(0).shift(LEFT)
+        pi = ArrayMob(r"$\pi$:", "-", "1", "1", "3", name_scale=1.2, show_indices=True, indices_pos=DOWN,
+                      starting_index=1).scale(0.38).to_edge(DOWN).set_x(0).shift(LEFT)
         self.play(Write(graph_example))
         self.next_section("BFS function")
         self.play(Write(bfs_func))
         self.next_section("BFS pi")
-        self.play(Write(pi), graph_example.animate.add_edges((2, 3),
-                                                             edge_config={"stroke_color": DARK_GREY,
-                                                                          "stroke_width": EDGE_STROKE_WIDTH * 1.3}))
+        print(graph_example.edges)
+        self.play(Write(pi), graph_example.edges[(3, 2)].animate_move_along_path(
+            time_width=4, width_factor=2.8, flash_color=DARK_GREY, preserve_state=True))
         self.next_section("BFS done")
         self.play(Unwrite(graph_example), Unwrite(bfs_func), Unwrite(pi), Unwrite(example_title))
         self.wait(1)
@@ -454,13 +409,13 @@ class GraphsIntro(SectionsScene):
             $G=(V,E)$, where $V$ represents a set of vertices and $E$ is a
             set of pairs of vertices, representing edges between the vertices.''',
             tex_environment="flushleft").scale_to_fit_width(self.definition_width).next_to(title, DOWN, buff=0.5)
+        color_tex(graph_def, t2c={r"\textbf{ undirected graph}": YELLOW})
         example_txt = Tex(
             r'''\textbf{Example}: $G=\left(\{1,2,3,4\},\ \left\{ \{1,2\},\{1,3\},\{3,4\}\right\} \right)$''',
             tex_environment="flushleft").scale_to_fit_width(self.definition_width).next_to(graph_def, DOWN,
                                                                                            buff=self.example_buffer)
-        graph_example = create_graph([1, 2, 3, 4], edges=[(1, 2), (1, 3), (3, 4)], directed_graph=False,
-                                     layout=SIMPLE_GRAPH_LAYOUT,
-                                     absolute_scale_vertices=True).scale_to_fit_height(
+        graph_example = create_graph([1, 2, 3, 4], edges=[(1, 2), (1, 3), (3, 4)], layout=SIMPLE_GRAPH_LAYOUT,
+                                     directed_graph=False).scale_to_fit_height(
             config.frame_height * 0.3).next_to(example_txt, DOWN, buff=0.3).set_x(0)
 
         self.play(Write(title))
@@ -479,15 +434,14 @@ class GraphsIntro(SectionsScene):
             where $V$ represents a set of vertices and $E\subseteq V\times V$
             is a set of directed edges between vertices.''', tex_environment="flushleft").scale_to_fit_width(
             self.definition_width).next_to(title, DOWN, buff=0.5)
+        color_tex(graph_def, t2c={r"\textbf{directed graph}": YELLOW})
         example_txt = Tex(
             r'''\textbf{Example}: $G=\left(\{1,2,3,4\},\ \left\{ (1,2),(1,4),(4,1),(4,3)\right\} \right)$''',
             tex_environment="flushleft").scale_to_fit_width(self.definition_width).next_to(graph_def, DOWN,
                                                                                            buff=self.example_buffer)
-        graph_example = create_graph([1, 2, 3, 4], edges=[(1, 2), (1, 4), (4, 1), (4, 3)], directed_graph=True,
-                                     layout=SIMPLE_GRAPH_LAYOUT,
-                                     absolute_scale_vertices=True).scale_to_fit_height(
-            config.frame_height * 0.3).next_to(
-            example_txt, DOWN, buff=0.3).set_x(0)
+        graph_example = create_graph([1, 2, 3, 4], edges=[(1, 2), (1, 4), (4, 1), (4, 3)], layout=SIMPLE_GRAPH_LAYOUT,
+                                     directed_graph=True, dual_arrow=True).scale_to_fit_height(
+            config.frame_height * 0.3).next_to(example_txt, DOWN, buff=0.3).set_x(0)
 
         self.play(Write(title))
         self.play(Write(graph_def))
@@ -513,14 +467,12 @@ class EdgesUpperBound(SectionsScene):
         # full graph
         vertices = list(range(1, 6))
         graph_example = create_graph(vertices, edges=[(i, j) for i in vertices for j in vertices if i != j],
-                                     directed_graph=False, layout='circular',
-                                     absolute_scale_vertices=True).scale_to_fit_width(
+                                     layout='circular', directed_graph=False).scale_to_fit_width(
             self.example_tex_width * 0.5).next_to(title, DOWN, buff=0.2).set_x(0)
 
         edeges_upper_bound = Tex(
             r"$\left|E\right|\leq{\left|V\right| \choose 2}=\frac{\left|V\right|\left(\left|V\right|-1\right)}{2}=O\left(\left|V\right|^{2}\right)$")
-        edeges_upper_bound.scale_to_fit_width(self.definition_width).next_to(graph_example, DOWN,
-                                                                             buff=0.5)
+        edeges_upper_bound.scale_to_fit_width(self.definition_width).next_to(graph_example, DOWN, buff=0.5)
         self.play(Write(title))
         self.play(Write(graph_example))
         self.next_section("claculation")
@@ -544,7 +496,8 @@ class GraphRepresentation(SectionsScene):
         title = Title("Graph Representation").to_edge(UP)
 
         graph_examp = create_graph([1, 2, 3, 4], edges=[(1, 2), (1, 4), (1, 3), (4, 1), (4, 3), (3, 1)],
-                                   directed_graph=True, layout=SIMPLE_GRAPH_LAYOUT).scale_to_fit_height(
+                                   layout=SIMPLE_GRAPH_LAYOUT, directed_graph=True,
+                                   dual_arrow=True).scale_to_fit_height(
             self.figs_height)
         for vertex in graph_examp.vertices:
             graph_examp[vertex].scale(0.7)
@@ -593,6 +546,5 @@ if __name__ == "__main__":
     scenes_lst = [GraphsIntro, EdgesUpperBound, GraphRepresentation, BFSIntro, BFSBigGraph, DirectedGraphBFS,
                   BFSComplexity]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
-               create_gif=False)
-    # create_scene_gif(OUT_DIR, scenes_lst[0].__name__, section_num_lst=[28 + i for i in range(6)])
+    render_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
+                  create_gif=False)

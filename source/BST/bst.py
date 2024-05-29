@@ -6,6 +6,7 @@ TODO: 3. Break down the main scene into smaller scenes.
 """
 from __future__ import annotations
 
+from tools.movie_maker import render_scenes
 from tools.scenes import *
 from tools.funcs import *
 from tools.graphs.bst import *
@@ -354,8 +355,7 @@ class ComplexitySummaryBST(BSTScene):
 
 
 if __name__ == "__main__":
-    # scenes_lst = [CheckBSTInsert]
     scenes_lst = [BSTLecture, ComplexitySummaryBST]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
-               create_gif=False)
+    render_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
+                  create_gif=False)

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from BST.bst import *
 from tools.graphs.avl_tree import *
+from tools.movie_maker import create_scene_gif
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_PATH.parent.parent))
@@ -368,7 +369,7 @@ class AVLLectureIntroInsert(AVLScene):
         self.update_height(self.avl.nodes[-1], lag_ratio=0.5, run_time=3)
         self.next_section("end insert")
         self.play(Unwrite(insert_tex), Unwrite(self.avl), Unwrite(self.hd_map))
-
+        self.wait()
 
 class AVLLectureRotations(AVLScene):
 
@@ -620,11 +621,8 @@ class ComplexitySummary(SectionsScene):
 
 
 if __name__ == "__main__":
-    create_scene_gif("D:\projects\Manim\dastimator\media\AVL", "AVLLectureRotations", [1+i for i in range(11)],
-                     quality_dir="2160p60")
+    scenes_lst = [AVLLectureIntro, AVLLectureIntroInsert, AVLLectureRotations,
+              AVLLectureBalance, AVLLectureInsert, ComplexitySummary]
 
-    # scenes_lst = [AVLLectureIntro, AVLLectureIntroInsert, AVLLectureRotations, AVLLectureBalance, AVLLectureInsert,
-    #               ComplexitySummary]
-    #
-    # run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[1 + i for i in range(6)],
-    #            create_gif=False)
+    render_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[1 + i for i in range(5)],
+                  create_gif=False)

@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block fluid_content %}
+
+<!-- settings modal -->
+<div class="modal fade" id="settings-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Player Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- go back time -->
+                <div class="row g-3 align-items-start">
+                    <div class="col">
+                        <label for="go-back-time" class="col-form-label">Go Back Time</label>
+                        <div class="form-text">Seconds after which LeftArrow doesn't go back but restarts current
+                            section (-1 always goes back)
+                        </div>
+                    </div>
+                    <div class="col">
+                        <input type="number" id="go-back-time" class="form-control">
+                    </div>
+                </div>
+                <!-- cache batch size -->
+                <div class="row g-3 align-items-start mt-2">
+                    <div class="col">
+                        <label for="cache-batch-size" class="col-form-label">Cache Batch Size</label>
+                    </div>
+                    <div class="col">
+                        <input type="number" id="cache-batch-size" class="form-control">
+                    </div>
+                </div>
+                <!-- past sections to buffer -->
+                <div class="row g-3 align-items-start mt-2">
+                    <div class="col">
+                        <label for="past-sections-to-buffer" class="col-form-label">Past Sections to Buffer</label>
+                    </div>
+                    <div class="col">
+                        <input type="number" id="past-sections-to-buffer" class="form-control">
+                    </div>
+                </div>
+                <!-- future sections to buffer -->
+                <div class="row g-3 align-items-start mt-1">
+                    <div class="col">
+                        <label for="future-sections-to-buffer" class="col-form-label">Future Sections to Buffer</label>
+                    </div>
+                    <div class="col">
+                        <input type="number" id="future-sections-to-buffer" class="form-control">
+                    </div>
+                </div>
+
+                <!-- loader -->
+                <div class="row g-3 align-items-center mt-2">
+                    <div class="col">
+                        Loader
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="loader-selection"
+                                   id="buffer-loader-selected" checked>
+                            <label class="form-check-label" for="buffer-loader-selected">
+                                Buffer Loader
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="loader-selection"
+                                   id="fallback-loader-selected">
+                            <label class="form-check-label" for="fallback-loader-selected">
+                                Fallback Loader
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button id="reset-settings" type="button" class="btn btn-danger">Reset and Reload</button>
+                <button id="update-settings" type="button" class="btn btn-primary">Apply and Reload</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-0">
+    <div class="col ms-3">
+        <div class="row g-0">
+            <div class="col-md-12">
+                <!-- video player -->
+                <div id="videos-div" data-project_file="project.json">
+                    <video id="video0" class="main-video" muted>
+                        your browser doesn't support html5 videos.
+                    </video>
+                    <video id="video1" class="main-video" muted>
+                        your browser doesn't support html5 videos.
+                    </video>
+                </div>
+                <div class="btn-toolbar mt-4" role="toolbar" style="margin-right: 2vw; margin-left: 2vw">
+                    <div class="btn-group me-2 mt-3 flex-wrap" role="group">
+                        <button id="previous-section" type="button" class="btn btn-secondary player_button"><i
+                                class="bi-caret-left"></i></button>
+                        <button id="restart-section" type="button" class="btn btn-secondary player_button"><i
+                                class="bi-arrow-counterclockwise"></i></button>
+                        <button id="pause" type="button" class="btn btn-secondary player_button"><i
+                                class="bi-pause"></i>
+                        </button>
+                        <button id="next-section" type="button" class="btn btn-secondary player_button"><i
+                                class="bi-caret-right"></i></button>
+                        <button id="fullscreen" type="button" class="btn btn-secondary player_button"><i
+                                class="bi-arrows-fullscreen"></i></button>
+                    </div>
+                    <div class="btn-group me-3 mt-3" role="group">
+                        <button id="cache" type="button" class="btn btn-secondary"><i
+                                class="bi-download me-1"></i>cache videos
+                        </button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#settings-modal"><i class="bi-gear me-1"></i>player
+                            settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    <div class="col-1">
+        <!-- timeline -->
+        <div class="timeline row flex-row g-2">
+            {% for slide in slides %}
+            {% for section in slide.sections %}
+            <!-- used to parse video url to TypeScript -->
+            <div class="section-urls"
+                 data-video="{{ url_for('main.serve_project_static', name=name, path=section.in_project_video) }}"></div>
+            {% endfor %}
+            <div id="timeline-element-{{ slide.sections[0].in_project_id }}" class="card timeline-element">
+                <div class="card-text">
+                    <div class="row card-text">
+                        <!-- type -->
+                        <div class="col">
+                            {% if slide.sections | length == 1 %}
+                            {% if slide.sections[0].type == "normal" %}
+                            <i class="bi-play-btn" role="img"></i>
+                            {% elif slide.sections[0].type == "skip" %}
+                            <i class="bi-wind" role="img"></i>
+                            {% elif slide.sections[0].type == "loop" %}
+                            <i class="bi-arrow-clockwise" role="img"></i>
+                            {% elif slide.sections[0].type == "complete_loop" %}
+                            <i class="bi-hourglass-split" role="img"></i>
+                            {% else %}
+                            [unsupported type]
+                            {% endif %}
+                            {% else %}
+                            +{{ slide.sections | length - 1 }}
+                            {% endif %}
+
+                            {{ slide.sections[0].name }}
+                        </div>
+                        <!-- timestamp -->
+                        <div class="col-auto">
+                            <div id="timeline-time-stamp-{{ slide.sections[0].in_project_id }}">0 s</div>
+                        </div>
+                        <!-- indicator -->
+                        <div class="col-auto">
+                            <div id="timeline-indicator-{{ slide.sections[0].in_project_id }}">
+                                <!-- one of -->
+                                <!-- <i class="bi-circle" role="img"></i> -->
+                                <!-- <i class="bi-circle-fill" role="img"></i> -->
+                                <!-- <i class="bi-check-circle" role="img"></i> -->
+                                <i class=" bi-circle" role="img"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- thumbnail (use last in slide) -->
+                <img src="{{ url_for('main.serve_project_static', name=name, path=slide.sections[-1].in_project_thumbnail) }}"
+                     class="card-img-top" alt="couldn't load thumbnail">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="row g-0">
+        <div class="container-fluid" style="margin-top: 3vh; padding-left: 10%; padding-right: 10%">
+            <!-- heading -->
+            <h1>{{ description_title }}</h1>
+            <footer class="page-footer font-small mt-auto">
+                <div class="text-left pb-3 fs-6 text-muted">
+                    {{ description }}
+                </div>
+            </footer>
+        </div>
+    </div>
+    <div id="tabs-container">
+        <!-- keymap legend -->
+        <table class="table table-sm mt-3">
+            <thead>
+            <tr>
+                <th scope="col">key</th>
+                <th scope="col">function</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr id="normal-legend">
+                <td scope="col">arrowleft</td>
+                <td scope="col">last section / repeat (according to go back time in player settings)</td>
+            </tr>
+            <tr id="normal-legend">
+                <td scope="col">arrowright</td>
+                <td scope="col">next section (respect complete loop sections)</td>
+            </tr>
+            <tr id="normal-legend">
+                <td scope="col">ctrl/cmd+arrowleft</td>
+                <td scope="col">force last section</td>
+            </tr>
+            <tr id="normal-legend">
+                <td scope="col">ctrl/cmd+arrowright</td>
+                <td scope="col">force next section</td>
+            </tr>
+            <tr id="normal-legend">
+                <td scope="col">space</td>
+                <td scope="col">pause / unpause</td>
+            </tr>
+            </tbody>
+        </table>
+        <h3 style="font-size: 1rem">Section Types</h3>
+        <table class="table table-sm mt-3">
+            <thead>
+            <tr>
+                <th scope="col">
+                <td class="bi-play-btn" role="img"> normal</td>
+                </th>
+                <th scope="col">
+                <td class="bi-wind" role="img"> skip</td>
+                </th>
+                <th scope="col">
+                <td class="bi-arrow-clockwise" role="img"> loop</td>
+                </th>
+                <th scope="col">
+                <td class="bi-hourglass-split" role="img"> complete loop</td>
+                </th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

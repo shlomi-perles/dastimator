@@ -44,6 +44,6 @@ def star_layout(n, center_vertex: Hashable, layout_scale: float = 2.4,
 
 
 def get_main_graph_example() -> DiGraph | WeightedGraph:
-    return create_graph(MAIN_GRAPH_EXAMPLE_VERTICES, MAIN_GRAPH_EXAMPLE_EDGES, graph_type=WeightedGraph,
-                        weights=MAIN_GRAPH_EXAMPLE_WEIGHTS, absolute_scale_vertices=True,
-                        layout=star_layout(MAIN_GRAPH_EXAMPLE_VERTICES[::-1], 1, rotate_angle=PI * 5 / 6))
+    return create_graph(MAIN_GRAPH_EXAMPLE_VERTICES, MAIN_GRAPH_EXAMPLE_EDGES,
+                        layout=star_layout(MAIN_GRAPH_EXAMPLE_VERTICES[::-1], 1, rotate_angle=PI * 5 / 6),
+                        graph_type=WeightedGraph, rescale_vertices=False, weights=MAIN_GRAPH_EXAMPLE_WEIGHTS)

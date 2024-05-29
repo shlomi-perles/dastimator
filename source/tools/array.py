@@ -1,14 +1,91 @@
 from __future__ import annotations
 
 from manim import *
-from typing import Callable, Iterable, List, Optional, Sequence, Union
-from copy import copy, deepcopy
+from typing import Callable, Iterable, Union
 
-__all__ = ["ArrayMob", "Pointer", "TextPointer"]
+__all__ = ["ArrayMob", "ArrayPointer"]
+
+
+class ArrayEntry(VGroup):
+    DEFAULT_CHAR = "-"
+    VALS_HEIGHT_FACTOR = 0.65
+    INDICES_BUFF = 0.12
+
+    def __init__(self, value: float | str, index: int | MathTex | Tex | Text, index_scale: float = 1,
+                 frame_type: Callable = Square,
+                 index_pos: Iterable = np.copy(DOWN), frame_config: dict = None, value_config: dict = None,
+                 index_config: dict = None, **kwargs):
+        super().__init__(**kwargs)
+
+        self.value_config = {} if value_config is None else value_config
+        self.index_config = {} if index_config is None else index_config
+        self.frame_config = {} if frame_config is None else frame_config
+        self.frame_type = frame_type
+        self.value = value
+        self.index = index
+        self.index_scale = index_scale
+
+        self.index_pos = index_pos
+
+        self._create_arr_entry(value, index)
+
+    def get_value(self):
+        return self.value
+
+    def _create_arr_entry(self, value: float | str, index: int | MathTex | Tex | Text):
+        self.frame = self.frame_type(**self.frame_config)
+        self.value_mob = Tex(ArrayEntry.DEFAULT_CHAR if value in {None, ""} else str(value), **self.value_config)
+        self.index_mob = index if isinstance(index, (MathTex, Tex, Text)) else Text(
+            ArrayEntry.DEFAULT_CHAR if index in {None, ""} else str(index), **self.index_config)
+
+        if value in {None, ""}:
+            self.value_mob.set_opacity(0).scale(0.2)
+        if index in {None, ""}:
+            self.index_mob.set_opacity(0).scale(0.2)
+
+        self.place_value()
+
+        if self.index:
+            self.place_index()
+
+        self.add(self.frame, self.value_mob, self.index_mob)
+
+    def set_value(self, value: float | str):
+        self.value = value
+        self.value_mob.become(Tex(ArrayEntry.DEFAULT_CHAR if value in {None, ""} else str(value), **self.value_config))
+        if value in {None, ""}:
+            self.value_mob.set_opacity(0).scale(0.2)
+        self.place_value()
+        return self
+
+    def set_index(self, index: int | MathTex | Tex | Text):
+        self.index = index
+        self.index_mob.become(index if isinstance(index, (MathTex, Tex, Text)) else Text(
+            ArrayEntry.DEFAULT_CHAR if index in {None, ""} else str(index), **self.index_config))
+        if index in {None, ""}:
+            self.index_mob.set_opacity(0).scale(0.2)
+        self.place_index()
+        return self
+
+    def place_value(self):
+        self.value_mob.move_to(self.frame)
+        if self.value_mob.width < self.value_mob.height:
+            self.value_mob.scale_to_fit_height(self.frame.height * ArrayEntry.VALS_HEIGHT_FACTOR)
+        else:
+            self.value_mob.scale_to_fit_width(self.frame.width * ArrayEntry.VALS_HEIGHT_FACTOR)
+        if self.value in {None, ""}:
+            self.value_mob.scale(0.1)
+        return self
+
+    def place_index(self):
+        self.index_mob.scale_to_fit_height(
+            self.frame.height * 0.18 * self.index_scale).next_to(self.frame, self.index_pos, buff=-(
+                self.index_mob.height + self.INDICES_BUFF)).align_to(self.frame, RIGHT).shift(
+            LEFT * self.INDICES_BUFF)
+        return self
 
 
 class ArrayMob(VGroup):
-    # TODO: create a class for the array entry
     """
         Array Object
         Parameters
@@ -26,99 +103,80 @@ class ArrayMob(VGroup):
 
         Usage Example:
         --------------
-        array = ArrayMob("Array:", *["-", "8", "1", "3", "9"], show_labels=True, labels_pos=DOWN, starting_index=1)
+        array = ArrayMob("Array:", "-", "8", "1", "3", "9", show_indices=True, indices_pos=DOWN, starting_index=1)
         array.scale_to_fit_width(config.frame_width * 0.6)
         self.play(Write(array))
-        self.play(array.at(1, "b"))
+        self.play(array.animate.at(1, "b"))
         self.play(array.indicate_at(1))
         self.play(array.push(5))
-        self.play(array.pop())
+        self.play(array.pop(4))
         self.play(array.swap(1, 3))
 
         # create a pointer with a text label
         pointer = TextPointer("Here", 0.8, UP)
-        pointer.next_to(array.get_square(1), DOWN)
-        self.play(pointer.draw())
+        pointer.next_to(array.get_entry(1), DOWN)
+        self.play(Write(pointer))
         array += pointer
 
-        self.play(pointer.animate.align_to(array.get_square(4), RIGHT))
+        self.play(pointer.animate.align_to(array.get_entry(4), RIGHT))
+        self.wait(2)
 
     """
-    VALS_HEIGHT_FACTOR = 0.65
-    LABELS_BUFF = 0.04
 
     def __init__(self, name: str, *array, name_config=None, arr_scale: float = 1, name_scale: float = 1,
-                 show_labels: bool = False, labels_pos: Iterable = UP, labels_scale: float = 1, starting_index: int = 0,
-                 align_point: Iterable = np.copy(ORIGIN), **kwargs):
-        super().__init__(name=name, **kwargs.pop("vgroup_config", {}))
+                 show_indices: bool = False, indices_pos: Iterable = np.copy(UP), indices_scale: float = 1,
+                 starting_index: int = 0, align_point: Iterable = np.copy(ORIGIN), **kwargs):
+        super().__init__(name=name, **kwargs)
 
         name_config = {} if name_config is None else name_config
         self.name = name
         self.array = array
         self.name_config = name_config
-        self.array_name = None
+        self.name_mob = None
         self.arr_scale = arr_scale
         self.name_scale = name_scale
-        self.show_labels = show_labels
-        self.labels_pos = labels_pos
-        self.labels_scale = labels_scale
-        self.labels = VGroup()
-        self.squares = VGroup()
-        self.vals_texts = VGroup()
+        self.show_indices = show_indices
+        self.indices_pos = indices_pos
+        self.indices_scale = indices_scale
+        self.entries = VGroup()
         self.align_point = np.copy(align_point)
         self.starting_index = starting_index
-        self.create_array_args = kwargs
+        self.array_args = kwargs
 
         self.obj_ref = None
         self.height_ref = None
-
         self.relative_entry = None
-        self.create_array()
+        self._create_array()
 
-        square, val_text, label = self.create_arr_entry(0, 0)
-        square.add(label)
-        square.add(val_text)
-        self.relative_entry = square.set_opacity(0).next_to(self.array_name, direction=RIGHT)
-        self.add(self.relative_entry)
         self.center()
 
-    def create_array(self):
+    def _create_array(self):
         """Creates the objects for each element in the array."""
-        self.array_name = Tex(self.name, font_size=DEFAULT_FONT_SIZE * self.name_scale, **self.name_config)
-        self.obj_ref = Tex(":", font_size=DEFAULT_FONT_SIZE * self.name_scale, **self.name_config)
+        self.name_mob = Tex(self.name, font_size=3.5 * DEFAULT_FONT_SIZE * self.name_scale, **self.name_config)
+        self.obj_ref = Tex(":", font_size=3.5 * DEFAULT_FONT_SIZE * self.name_scale, **self.name_config).set_opacity(0)
         self.height_ref = self.obj_ref.height
-        self.add(self.array_name)
+        self.add(VGroup(self.name_mob))
 
-        for index, val in enumerate(self.array):
-            square, val_text, label = self.create_arr_entry(val, index)
+        for index, val in enumerate(self.array, self.starting_index):
+            self.entries += ArrayEntry(val, index if self.show_indices else "", index_scale=self.indices_scale,
+                                       frame_config=self.array_args.get("frame_config", {}),
+                                       value_config=self.array_args.get("value_config", {}),
+                                       index_config=self.array_args.get("indices_config", {}))
 
-            square.add(label)
-            square.add(val_text)
-            self.squares.add(square)
-            if self.show_labels:
-                self.labels.add(label)
-            self.vals_texts.add(val_text)
+        self.entries.arrange(buff=0)
 
-        self.squares.arrange(buff=0)
+        self.add(*self.entries)
+        self.name_mob.next_to(self.align_point, LEFT, buff=0)
+        self.entries.next_to(self.name_mob, direction=RIGHT, buff=0.5)
 
-        self.add(*self.squares)
-        self.add(*self.vals_texts)
-        self.array_name.next_to(self.align_point, LEFT, buff=0)
-        # self.array_name.align_to(self.align_point, RIGHT)
-        # self.squares.next_to(self.array_name.get_right(), direction=RIGHT, aligned_edge=LEFT)
-        self.squares.next_to(self.array_name, direction=RIGHT, buff=DEFAULT_MOBJECT_TO_MOBJECT_BUFFER)
+        self.relative_entry = ArrayEntry(0, 0).set_opacity(0).move_to(self.entries[0])
+        self[0] += VGroup(self.relative_entry, self.obj_ref)
 
-    def draw_array(self, **kwargs):
-        """Draws the array. Returns a list of the array's animations."""
-        if "lag_ratio" not in kwargs:
-            kwargs["lag_ratio"] = 0.3
+    def get_entry(self, index: int) -> ArrayEntry:
+        return self.entries[index - self.starting_index]
 
-        all_anims = [Write(self.array_name)]
-        all_anims += [Write(square) for square in self.squares]
-        return AnimationGroup(*all_anims, **kwargs)
-
-    # TODO: implement update_labels
-    def pop(self, index: int = 0, shift=DOWN, update_labels=False, **kwargs) -> AnimationGroup:
+    # TODO: implement update_indices
+    def pop(self, index: int = None, shift=DOWN, update_indices=False, **kwargs) -> AnimationGroup:
         """
         Pops an element from the array.
         :param shift: The direction of the shift.
@@ -126,191 +184,151 @@ class ArrayMob(VGroup):
         :param kwargs: Additional arguments to the AnimationGroup.
         :return: The AnimationGroup of the pop animation.
         """
+        index = len(self.entries) + self.starting_index - 1 if index is None else index
         if "lag_ratio" not in kwargs:
             kwargs["lag_ratio"] = 1
 
         animations = []
 
+        pop_entry = self.get_entry(index)
         # Fade out the element with the given index
-        animations.append(
-            AnimationGroup(FadeOut(self.squares[index], shift=shift), FadeOut(self.vals_texts[index], shift=shift)))
+        animations.append(FadeOut(pop_entry, shift=shift))
 
-        self.remove(self.squares[index])
-        self.remove(self.labels[index])
-        self.remove(self.vals_texts[index])
+        self.remove(pop_entry)
+        self.entries.remove(pop_entry)
 
-        if len(self.squares) - 1 == 0:
-            self.squares = VGroup()
-            self.vals_texts = VGroup()
+        if len(self.entries) == 0:
             return AnimationGroup(*animations, **kwargs)
 
-        self.squares.remove(self.squares[index])
-        self.labels.remove(self.labels[index])
-        self.vals_texts.remove(self.vals_texts[index])
+        shift_entries = VGroup(*[self.get_entry(i) for i in range(index, len(self.entries) + self.starting_index)])
 
-        if index != 0:
+        if index != self.starting_index:
             animations.append(
-                AnimationGroup(self.squares[index:].animate.next_to(self.squares[index - 1], direction=RIGHT, buff=0)))
+                AnimationGroup(shift_entries.animate.next_to(self.get_entry(index - 1), direction=RIGHT, buff=0)))
         else:
-            animations.append(AnimationGroup(
-                self.squares[index:].animate.next_to(self.relative_entry.get_left(), direction=RIGHT, buff=0), ))
+            animations.append(
+                AnimationGroup(shift_entries.animate.next_to(self.relative_entry.get_left(), direction=RIGHT, buff=0)))
 
         return AnimationGroup(*animations, **kwargs)
 
+    # TODO: update indices
     def push(self, value: int | str, side: np.ndarray = RIGHT, **kwargs) -> Animation:
         """
         Pushes an element to the array.
         :param value: The value of the element to be pushed.
+        :param side: The side from which the element will be pushed.
         :param kwargs: Additional arguments to the AnimationGroup.
         :return: The AnimationGroup of the push animation.
         """
         side = np.array(side)
-        square, val_text, label = self.create_arr_entry(value, index=len(self.squares))
-        square.add(label)
-        self.labels.add(label)
+        new_entry = ArrayEntry(value, len(self.entries) + self.starting_index if self.show_indices else "",
+                               index_scale=self.indices_scale,
+                               frame_config=self.array_args.get("frame_config", {}),
+                               value_config=self.array_args.get("value_config", {}),
+                               index_config=self.array_args.get("indices_config", {})).match_height(self.relative_entry)
 
-        if len(self.squares) == 0:
-            square.next_to(self.array_name, direction=RIGHT)
-        elif (side == RIGHT).all():
-            square.move_to(self.squares[-1].get_right(), aligned_edge=LEFT)
-        else:  # equal LEFT
-            square.move_to(self.squares[0])
-
-        val_text.move_to(square)
-        square.remove(label)
-        square.add(label)
-        square.add(val_text)
-
-        if (side == LEFT).all():
-            def on_finish(scene: Scene):
-                self.squares.add_to_back(square)
-                self.vals_texts.add_to_back(val_text)
-                self.add_to_back(square)
-                self.add_to_back(val_text)
-
-            relative_pos = square.copy().move_to(self.squares[0].get_left(), aligned_edge=RIGHT).get_center()
-            return AnimationGroup(FadeIn(square, target_position=relative_pos, **kwargs),
-                                  self.squares.animate.move_to(square.get_right(), aligned_edge=LEFT),
-                                  group=self, _on_finish=on_finish, **kwargs)
-
-        self.squares.add(square)
-        self.vals_texts.add(val_text)
-        self.add(square)
-        self.add(val_text)
-        return FadeIn(square, shift=-side, **kwargs)
-
-    def create_arr_entry(self, value, index) -> tuple[VGroup, Tex, VGroup]:
-        square = Square(**self.create_array_args.pop("square_config", {})).scale_to_fit_height(
-            self.height_ref * self.arr_scale * 3)
-        if self.relative_entry is not None:
-            square.match_height(self.relative_entry)
-        val_text = Tex("" if value is None else str(value), **self.create_array_args.pop("value_config", {}))
-        if val_text.width < val_text.height:
-            val_text.scale_to_fit_height(square.height * ArrayMob.VALS_HEIGHT_FACTOR)
+        if len(self) <= 1 or np.allclose(side, LEFT):
+            new_entry.move_to(self.relative_entry)
         else:
-            val_text.scale_to_fit_width(square.width * ArrayMob.VALS_HEIGHT_FACTOR)
-        label = VGroup()
-        if self.show_labels:
-            label = self.create_label(index, square)
-        return VGroup(square), val_text, label
+            new_entry.next_to(self.entries[-1], direction=side, buff=0)
 
-    def create_label(self, index: int, square: Square):
-        label = Text(str(index + self.starting_index)).match_height(square).scale(0.2 * self.labels_scale)
-        if self.relative_entry is None:
-            label.next_to(square, self.labels_pos, buff=-(label.height + self.LABELS_BUFF)).align_to(
-                square, RIGHT).shift(LEFT * self.LABELS_BUFF)
+        if np.allclose(side, LEFT):
+            self.entries.insert(0, new_entry)
+            self.insert(1, new_entry)
+            return AnimationGroup(FadeIn(new_entry, shift=-side, run_time=1, **kwargs), self.entries[1:].animate(
+                run_time=1).next_to(self.relative_entry, direction=RIGHT, buff=0), run_time=1)
         else:
-            label.match_y(self.relative_entry[2]).set_x(square.get_x()).shift(
-                RIGHT * (self.relative_entry[2].get_x() - self.relative_entry[0].get_x()))
-        return label
+            self.entries.add(new_entry)
+            self.add(new_entry)
+            return FadeIn(new_entry, shift=-side, **kwargs)
 
-    def get_square(self, index: int) -> VGroup:
-        """Get the square object of an element with a given index."""
-        return self.squares[index]
-
-    def indicate_at(self, index: int, change_color: bool = True, **kwargs) -> AnimationGroup:
+    def indicate_at(self, index: int, color: str = YELLOW, preserve_color: bool = True, **kwargs) -> AnimationGroup:
         """Used to indicate an element at a given index."""
-        if change_color:
-            self.squares[index].set_color(YELLOW)
-            self.vals_texts[index].set_color(YELLOW)
-        for i in range(len(self.squares)):
+        if preserve_color:
+            self.get_entry(index).set_color(color)
+        for i in range(len(self.entries)):
             if i != index:
-                self.squares[index].set_z_index(1)
-                self.vals_texts[index].set_z_index(1)
+                self.get_entry(index).set_z_index(self.get_z_index() + 1)
 
-        return AnimationGroup(Indicate(self.squares[index]), Indicate(self.vals_texts[index]))
+        return AnimationGroup(Indicate(self.get_entry(index), **kwargs))
 
-    def at(self, index: int, value: Union[float, str, "VMobject"]) -> Animation:
+    def at(self, index: int, value: Union[float, str, "VMobject"]) -> ArrayEntry:
         """Changes the value of an element at a given index."""
-        val_text = Tex("" if value is None else f"{value}", **self.create_array_args.pop("value_config", {}))
+        return self.get_entry(index).set_value(value)
 
-        old_element = self.vals_texts[index]
-        if val_text.width < val_text.height:
-            val_text.set_height(
-                (self.squares[index].get_top()[1] - self.squares[index].get_bottom()[1]) * ArrayMob.VALS_HEIGHT_FACTOR)
-        else:
-            val_text.set_width(
-                (self.squares[index].get_left()[0] - self.squares[index].get_right()[0]) * ArrayMob.VALS_HEIGHT_FACTOR)
-
-        val_text.move_to(self.squares[index])
-
-        if old_element.tex_string == "":
-            # self.squares[index].remove(old_element)
-            self.remove(old_element)
-            self.squares[index][-1] = val_text  # TODO: handle bug
-            self.vals_texts[index] = val_text
-            self.add(val_text)
-            return Write(val_text)
-
-        self.squares[index].remove(old_element)
-        self.remove(old_element)
-        self.vals_texts[index] = val_text
-
-        # self.squares[index].generate_target(use_deepcopy=True)
-        # self.squares[index].target.remove(old_element)
-        # self.squares[index].target.add(val_text)
-        def _on_finish(scene: Scene):
-            self.add(val_text)
-            self.squares[index] += val_text
-
-        return AnimationGroup(ReplacementTransform(old_element, val_text), _on_finish=_on_finish)
-
+    # TODO: update array indexes
     def swap(self, i: int, j: int, path_args: dict = None, **kwargs) -> AnimationGroup:
         """Swaps the elements at indices i and j."""
-        # TODO: update array indexes
         path_args = path_args or {}
-        i -= self.starting_index
-        j -= self.starting_index
         i, j = (j, i) if i > j else (i, j)
-        right_path = ArcBetweenPoints(self.squares[i].get_center(), self.squares[j].get_center(), angle=TAU / 3)
-        left_path = ArcBetweenPoints(self.squares[j].get_center(), self.squares[i].get_center(), angle=TAU / 3)
-        return AnimationGroup(MoveAlongPath(self.squares[i], right_path, **path_args),
-                              MoveAlongPath(self.squares[j], left_path, **path_args), **kwargs)
+        right_path = ArcBetweenPoints(self.get_entry(i).get_center(), self.get_entry(j).get_center(), angle=TAU / 3)
+        left_path = ArcBetweenPoints(self.get_entry(j).get_center(), self.get_entry(i).get_center(), angle=TAU / 3)
+        ret = AnimationGroup(MoveAlongPath(self.get_entry(i), right_path, **path_args),
+                             MoveAlongPath(self.get_entry(j), left_path, **path_args), **kwargs)
+        a, b = i - self.starting_index, j - self.starting_index
+        self.entries[a], self.entries[b] = self.entries[b], self.entries[a]
+        self[a + 1], self[b + 1] = self[b + 1], self[a + 1]
+        return ret
 
 
-class Pointer(VGroup):
-    def __init__(self, direction: Iterable):
-        super().__init__()
-        self.arrow = Vector(direction)
-        self.add(self.arrow)
-
-    def draw(self):
-        return Create(self.arrow)
-
-
-class TextPointer(Pointer):
-    def __init__(self, text, text_size: float = 1, direction: Iterable = UP):
-        super().__init__(direction)
-        self.text = Text(text).scale(text_size)
-
-        # Position the text
-        if np.array_equal(direction, UP):
-            self.text.next_to(self.arrow, DOWN)
-        else:
-            self.text.next_to(self.arrow, UP)
-
+class ArrayPointer(Vector):
+    def __init__(self, array: ArrayMob, index: int, text: str | Mobject = None, text_scale: float = 0.6,
+                 direction: np.ndarray = DOWN, change_val_color: bool = True, val_color: str = None,
+                 text_args=None, **kwargs):
+        kwargs["color"] = YELLOW if "color" not in kwargs else kwargs["color"]
+        super().__init__(direction, **kwargs)
+        self.index = index
+        self.array = array
+        self.arrow = self[0]
+        self.change_val_color = change_val_color
+        self.val_color = kwargs.get("color", YELLOW) if val_color is None else val_color
+        self.zero_base_z_index = self.array.get_z_index()
+        self.array.get_entry(self.index).set_z_index(self.zero_base_z_index + 1)
+        self._position_arrow()
+        self.text_args = {} if text_args is None else text_args
+        self.text_scale = text_scale
+        self.text = self._get_text_mob(text, **self.text_args)
         self.add(self.text)
 
-    def draw(self, **kwargs) -> AnimationGroup:
-        lag_ratio = kwargs.pop("lag_ratio", 0.5)
-        return AnimationGroup(Create(self.arrow), Write(self.text), lag_ratio=lag_ratio, **kwargs)
+    def write_arrow(self) -> AnimationGroup:
+        self._color_val(self.index)
+        return AnimationGroup(Write(self), self.array.indicate_at(self.index, scale_factor=1))
+
+    def _get_text_mob(self, text: str | Mobject, **kwargs):
+        text = Text(".").set_opacity(0) if text in {None, ""} else text
+        text = text if isinstance(text, Mobject) else MathTex(str(text), **kwargs)
+        text.next_to(self.arrow, direction=-self.get_vector(), buff=0.1).set_color(self.get_color())
+        return text
+
+    def to_entry(self, index: int, text: str | Mobject = None, change_val_color=None, **kwargs):
+        anims = []
+        if change_val_color is True or (self.change_val_color and change_val_color is None):
+            anims.append(self.array.get_entry(self.index).animate.set_color(
+                self.array.relative_entry.value_mob.get_color()).set_z_index(self.zero_base_z_index))
+            if self.index + 1 - self.array.starting_index < len(self.array.entries):
+                anims.append(self.array.get_entry(self.index + 1).animate.shift(ORIGIN))
+
+            if self.index - 1 - self.array.starting_index < len(self.array.entries):
+                anims.append(self.array.get_entry(self.index - 1).animate.shift(ORIGIN))
+
+            anims.append(
+                self.array.get_entry(index).animate.set_color(self.val_color).set_z_index(self.zero_base_z_index + 1))
+
+        self.index = index
+
+        if text is not None:
+            anims.append(self.text.animate.become(self._get_text_mob(text, **self.text_args)))
+        return AnimationGroup(*anims, self.animate._position_arrow(), **kwargs)
+
+    def _position_arrow(self, **kwargs):
+        return self.next_to(self.array.get_entry(self.index), direction=-self.get_vector(), **kwargs)
+
+    def _color_val(self, index: int):
+        new_entry, prev_entry = self.array.get_entry(index), self.array.get_entry(self.index)
+
+        prev_entry.value_mob.set_color(self.array.relative_entry.value_mob.get_color())
+        prev_entry.frame.set_color(self.array.relative_entry.frame.get_color())
+        new_entry.value_mob.set_color(self.val_color)
+        new_entry.frame.set_color(self.val_color)
+        new_entry.set_z_index(self.zero_base_z_index + 1)
+        prev_entry.set_z_index(self.zero_base_z_index)

@@ -13,7 +13,8 @@ class SectionsScene(Scene):
         if skip_section:
             return
         if self.PRESENTATION_MODE:
-            self.wait(0.3)
+            if len(self.renderer.file_writer.sections) > 1:
+                self.wait(0.3)
             super().next_section(name, type, skip_animations)
         else:
             self.wait()

@@ -39,8 +39,6 @@ def change_layout(n, layout_scale: float = 2.4, layout_config: dict | None = Non
     if flip_x:
         center_x = np.average(list(layout.values()), axis=0)[0]
         layout = {k: np.array([2 * center_x - v[0], *v[1:]]) for k, v in layout.items()}
-    # rotate layout around center vertex
-    # layout = {k: rotate_vector(v, rotate_angle) for k, v in layout.items()}
     return layout
 
 

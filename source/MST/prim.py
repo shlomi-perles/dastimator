@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import numpy as np
-
-from tools.array import ArrayMob
+from tools.movie_maker import render_scenes
 from tools.scenes import *
 from tools.graphs.edge import *
 from tools.graphs.node import IndicateNode
 from tools.graphs.utils import get_vertices_cut, get_neighbors
-from mst_utils import *
+from MST.mst_utils import *
 
 ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
@@ -245,5 +243,5 @@ class PrimComplexity(Prim):
 if __name__ == "__main__":
     scenes_lst = [PrimExample, PrimComplexity]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
-               create_gif=False)
+    render_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
+                  create_gif=False)

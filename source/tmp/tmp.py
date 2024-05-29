@@ -1,44 +1,41 @@
 from __future__ import annotations
 
-from typing import Hashable
-from copy import copy, deepcopy
-
 from tools.array import *
 from tools.consts import *
-from tools.funcs import *
+from tools.movie_maker import render_scenes
 from tools.scenes import *
-from tools.graphs.my_graphs import DiGraph
 
 ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
-PRESENTATION_MODE = True
+PRESENTATION_MODE = False
 DISABLE_CACHING = True
 
 
 class ArrayExample(SectionsScene):
     def construct(self):
         self.next_section("arr", pst.NORMAL)
-        array = ArrayMob("Array:", *["-", "8", "1", "3", "9"], show_labels=True, labels_pos=DOWN, starting_index=1)
+        array = ArrayMob("Array:", "", "8", "1", "3", "9", show_indices=True, indices_pos=DOWN, starting_index=1)
         array.scale_to_fit_width(config.frame_width * 0.6)
         self.play(Write(array))
-        self.play(array.at(1, "b"))
+        self.play(array.animate.at(1, "b"))
+        self.play(array.animate.at(1, 3))
+        self.play(array.animate.at(1, 2))
+        self.play(array.animate.at(1, 5))
         self.play(array.indicate_at(1))
         self.play(array.push(5))
-        self.play(array.pop())
+        self.play(array.pop(4))
         self.play(array.swap(1, 3))
 
         # create a pointer with a text label
-        pointer = TextPointer("Here", 0.8, UP)
-        pointer.next_to(array.get_square(1), DOWN)
-        self.play(pointer.draw())
+        pointer = ArrayPointer("Here", 0.8, UP)
+        pointer.next_to(array.get_entry(1), DOWN)
+        self.play(Write(pointer))
         array += pointer
-        self.next_section("sub", pst.SUB_NORMAL)
 
-        self.play(pointer.animate.align_to(array.get_square(4), RIGHT))
+        self.play(pointer.animate.align_to(array.get_entry(4), RIGHT))
         self.wait(2)
-
 
 
 def make_elements():  # only setting up the mobjects
@@ -55,7 +52,6 @@ def make_elements():  # only setting up the mobjects
 
 class MinimalPresentationExample(SectionsScene):
     def construct(self):
-
         dots, moving_dot, path = make_elements()
         self.add(dots, moving_dot, path)
 
@@ -77,10 +73,11 @@ class MinimalPresentationExample(SectionsScene):
         self.next_section("E", pst.NORMAL)
         self.play(moving_dot.animate.move_to(dots[6]), rate_func=linear)
 
-if __name__ == "__main__":
-    # scenes_lst = [ArrayExample]
-    scenes_lst = [MinimalPresentationExample, ArrayExample]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, create_gif=False, save_sections=True,
-               quality="production_quality", movie_name="tmp")
+if __name__ == "__main__":
+    scenes_lst = [ArrayExample]
+    # scenes_lst = [MinimalPresentationExample, ArrayExample]
+
+    render_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, create_gif=False, save_sections=True,
+                  quality="low_quality", movie_name="tmp")
     # create_scene_gif(OUT_DIR, scenes_lst[0].__name__, section_num_lst=[28 + i for i in range(6)])

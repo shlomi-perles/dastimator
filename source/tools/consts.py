@@ -3,13 +3,17 @@ from manim import *
 BACKGROUND_COLOR: str = "#242424"  # Also, 1C1D21 or 242424 or 2C2F33
 
 # ----------------------------------    Paths     ---------------------------------- #
-MEDIA_PATH: Path = Path(__file__).resolve().parent.parent.parent / "media"
+DASTIMATOR_PATH: Path = Path(__file__).resolve().parent.parent.parent
+MEDIA_PATH: Path = DASTIMATOR_PATH / "media"
+SITE_PATH = DASTIMATOR_PATH / "docs"
+MOVIES_PATH = SITE_PATH / "movies"
 
 # ---------------------------------- Graph consts ---------------------------------- #
 VERTEX_COLOR: str = DARK_BLUE
+VERTEX_WIDTH: float = config.frame_width * 0.038
 VERTEX_STROKE_WIDTH: float = DEFAULT_STROKE_WIDTH * 1.6
 VERTEX_STROKE_COLOR: str = BLUE_D
-VERTEX_LABEL_SCALE: float = 0.7
+VERTEX_LABEL_SCALE: float = 0.9
 VERTEX_CONFIG: dict = {"fill_color": VERTEX_COLOR, "stroke_color": VERTEX_STROKE_COLOR,
                        "stroke_width": VERTEX_STROKE_WIDTH}
 
@@ -47,5 +51,11 @@ DISTANCE_LABEL_COLOR: str = ORANGE
 LINES_OFF_OPACITY: float = 0.5
 # ----------------------------------    Text     ---------------------------------- #
 DEFINITION_TEX_ENV: str = "{minipage}{8cm}"
+REMOVE_MATH_SPACE_PREAMBLE: str = r'''\setlength{\abovedisplayskip}{0pt}
+\setlength{\belowdisplayskip}{0pt}
+\setlength{\abovedisplayshortskip}{0pt}
+\setlength{\belowdisplayshortskip}{0pt}
+'''
 # ----------------------------------    Manim    ---------------------------------- #
+PROBABILITY_SPACE_BACK_COLOR: str = "#404040"
 QUALITY_TO_DIR = {"l": "480p15", "h": "1080p60", "k": "2160p60"}

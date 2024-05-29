@@ -1,161 +1,28 @@
 from __future__ import annotations
 
-import json
 import re
-import shutil
 
+import numpy as np
 from manim import *
 from manim import Polygon, Rectangle, SurroundingRectangle, VGroup
 from manim.mobject.geometry.boolean_ops import _BooleanOps
 from manim_fonts import *
-from moviepy.editor import VideoFileClip, concatenate_videoclips
 from scipy.spatial import ConvexHull, KDTree
 import networkx as nx
-import subprocess
 
-from .scenes import SectionsScene
 from .consts import LINES_OFF_OPACITY
 from .code_styles import DarculaStyle, pygments_monkeypatch_style
 
-QFLAGS_TO_QUALITY = {v["flag"]: k for k, v in QUALITIES.items() if v["flag"] is not None}
-QUALITY_TO_DIR = {k: f"{QUALITIES[k]['pixel_height']}p{QUALITIES[k]['frame_rate']}" for k in QUALITIES.keys()}
-DEFAULT_GIF_SCENES = list(range(1, 3))
-SECTIONS_MEDIA_PATH = r"videos/{quality_dir}/sections"
-SCENE_CLIP_NAME = "{scene_name}_{section_num:04d}.mp4"
-MANIM_EDITOR_COMMAND = "manedit"
-MOVIE_MEDIA_DIR_NAME = "media"
-DEFAULT_GIF_RESIZE = 0.2
 CODE_MATH_SCALE = 0.9
-
-
-def run_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, disable_caching: bool = False,
-               preview: bool = True, save_sections: bool = True, quality: str = None, overwrite_scenes: bool = True,
-               scenes_to_gif_frames: dict[Scene, list] = None, run_manedit: bool = None, movie_name="", **kwargs):
-    """Run a list of scenes. This function is used by the manim command line interface.
-    Possible quality settings are:
-    - fourk_quality [k] 2160X3840
-    - production_quality [p] 1440X2560
-    - high_quality [h] 1080X1920
-    - medium_quality [m] 720X1280
-    - low_quality [l] 480X854
-    """
-    if quality is None:
-        quality = "production_quality" if presentation_mode else "low_quality"
-    else:
-        if quality not in QUALITIES and quality not in QFLAGS_TO_QUALITY:
-            raise ValueError(f"Invalid quality setting: {quality}")
-
-        quality = QFLAGS_TO_QUALITY[quality] if quality in QFLAGS_TO_QUALITY else quality
-
-    if scenes_to_gif_frames is None:
-        scenes_to_gif_frames = {}
-    if run_manedit is None:
-        run_manedit = presentation_mode
-    if not Path(media_path).exists():
-        Path(media_path).mkdir(parents=True, exist_ok=True)
-    jsons_path = media_path / SECTIONS_MEDIA_PATH.format(quality_dir=QUALITY_TO_DIR[quality])
-
-    for scene in scenes_lst:
-        if not overwrite_scenes and jsons_path.with_name(scene.__name__ + ".mp4").exists():
-            continue
-
-        with tempconfig(
-                {"quality": quality, "preview": preview, "media_dir": media_path, "save_sections": save_sections,
-                 "disable_caching": disable_caching}):
-            scene_obj = scene()
-            if isinstance(scene_obj, SectionsScene):
-                scene_obj.PRESENTATION_MODE = presentation_mode
-            scene_obj.render()
-        if scene in scenes_to_gif_frames:
-            create_scene_gif(media_path, scene.__name__, scenes_to_gif_frames[scene], QUALITY_TO_DIR[quality])
-
-    if save_sections:
-        manim_editor_autocreated_scene_fix(jsons_path)
-
-    if run_manedit:
-        if movie_name == "":
-            raise ValueError("movie_name must be specified when run_manedit is True")
-        run_manim_editor(scenes_lst, jsons_path, movie_name)
-        reorder_manedit_dirs_structure(jsons_path.parent / movie_name)
-
-
-def create_scene_gif(out_dir: str | Path, scene_name, section_num_lst: list[int], quality_dir: str):
-    """
-    Create a gif from the video file.
-    :param out_dir: Name of the directory run_scenes() was called with.
-    :param section_num_lst: Number of the section to create a gif from.
-    """
-    out_dir = Path(out_dir) if isinstance(out_dir, str) else out_dir
-    gif_dir = out_dir / "gifs"
-    gif_dir.mkdir(parents=True, exist_ok=True)
-
-    clips = [VideoFileClip(str(out_dir / SECTIONS_MEDIA_PATH.format(quality_dir=quality_dir) / SCENE_CLIP_NAME.format(
-        scene_name=scene_name, section_num=i))).resize(DEFAULT_GIF_RESIZE) for i in section_num_lst]
-
-    concatenate_videoclips(clips).write_gif(str(gif_dir / f"{scene_name}.gif"), fps=13)
-
-
-def run_manim_editor(scenes_lst: list, jsons_path: Path | str, movie_name: str):
-    jsons_path = Path(jsons_path) if isinstance(jsons_path, str) else jsons_path
-    scenes_to_add = [MANIM_EDITOR_COMMAND]
-    for scene in scenes_lst:
-        scenes_to_add.append(f"--quick_present_export {str(jsons_path / scene.__name__)}.json")
-    scenes_to_add.append(f"--project_name {movie_name}")
-    scenes_to_add = " ".join(scenes_to_add)
-    print(scenes_to_add)
-    subprocess.run(scenes_to_add, cwd=jsons_path.parent)
-
-
-def reorder_manedit_dirs_structure(movie_path: Path | str):
-    movie_path = Path(movie_path) if isinstance(movie_path, str) else movie_path
-    # create media dir if not exists
-    media_dir = movie_path / MOVIE_MEDIA_DIR_NAME
-    media_dir.mkdir(parents=True, exist_ok=True)
-
-    # move all files end with .mp4 or .jpg to media dir
-    for file in movie_path.glob("*.mp4"):
-        shutil.move(file, media_dir)
-    for file in movie_path.glob("*.jpg"):
-        shutil.move(file, media_dir)
-
-    # replace all "data-video="video" to "data-video="media/video" in all index.html file
-    index_html = movie_path / "index.html"
-    with open(index_html, "r+") as f:
-        content = f.read()
-        content = content.replace('data-video="video', f'data-video="{MOVIE_MEDIA_DIR_NAME}/video')
-        for match in re.findall(r'<img src="thumb_(\d+).jpg"', content):
-            content = content.replace(f'<img src="thumb_{match}.jpg"',
-                                      f'<img src="{MOVIE_MEDIA_DIR_NAME}/thumb_{str(int(match) - 1).zfill(4)}.jpg"')
-        f.seek(0)
-        f.write(content)
-        f.truncate()
-
-
-def manim_editor_autocreated_scene_fix(json_path: Path | str):
-    json_path = Path(json_path) if isinstance(json_path, str) else json_path
-    # create a list of all jsons in this path
-    json_files = [j_file for j_file in json_path.glob("*.json")]
-    for j_file in json_files:
-        section_json = []
-        with open(j_file, "r+") as f:
-            section_json = json.load(f)
-        for i, section in enumerate(section_json):
-            if section["name"] == "autocreated":
-                if i < len(section_json) - 1:
-                    section["name"] = section_json[i + 1]["name"]
-                    section_json[i + 1]["type"] = "presentation.sub.normal"
-        # write the new json
-        with open(j_file, "w") as f:
-            json.dump(section_json, f, indent=4)
 
 
 # ---------------------------- Code ----------------------------
 
 def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = LINES_OFF_OPACITY, indicate=True,
-                         **kwargs) -> AnimationGroup | tuple[AnimationGroup, AnimationGroup]:
+                         **kwargs) -> AnimationGroup | tuple[AnimationGroup, Indicate]:
     code = code.code
     lines_highlighted_animation = []
-    lines_indicate_animation = []
+    lines_indicate = []
     lines = list(range(len(code) + 1)) if lines is None else lines
     # VMobjectFromSVGPath().background_stroke_opacity
     for line_number, line in enumerate(code):
@@ -163,13 +30,12 @@ def highlight_code_lines(code: Code, lines: list = None, off_opacity: float = LI
 
         if line_number + 1 in lines:
             if indicate:
-                lines_indicate_animation.append(Indicate(line))
+                lines_indicate.append(line)
             lines_highlighted_animation.append(line.animate.set_fill(opacity=1))
         else:
             lines_highlighted_animation.append(line.animate.set_fill(opacity=off_opacity))
     if indicate:
-        return AnimationGroup(*lines_highlighted_animation, **kwargs), AnimationGroup(*lines_indicate_animation,
-                                                                                      **kwargs)
+        return AnimationGroup(*lines_highlighted_animation, **kwargs), Indicate(VGroup(*lines_indicate), **kwargs)
     return AnimationGroup(*lines_highlighted_animation, **kwargs)
 
 
@@ -211,7 +77,7 @@ def transform_code_lines(code: Code, target_code: Code, lines_transform_dict: di
     return AnimationGroup(*lines_transform_animation, **kwargs)
 
 
-def create_code(code_str: str, tex=True, colored_func_name=True, **kwargs):
+def create_code(code_str: str, tex=True, colored_func_name=True, **kwargs) -> Code:
     pygments_monkeypatch_style("darcula", DarculaStyle)
     with RegisterFont("JetBrains Mono") as fonts:
         Code.set_default(font="JetBrains Mono")
@@ -249,12 +115,14 @@ def compile_code_tex(code: Code, start_line: int = 0, end_line: int = None):
         VGroup(code.code, code.line_numbers).width + 0.1 * 3 + 2 * code.margin, about_edge=LEFT)
 
 
-def compile_code_tex_line(line_mob, line_str: str, line_start_idx: int = 0):
+def compile_code_tex_line(line_mob, line_str: str, line_start_idx: int = 0, bold_math=True):
     math_strings = find_math_substrings(line_str)
     for string, idx in math_strings:
         idx += line_start_idx
         replace_word = line_mob[idx:idx + len(string)]
         tex_str = r"$\boldsymbol{" + string.strip("$") + r"}$"
+        if not bold_math:
+            tex_str = r"$" + string.strip("$") + r"$"
         tex = Tex(tex_str).match_height(replace_word[1:-1]).scale(CODE_MATH_SCALE).move_to(replace_word,
                                                                                            aligned_edge=LEFT).set_stroke(
             width=0, opacity=0)
@@ -290,11 +158,13 @@ def search_shape_in_text(text: VMobject, shape: VMobject):
     l = len(shape.submobjects[0])
     shape_aux = VMobject()
     shape_aux.points = np.concatenate([p.points for p in shape.submobjects[0]])
-    for i in range(len(text.submobjects[0])):
-        subtext = VMobject()
-        subtext.points = np.concatenate([p.points for p in text.submobjects[0][i:i + l]])
-        if T.get_mobject_key(subtext) == T.get_mobject_key(shape_aux):
-            results.append(slice(i, i + l))
+    for j in range(len(text.submobjects)):
+        results.append([])
+        for i in range(len(text.submobjects[j])):
+            subtext = VMobject()
+            subtext.points = np.concatenate([p.points for p in text.submobjects[j][i:i + l]])
+            if T.get_mobject_key(subtext) == T.get_mobject_key(shape_aux):
+                results[j].append(slice(i, i + l))
     return results
 
 
@@ -302,8 +172,9 @@ def color_tex(equation: Tex | MathTex, t2c: dict, tex_class: type[Tex | MathTex]
     for string, color in t2c.items():
         tex = tex_class(string)
         results = search_shape_in_text(equation, tex)
-        for result in results:
-            equation[0][result].set_color(color)
+        for i in range(len(results)):
+            for result in results[i]:
+                equation[i][result].set_color(color)
 
 
 # ---------------------------- geometry ----------------------------
@@ -363,3 +234,20 @@ def get_surrounding_rectangle(mobject_a, mobject_b, **kwargs) -> Rectangle:
                            mobject_a.get_center()[0] - mobject_b.get_center()[0])
     rect.rotate(u_v_angle, about_point=mobject_a.get_center())
     return rect
+
+
+def get_frame_center(left: Mobject | np.ndarray = None, right: Mobject | np.ndarray = None,
+                     top: Mobject | np.ndarray = None, bottom: Mobject | np.ndarray = None) -> np.ndarray:
+    ref_obj = Text(".").scale(0.01)
+    left = ref_obj.to_edge(LEFT, buff=0).get_right() if left is None else left if not isinstance(left,
+                                                                                                 Mobject) else left.get_right()
+    right = ref_obj.to_edge(RIGHT, buff=0).get_left() if right is None else right if not isinstance(right,
+                                                                                                    Mobject) else right.get_left()
+    top = ref_obj.to_edge(UP, buff=0).get_bottom() if top is None else top if not isinstance(top,
+                                                                                             Mobject) else top.get_bottom()
+    bottom = ref_obj.to_edge(DOWN, buff=0).get_top() if bottom is None else bottom if not isinstance(bottom,
+                                                                                                     Mobject) else bottom.get_top()
+
+    return np.array(
+        [Line(left * RIGHT, right * RIGHT, buff=0).get_center()[0], Line(top * UP, bottom * UP, buff=0).get_center()[1],
+         0])

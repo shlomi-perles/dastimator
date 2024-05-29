@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__ = ["Graph", "DiGraph"]
+__all__ = ["Graph", "DiGraph", "WeightedGraph"]
 
 import itertools as it
 from copy import copy
@@ -596,13 +596,17 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
 
         self.edges = {}
         self._edge_config = {}
+        self._tip_config = {}
+        self.default_tip_config = self.DEFAULT_TIP_CONFIG
         if directed_graph:
-            self._tip_config = {}
-            self.default_tip_config = self.DEFAULT_TIP_CONFIG
             if "tip_config" in edge_config:
                 self.default_tip_config = {**self.default_tip_config, **edge_config["tip_config"]}
         for e in edges:
             self._add_edge_config(e, edge_config)
+            if not directed_graph and (e[1], e[0]) in self.edges:
+                self.edges[e] = self.edges[(e[1], e[0])]
+                continue
+
             self.edges[e] = self.create_edge(edge_type, *e)
             if directed_graph:
                 self.edges[e] = self.edges[e].add_tip(**self._tip_config[e])
@@ -956,7 +960,7 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
     def _add_edge(
             self,
             edge: tuple[Hashable, Hashable],
-            edge_type: type[Mobject] = Line,
+            edge_type: type[Mobject] = Edge,
             edge_config: dict | None = None,
     ):
         """Add a new edge to the graph.
@@ -994,17 +998,22 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
 
         self.add(self.edges[(u, v)])
         added_mobjects.append(self.edges[(u, v)])
+        self.set_z_index(self.z_index)
         return self.get_group_class()(*added_mobjects)
 
     def create_edge(self, edge_type, u, v):
         """Create an edge mobject between two vertices."""
+        start, end = self[u], self[v]
+        if edge_type is not Edge:
+            start, end = start.get_center(), end.get_center()
+
         if self.graph_type == GraphType.UNDIRECTED:
-            edge_mobject = edge_type(self[u].get_center(), self[v].get_center(), z_index=-1,
+            edge_mobject = edge_type(start, end, z_index=-1,
                                      **self._edge_config[(u, v)])
         else:
             edge_len = np.linalg.norm(self[u].get_center() - self[v].get_center()
                                       ) - (self[v].width + self[u].width) / 2
-            edge_mobject = edge_type(self[u].get_center(), self[v].get_center(), z_index=-1,
+            edge_mobject = edge_type(start, end, z_index=-1,
                                      **self._edge_config[(u, v)])
             edge_mobject.put_start_and_end_on(ORIGIN, [edge_len, 0, 0])
             edge_mobject.next_to(self[u], RIGHT, buff=0)
@@ -1016,7 +1025,7 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
     def add_edges(
             self,
             *edges: tuple[Hashable, Hashable],
-            edge_type: type[Mobject] = Line,
+            edge_type: type[Mobject] = Edge,
             edge_config: dict | None = None,
             **kwargs,
     ):
@@ -1125,6 +1134,28 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
 
         mobjects = self.remove_edges(*edges)
         return AnimationGroup(*(animation(mobj, **anim_args) for mobj in mobjects))
+
+    def set_z_index(self, z_index_value: float, **kwargs) -> Graph:
+        """Sets the z-index of the graph.
+
+        Parameters
+        ----------
+        z_index_value
+            The z-index value to be set.
+        kwargs
+            Further keyword arguments to be passed to :meth:`.Mobject.set_z_index`.
+
+        Returns
+        -------
+        Graph
+            The graph itself.
+
+        """
+        super().set_z_index(z_index_value, **kwargs)
+        for edge in self.edges.values():
+            if isinstance(edge, Edge):
+                edge.fix_z_index()
+        return self
 
     @staticmethod
     def from_networkx(
@@ -1360,7 +1391,7 @@ class DiGraph(GenericGraph):
             layout: str | dict = "spring",
             layout_scale: float | tuple = 2,
             layout_config: dict | None = None,
-            vertex_type: type[Mobject] = Dot,
+            vertex_type: type[Mobject] = Node,
             vertex_config: dict | None = None,
             vertex_mobjects: dict | None = None,
             edge_type: type[Mobject] = Line,
@@ -1391,7 +1422,9 @@ class DiGraph(GenericGraph):
             edge_type = type(edge)
             tip = edge.pop_tips()
 
-            new_edge = self.create_edge(edge_type, u, v)
+            new_edge = self.create_edge(edge_type, u, v).set_z_index(edge.z_index)
+            if isinstance(edge, Edge):
+                new_edge.fix_z_index()
 
             edge.become(new_edge)
             if len(tip) > 0:

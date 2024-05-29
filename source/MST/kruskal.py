@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from tools.movie_maker import render_scenes
 from tools.scenes import *
 from tools.graphs.edge import *
 from tools.graphs.node import IndicateNode
 from tools.graphs.utils import get_vertices_cut
-from mst_utils import *
+from MST.mst_utils import *
 
 ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
@@ -103,10 +104,9 @@ class WeightedGraphDefinition(SectionsScene):
             $E=\left\{'{'}{', '.join(map(str, EDGES_SMALL_EXAMPLE))}\right\{'}'}$)\\
             ${', '.join(map(lambda x: weight_format_str.format(x, WEIGHTS_SMALL_EXAMPLE[x]), WEIGHTS_SMALL_EXAMPLE))}$''',
             tex_environment="flushleft").match_width(definition).next_to(definition, DOWN, buff=0.5)
-        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, graph_type=WeightedGraph,
-                             weights=WEIGHTS_SMALL_EXAMPLE,
-                             absolute_scale_vertices=True, layout="circular").scale(0.6).next_to(example, DOWN,
-                                                                                                 buff=0.2)
+        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, layout="circular", graph_type=WeightedGraph,
+                             weights=WEIGHTS_SMALL_EXAMPLE, rescale_vertices=False).scale(0.6).next_to(example, DOWN,
+                                                                                                       buff=0.2)
         self.play(Write(example))
         self.play(Write(graph))
         self.next_section("End")
@@ -129,8 +129,8 @@ class MSTDefinition(SectionsScene):
 
         self.next_section("Spanning Tree Example")
         example = Tex(r'''Example:''').next_to(spanning_tree_def, DOWN, buff=0.5).align_to(spanning_tree_def, LEFT)
-        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, absolute_scale_vertices=True,
-                             graph_type=WeightedGraph, layout="circular").scale(0.7).move_to(ORIGIN).to_edge(DOWN)
+        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, layout="circular", graph_type=WeightedGraph
+                             , rescale_vertices=False).scale(0.7).move_to(ORIGIN).to_edge(DOWN)
         graph.remove_updater(graph.update_edges)
         self.play(Write(example))
         self.play(Write(graph))
@@ -153,8 +153,8 @@ class MSTDefinition(SectionsScene):
         self.next_section("MST Example")
         example = Tex(r'''Example:''').next_to(mst_def, DOWN, buff=0.5).align_to(mst_def, LEFT)
         tree_weight = MathTex(fr"w\left(T\right)\ =\ ", "9").next_to(graph, UP + RIGHT, buff=0.3).move_to(ORIGIN)
-        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, absolute_scale_vertices=True,
-                             weights=WEIGHTS_SMALL_EXAMPLE, graph_type=WeightedGraph, layout="circular").scale(
+        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, layout="circular", graph_type=WeightedGraph,
+                             rescale_vertices=False, weights=WEIGHTS_SMALL_EXAMPLE).scale(
             0.7).next_to(tree_weight, RIGHT).to_edge(DOWN, buff=0.1)
         tree_weight.match_y(graph).shift(LEFT)
         graph.remove_updater(graph.update_edges)
@@ -198,9 +198,8 @@ class TheCutLemma(SectionsScene):
         self.next_section("Cut Example")
         example = Tex(r'Example: $U=$', r"$\left\{1\right\}$").next_to(cut_def, DOWN, buff=0.5).align_to(cut_def, LEFT)
         color_tex(example, t2c={r"U": GREEN}, tex_class=MathTex)
-        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, absolute_scale_vertices=True,
-                             graph_type=WeightedGraph, layout="circular").scale(0.6).move_to(ORIGIN).to_edge(DOWN,
-                                                                                                             buff=0.2)
+        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, layout="circular", graph_type=WeightedGraph
+                             , rescale_vertices=False).scale(0.6).move_to(ORIGIN).to_edge(DOWN, buff=0.2)
         graph.remove_updater(graph.update_edges)
 
         self.play(Write(example))
@@ -237,9 +236,9 @@ class TheCutLemma(SectionsScene):
 
         self.next_section("Example:")
         example_tex = Tex(r"Example:").next_to(the_cut_lemma, DOWN, buff=0.5).align_to(the_cut_lemma, LEFT)
-        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, absolute_scale_vertices=True,
-                             weights=WEIGHTS_SMALL_EXAMPLE,
-                             graph_type=WeightedGraph, layout="circular").scale(0.6).move_to(ORIGIN).to_edge(DOWN)
+        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, layout="circular", graph_type=WeightedGraph,
+                             rescale_vertices=False, weights=WEIGHTS_SMALL_EXAMPLE).scale(0.6).move_to(ORIGIN).to_edge(
+            DOWN)
         graph.remove_updater(graph.update_edges)
         cut = [1, 3]
         new_cut_mob = SurroundingRectangle(VGroup(graph.vertices[1], graph.vertices[3]), buff=0.4, **DEFAULT_CUT_PARAMS,
@@ -448,5 +447,5 @@ class KruskalComplexity(KruskalUnion):
 if __name__ == "__main__":
     scenes_lst = [Intro, WeightedGraphDefinition, MSTDefinition, TheCutLemma, KruskalUnionExample, KruskalComplexity]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
-               create_gif=False)
+    render_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
+                  create_gif=False)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Iterable
+
 import numpy as np
 
 from ..consts import *
@@ -18,8 +20,8 @@ class Edge(VGroup):
         """kwargs are passed to Line constructor"""
         super().__init__()
         self.edge_type = edge_type
-        start_loc = start.get_center() if isinstance(start, Node) else np.copy(start)
-        end_loc = end.get_center() if isinstance(end, Node) else np.copy(end)
+        start_loc = np.copy(start) if isinstance(start, np.ndarray) else start.get_center()
+        end_loc = np.copy(end) if isinstance(start, np.ndarray) else end.get_center()
         self.edge_line = edge_type(start_loc, end_loc, **kwargs)
         self.start = start
         self.end = end
@@ -42,7 +44,11 @@ class Edge(VGroup):
         self.fix_z_index()
 
     def __str__(self):
-        return f"Edge({self.start.key}, {self.end.key}{(' ,' + str(self.weight)) if self.weight is not None else ''})"
+        start_key, end_key = self.start, self.end
+        if isinstance(start_key, Node):
+            start_key, end_key = start_key.key, end_key.key
+
+        return f"Edge({start_key}, {end_key}{(' ,' + str(self.weight)) if self.weight is not None else ''})"
 
     def put_start_and_end_on(self, start, end):  # TODO: update start and end?
         self.fix_z_index()
@@ -89,15 +95,17 @@ class Edge(VGroup):
     def fix_z_index(self):
         if self.start is None or self.end is None:
             return
+        if isinstance(self.start, Dot):
+            self.start.set_z_index(self.z_index + self.NODE_Z_INDEX)
         if isinstance(self.start, Node):
-            self.start.set_z_index(self.NODE_Z_INDEX)
-            self.start.label.set_z_index(self.LABEL_Z_INDEX)
+            self.start.label.set_z_index(self.z_index + self.LABEL_Z_INDEX)
+        if isinstance(self.end, Dot):
+            self.end.set_z_index(self.z_index + self.NODE_Z_INDEX)
         if isinstance(self.end, Node):
-            self.end.set_z_index(self.NODE_Z_INDEX)
-            self.end.label.set_z_index(self.LABEL_Z_INDEX)
-        self.edge_line.set_z_index(self.EDGE_Z_INDEX)
+            self.end.label.set_z_index(self.z_index + self.LABEL_Z_INDEX)
+        self.edge_line.set_z_index(self.z_index + self.EDGE_Z_INDEX)
         if self.weight_mob is not None:
-            self.weight_mob.set_z_index(self.WEIGHT_Z_INDEX)
+            self.weight_mob.set_z_index(self.z_index + self.WEIGHT_Z_INDEX)
 
     def animate_move_along_path(self, flash_color=VISITED_COLOR, width_factor=EDGE_PATH_WIDTH_FACTOR,
                                 time_width: float = 0.1, opposite_direction=False, preserve_state=False,
@@ -129,3 +137,6 @@ class Edge(VGroup):
     def set_color(self, *args, **kwargs):
         self.edge_line.set_color(*args, **kwargs)
         return self
+
+    def get_angle(self):
+        return self.edge_line.get_angle()

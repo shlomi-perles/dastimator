@@ -3,14 +3,15 @@ from __future__ import annotations
 from tools.array import ArrayMob
 from tools.graphs.node import IndicateNode
 from tools.graphs.utils import create_graph
+from tools.movie_maker import render_scenes
 from tools.scenes import *
-from shortes_path_utils import *
+from shortest_weighted_path.shortes_path_utils import *
 
 ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
 OUT_DIR = MEDIA_PATH / Path(__file__).resolve().parent.stem
 
-PRESENTATION_MODE = True
+PRESENTATION_MODE = False
 DISABLE_CACHING = False
 
 # --------------------------------- constants --------------------------------- #
@@ -50,11 +51,11 @@ def get_main_graph_example() -> DiGraph | WeightedGraph:
     layout[5][1] = layout[4][1]
     layout[1][1] += add_y / 2
 
-    graph = create_graph(MAIN_GRAPH_EXAMPLE_VERTICES, MAIN_GRAPH_EXAMPLE_EDGES, graph_type=WeightedGraph,
-                         weights=MAIN_GRAPH_EXAMPLE_WEIGHTS, directed_graph=True,
-                         layout=layout).shift(1e-6 * LEFT)
+    graph = create_graph(MAIN_GRAPH_EXAMPLE_VERTICES, MAIN_GRAPH_EXAMPLE_EDGES, layout=layout, directed_graph=True,
+                         graph_type=WeightedGraph, weights=MAIN_GRAPH_EXAMPLE_WEIGHTS, rescale_vertices=False).shift(
+        1e-6 * LEFT)
     for v, node in graph.vertices.items():
-        node.label.scale(0.8).next_to(node.get_top(), DOWN, buff=0.1)
+        node.label.scale(0.5).next_to(node.get_top(), DOWN, buff=0.1)
     return graph
 
 
@@ -64,7 +65,7 @@ class Intro(SectionsScene):
         title = Title("Shortest Path in a Weighted Graph")
         overview = Tex(r'''Overview:
             \begin{itemize}
-                \item[$\bullet$] Dijkstra Algorithm - $O\left(\left|E\right|\log\left|V\right|\right)$
+                \item[$\bullet$] Dijkstra Algorithm - $O\left(\left(\left|E\right|+\left|V\right|\right)\log\left|V\right|\right)$
                 \begin{itemize}
                 \item weight function: $w: E \rightarrow \mathbb{R}^+$ (non-negative)
                 \end{itemize}
@@ -105,9 +106,9 @@ class ShortestPath(SectionsScene):
         self.next_section("Example")
         example = Text("Example:").next_to(definition, DOWN, buff=0.5).align_to(definition, LEFT)
 
-        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, graph_type=WeightedGraph,
-                             weights=WEIGHTS_SMALL_EXAMPLE, directed_graph=True, absolute_scale_vertices=True,
-                             layout="circular").scale(0.7).next_to(definition, DOWN).to_edge(DOWN)
+        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, layout="circular", directed_graph=True,
+                             graph_type=WeightedGraph, rescale_vertices=False,
+                             weights=WEIGHTS_SMALL_EXAMPLE).scale(0.7).next_to(definition, DOWN).to_edge(DOWN)
         graph.clear_updaters(recursive=True)
         for edge in graph.edges.values():
             edge.clear_updaters()
@@ -158,9 +159,9 @@ class DijkstraIntro(SectionsScene):
         self.next_section("Example")
         example = Text("Example:").scale(0.8).next_to(dijk_input, DOWN, buff=0.2).align_to(dijk_input, LEFT)
         weights = {(1, 2): 7, (3, 1): 2, (1, 4): 4, (2, 3): 1, (3, 4): 8}
-        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, graph_type=WeightedGraph,
-                             weights=weights, directed_graph=True, absolute_scale_vertices=True,
-                             layout="circular").scale(0.55).next_to(dijk_input, DOWN).to_edge(DOWN, buff=0.18).shift(
+        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, layout="circular", directed_graph=True,
+                             graph_type=WeightedGraph, rescale_vertices=False,
+                             weights=weights).scale(0.55).next_to(dijk_input, DOWN).to_edge(DOWN, buff=0.18).shift(
             RIGHT * 1.8)
         graph.clear_updaters(recursive=True)
 
@@ -200,9 +201,8 @@ class Relax(SectionsScene):
         title = Title("Vertex Relaxation")
         code = create_code(RELAX_PSEUDO_CODE).next_to(title, DOWN, buff=0.5)
 
-        graph = create_graph(["v", "u"], [("u", "v")], graph_type=WeightedGraph,
-                             weights={("u", "v"): 2}, directed_graph=True, absolute_scale_vertices=True,
-                             layout="circular").scale(0.7).next_to(code, DOWN, buff=0.9)
+        graph = create_graph(["v", "u"], [("u", "v")], layout="circular", directed_graph=True, graph_type=WeightedGraph,
+                             rescale_vertices=False, weights={("u", "v"): 2}).scale(0.7).next_to(code, DOWN, buff=0.9)
         graph.clear_updaters(recursive=True)
 
         for edge in graph.edges.values():
@@ -292,11 +292,11 @@ class Dijkstra(SectionsScene):
         if v_dist_val > u_dist_val + weight:
             self.decrease_key(v, u_dist_val + weight)
             self.next_section("Update π")
-            if self.pi.get_square(v - 1)[2].tex_string != "":
-                self.play(self.graph.edges[(int(self.pi[v][2].tex_string), v)].animate_move_along_path(
+            if self.pi.get_entry(v).value != "":
+                self.play(self.graph.edges[(int(self.pi.get_entry(v).value), v)].animate_move_along_path(
                     **SP_RELAX_PATH_PARAMS))
             self.play(self.graph.edges[(u, v)].animate_move_along_path(**SP_PATH_PARAMS))
-            self.play(self.pi.at(v - 1, u))
+            self.play(self.pi.animate.at(v, u))
 
         self.play(Unwrite(relax_edge))
 
@@ -321,20 +321,20 @@ class Dijkstra(SectionsScene):
 
     def create_dijkstra_vars(self) -> tuple[ArrayMob, Tex, ArrayMob]:
         scale = 1
+        arr_scale = 0.38
         start_vars_y = self.code.get_bottom()[1]
         lag_y = (config.frame_height / 2 + start_vars_y) / 3
-        heap_mob = ArrayMob("min-heap:", 1, name_scale=scale).set_y(start_vars_y - lag_y, DOWN).to_edge(
-            LEFT)
+        heap_mob = ArrayMob("min-heap:", 1, name_scale=scale).scale(arr_scale).set_y(start_vars_y - lag_y,
+                                                                                     DOWN).to_edge(LEFT)
 
-        u = Tex("u:").scale_to_fit_height(heap_mob.height_ref).next_to(heap_mob, DOWN, buff=heap_mob.get_square(
-            0).height * 0.8).align_to(heap_mob.array_name, RIGHT).set_y(start_vars_y - 2 * lag_y, DOWN)
-        pi = ArrayMob(r"$\pi$:", *[""] * len(self.graph.vertices), name_scale=scale, show_labels=True, labels_pos=DOWN,
-                      align_point=u.get_right() + 0.5 * DOWN * (heap_mob.obj_ref.get_bottom()[1] - u.get_top()[1]),
-                      starting_index=1).set_y(start_vars_y - 3 * lag_y, DOWN)
-        pi.shift((pi.array_name.get_right() - u.get_right())[0] * LEFT)
+        u = Tex("u:").match_height(heap_mob.obj_ref).next_to(heap_mob, DOWN, buff=heap_mob.get_entry(
+            0).height * 0.8).align_to(heap_mob.name_mob, RIGHT).set_y(start_vars_y - 2 * lag_y, DOWN)
+        pi = ArrayMob(r"$\pi$:", *[""] * len(self.graph.vertices), name_scale=scale, show_indices=True,
+                      indices_pos=DOWN, starting_index=1).scale(arr_scale).set_y(start_vars_y - 3 * lag_y, DOWN)
+        pi.shift((heap_mob.entries.get_left()[0] - pi.entries.get_left()[0]) * RIGHT)
         u.set_y((heap_mob.get_bottom()[1] + pi.get_top()[1]) / 2)
         VGroup(heap_mob, u, pi).next_to(self.code, DOWN).to_edge(LEFT)
-        heap_mob = heap_mob.array_name
+        heap_mob = heap_mob.name_mob
         return heap_mob, u, pi
 
     def find_in_heap(self, v: Hashable) -> VGroup:
@@ -373,7 +373,6 @@ class DijkstraExample(Dijkstra):
 
     def construct(self):
         self.next_section("Dijkstra Example", pst.NORMAL)
-        # self.add(self.graph, self.code)
         self.play(Write(self.code), Write(self.graph))
         self.play(Write(self.heap_label), Write(self.u), Write(self.pi))
 
@@ -418,5 +417,5 @@ class DijkstraComplexity(Dijkstra):
 if __name__ == "__main__":
     scenes_lst = [Intro, ShortestPath, DijkstraIntro, Relax, DijkstraExample, DijkstraComplexity]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[18 + i for i in range(5)],
-               create_gif=False)
+    render_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[18 + i for i in range(5)],
+                  create_gif=False)

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from tools.array import ArrayMob
-from tools.graphs.node import IndicateNode
 from tools.graphs.utils import create_graph
+from tools.movie_maker import render_scenes
 from tools.scenes import *
-from shortes_path_utils import *
+from shortest_weighted_path.shortes_path_utils import *
 
 ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
@@ -47,11 +47,11 @@ def get_main_graph_example() -> DiGraph | WeightedGraph:
     layout[5][1] = layout[4][1]
     layout[1][1] += add_y / 2
 
-    graph = create_graph(MAIN_GRAPH_EXAMPLE_VERTICES, MAIN_GRAPH_EXAMPLE_EDGES, graph_type=WeightedGraph,
-                         weights=MAIN_GRAPH_EXAMPLE_WEIGHTS, directed_graph=True,
-                         layout=layout).shift(1e-6 * LEFT)
+    graph = create_graph(MAIN_GRAPH_EXAMPLE_VERTICES, MAIN_GRAPH_EXAMPLE_EDGES, layout=layout, directed_graph=True,
+                         graph_type=WeightedGraph, weights=MAIN_GRAPH_EXAMPLE_WEIGHTS, rescale_vertices=False).shift(
+        1e-6 * LEFT)
     for v, node in graph.vertices.items():
-        node.label.scale(0.8).next_to(node.get_top(), DOWN, buff=0.1)
+        node.label.scale(0.5).next_to(node.get_top(), DOWN, buff=0.1)
     graph.edges[(2, 4)].weight_relative_position = 0.7
     graph.edges[(2, 4)].update_weight(graph.edges[(2, 4)])
     graph.edges[(5, 3)].weight_relative_position = 0.7
@@ -82,9 +82,9 @@ class BellmanFordIntro(SectionsScene):
         self.next_section("Example")
         example = Text("Negative cycle example:").scale(0.6).next_to(bf_input, DOWN, buff=0.2).align_to(bf_input, LEFT)
 
-        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, graph_type=WeightedGraph,
-                             weights=WEIGHTS_SMALL_EXAMPLE, directed_graph=True, absolute_scale_vertices=True,
-                             layout="circular").scale(0.5).next_to(bf_input, DOWN).to_edge(DOWN, buff=0.18)
+        graph = create_graph(VERTICES_SMALL_EXAMPLE, EDGES_SMALL_EXAMPLE, layout="circular", directed_graph=True,
+                             graph_type=WeightedGraph, rescale_vertices=False,
+                             weights=WEIGHTS_SMALL_EXAMPLE).scale(0.5).next_to(bf_input, DOWN).to_edge(DOWN, buff=0.18)
         graph.clear_updaters(recursive=True)
 
         for edge in graph.edges.values():
@@ -172,11 +172,11 @@ class BellmanFord(SectionsScene):
         if v_dist_val > u_dist_val + weight:
             self.set_dist(v, u_dist_val + weight)
             self.next_section("Update π")
-            if self.pi.get_square(v - 1)[2].tex_string != "":
-                self.play(self.graph.edges[(int(self.pi[v][2].tex_string), v)].animate_move_along_path(
+            if self.pi.get_entry(v).value != "":
+                self.play(self.graph.edges[(int(self.pi.get_entry(v).value), v)].animate_move_along_path(
                     **SP_RELAX_PATH_PARAMS))
             self.play(self.graph.edges[(u, v)].animate_move_along_path(**SP_PATH_PARAMS))
-            self.play(self.pi.at(v - 1, u))
+            self.play(self.pi.animate.at(v, u))
             ret = True
 
         self.play(Unwrite(relax_edge))
@@ -189,11 +189,10 @@ class BellmanFord(SectionsScene):
 
     def create_bf_vars(self) -> ArrayMob:
         scale = 1
-        start_vars_y = self.code.get_bottom()[1]
-        lag_y = (config.frame_height / 4 + start_vars_y)
 
-        pi = ArrayMob(r"$\pi$:", *[""] * len(self.graph.vertices), name_scale=scale, show_labels=True, labels_pos=DOWN,
-                      starting_index=1).scale(1.6).set_y(start_vars_y - lag_y, DOWN).to_edge(LEFT)
+        pi = ArrayMob(r"$\pi$:", *[""] * len(self.graph.vertices), name_scale=scale, show_indices=True,
+                      indices_pos=DOWN,
+                      starting_index=1).scale(0.6).move_to(get_frame_center(top=self.code)).align_to(self.code, LEFT)
         return pi
 
     def set_dist(self, v: Hashable, dist: float, **kwargs):
@@ -246,5 +245,5 @@ class BellmanFordComplexity(BellmanFord):
 if __name__ == "__main__":
     scenes_lst = [BellmanFordIntro, BellmanFordExample, BellmanFordComplexity]
 
-    run_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
-               create_gif=False)
+    render_scenes(scenes_lst, OUT_DIR, PRESENTATION_MODE, DISABLE_CACHING, gif_scenes=[28 + i for i in range(6)],
+                  create_gif=False)
