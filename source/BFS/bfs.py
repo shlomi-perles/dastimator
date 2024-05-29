@@ -3,13 +3,13 @@ from __future__ import annotations
 from copy import copy
 from typing import Hashable
 
+from tools.graphs.utils import get_neighbors, create_dist_label, create_graph
+from tools.movie_maker import render_scenes
+from tools.scenes import *
 from tools.array import *
 from tools.consts import *
 from tools.funcs import *
 from tools.graphs.my_graphs import DiGraph
-from tools.graphs.utils import get_neighbors, create_dist_label, create_graph
-from tools.movie_maker import render_scenes
-from tools.scenes import *
 
 ROOT_PATH = Path(__file__).resolve().parent
 sys.path.append(str(ROOT_PATH.parent))
