@@ -31,8 +31,8 @@ CUR_DIR = Path(__file__).parent.absolute()
 
 def render_scenes(scenes_lst: list, media_path, presentation_mode: bool = False, disable_caching: bool = False,
                   preview: bool = True, save_sections: bool = True, quality: str = None, overwrite_scenes: bool = True,
-                  scenes_to_gif_frames: dict[Scene, list[int]] = None, run_manedit: bool = None, movie_name="",
-                  description_title="", description="", **kwargs):
+                  scenes_to_gif_frames: dict[Scene, list[int]] = None, run_manedit: bool = None, movie_name: str = "",
+                  description_title: str = "", description: str = "", **kwargs):
     """Run a list of scenes. This function is used by the manim command line interface.
     Possible quality settings are:
     - fourk_quality [k] 2160X3840

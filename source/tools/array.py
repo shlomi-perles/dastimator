@@ -176,7 +176,8 @@ class ArrayMob(VGroup):
         return self.entries[index - self.starting_index]
 
     # TODO: implement update_indices
-    def pop(self, index: int = None, shift=DOWN, update_indices=False, **kwargs) -> AnimationGroup:
+    def pop(self, index: int = None, shift: np.ndarray = DOWN, update_indices: bool = False,
+            **kwargs) -> AnimationGroup:
         """
         Pops an element from the array.
         :param shift: The direction of the shift.

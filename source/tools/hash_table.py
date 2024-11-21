@@ -3,7 +3,7 @@ from __future__ import annotations
 from manim import *
 from tools.array import ArrayEntry
 
-DEFAULT_HASH_ARROWS_COLOR = YELLOW
+DEFAULT_HASH_ARROWS_COLOR: ManimColor = YELLOW
 
 
 class HashTable(VGroup):

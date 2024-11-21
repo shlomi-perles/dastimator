@@ -8,7 +8,7 @@ MEDIA_PATH: Path = DASTIMATOR_PATH / "media"
 SITE_PATH = DASTIMATOR_PATH / "docs"
 MOVIES_PATH = SITE_PATH / "movies"
 
-# ---------------------------------- Graph consts ---------------------------------- #
+# ---------------------------------- Graph Consts ---------------------------------- #
 VERTEX_COLOR: str = DARK_BLUE
 VERTEX_WIDTH: float = config.frame_width * 0.038
 VERTEX_STROKE_WIDTH: float = DEFAULT_STROKE_WIDTH * 1.6

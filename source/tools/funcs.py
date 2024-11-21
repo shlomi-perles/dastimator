@@ -115,7 +115,7 @@ def compile_code_tex(code: Code, start_line: int = 0, end_line: int = None):
         VGroup(code.code, code.line_numbers).width + 0.1 * 3 + 2 * code.margin, about_edge=LEFT)
 
 
-def compile_code_tex_line(line_mob, line_str: str, line_start_idx: int = 0, bold_math=True):
+def compile_code_tex_line(line_mob, line_str: str, line_start_idx: int = 0, bold_math: bool = True):
     math_strings = find_math_substrings(line_str)
     for string, idx in math_strings:
         idx += line_start_idx
@@ -132,7 +132,7 @@ def compile_code_tex_line(line_mob, line_str: str, line_start_idx: int = 0, bold
         line_mob[idx + len(string):].next_to(replace_word[-1], buff=0.05)
 
 
-def find_math_substrings(string):
+def find_math_substrings(string: str):
     pattern = r'\$(.*?)\$'
     matches = re.findall(pattern, string)
     return [("$" + match + "$", string.index("$" + match + "$")) for match in matches]
