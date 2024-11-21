@@ -53,7 +53,7 @@ class ArrayExample(SectionsScene):
         self.wait(2)
 ```
 
-![](examples/ArrayExample.mp4)
+![](https://github.com/user-attachments/assets/6cf6136d-d802-439a-b924-6cdaa382a24d)
 ---
 
 ## Contributions 🤝
