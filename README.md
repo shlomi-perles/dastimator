@@ -9,8 +9,7 @@ for educational purposes.
 
 ## Features 🚀
 
-### 🖥️ **[Dastflix](https://shlomi-perles.github.io/dastimator)**
-
+[<img src="https://github.com/user-attachments/assets/9ab6acd3-6cd8-4ce2-b22b-29d724bb79e4" width="320">](https://shlomi-perles.github.io/dastimator)
 - A dedicated website hosting presentations about data structures, all created using dastimator.
 - Explore the presentations and their source code [here](source).
 
