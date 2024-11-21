@@ -78,5 +78,3 @@ This project is licensed under the MIT License.
 
 - Built using the Manim library.
 - Special thanks to the students of HUJI for inspiring the project.
-
-Explore, create, and teach with Dastimator! 🎉
