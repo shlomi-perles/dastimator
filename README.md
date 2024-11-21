@@ -53,7 +53,9 @@ class ArrayExample(SectionsScene):
         self.wait(2)
 ```
 
-https://github.com/user-attachments/assets/6cf6136d-d802-439a-b924-6cdaa382a24d
+
+https://github.com/user-attachments/assets/221cfdd5-6bd7-4416-b72f-5d9ad3ab5e80
+
 ---
 
 ## Contributions 🤝
