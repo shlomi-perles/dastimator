@@ -31,7 +31,6 @@ Here's a sample snippet showcasing how to create and animate an array:
 ```python
 from tools.array import *
 from tools.consts import *
-from tools.movie_maker import render_scenes
 from tools.scenes import *
 
 
