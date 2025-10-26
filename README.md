@@ -16,7 +16,7 @@ for educational purposes.
 
 - A dedicated website hosting presentations about data structures, all created using dastimator.
 - Explore the presentations and their source code [here](source).
-
+- Visit the official site [here](https://shlomi-perles.github.io/dastimator)
 <p align="center">
     <a href="https://shlomi-perles.github.io/dastimator">
         <img src="https://github.com/user-attachments/assets/beb76038-d91f-4600-852e-2ebefc145f41" width="620">
